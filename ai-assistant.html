@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant - IBEMH ALIAS | AI-Powered UPSC Preparation</title>
+    <meta name="description" content="IBEMH ALIAS AI Assistant - Your personal AI tutor for UPSC preparation. Get personalized study plans, answer evaluation, current affairs summaries, mock interviews, and progress analytics.">
+    <link rel="icon" href="/assets/images/logo.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/assets/js/main.js" defer></script>
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { primary: { 500:'#f59e0b', 600:'#d97706', 700:'#b45309' }, secondary: { 500:'#0ea5e9', 600:'#0284c7', 700:'#0369a1' }, dark: { 800:'#262626', 900:'#171717', 950:'#0a0a0a' } }, fontFamily: { sans: ['Inter','sans-serif'], display: ['Poppins','sans-serif'] }, backgroundImage: { 'hero-pattern': 'linear-gradient(135deg, rgba(217,119,6,0.9) 0%, rgba(147,51,234,0.8) 50%, rgba(37,99,235,0.9) 100%)' } } } };
+    </script>
+    <style>
+        body { scroll-behavior: smooth; } .gradient-text { background: linear-gradient(135deg, #d97706 0%, #9333ea 50%, #2563eb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .hero-gradient { background: linear-gradient(135deg, #d97706 0%, #7c3aed 50%, #1e40af 100%); }
+        .gradient-bg { background: linear-gradient(135deg, #d97706 0%, #9333ea 50%, #2563eb 100%); }
+        .btn-primary { background: linear-gradient(135deg, #d97706 0%, #0ea5e9 100%); color: white; font-weight: 600; padding: 0.75rem 1.5rem; border-radius: 0.75rem; transition: all 0.3s; display: inline-flex; gap: 0.5rem; align-items: center; box-shadow: 0 10px 25px rgba(217, 119, 6, 0.3); }
+        .btn-primary:hover { transform: scale(1.05); }
+        .btn-secondary { background: linear-gradient(135deg, #f59e0b 0%, #0ea5e9 100%); color: white; font-weight: 600; padding: 0.75rem 1.5rem; border-radius: 0.75rem; transition: all 0.3s; display: inline-flex; gap: 0.5rem; align-items: center; }
+        .btn-secondary:hover { transform: scale(1.05); }
+        [x-cloak] { display: none !important; }
+        .feature-card { transition: all 0.3s ease; }
+        .feature-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .dark .feature-card:hover { box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+    </style>
+</head>
+<body x-data="darkMode()" x-init="init()" x-cloak>
+
+    <div id="preloader" class="fixed inset-0 bg-white dark:bg-dark-950 z-[200] flex items-center justify-center transition-opacity duration-500">
+        <div class="relative"><div class="w-16 h-16 border-4 border-primary-200 dark:border-dark-700 border-t-primary-600 dark:border-t-primary-400 rounded-full animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center"><span class="text-primary-600 dark:text-primary-400 font-display font-bold text-xl">IBEMH ALIAS</span></div></div>
+    </div>
+
+    <!-- AI Chatbot Widget -->
+    <div x-data="aiChatbot()" x-init="init()" x-cloak>
+        <div x-show="open && !minimized" class="fixed bottom-6 right-6 z-[100]">
+            <div class="bg-white dark:bg-dark-900 rounded-2xl shadow-2xl w-96 max-w-[calc(100vw-48px)] border border-gray-200 dark:border-dark-700 overflow-hidden">
+                <div class="hero-gradient text-white p-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-3"><div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center"><i class="fas fa-brain text-lg"></i></div><div><h3 class="font-display font-bold">AI Study Assistant</h3><p class="text-xs opacity-80">Online - Ready to help</p></div></div>
+                    <div class="flex items-center space-x-2"><button @click="minimize()" class="p-1 hover:bg-white/10 rounded-lg transition-colors"><i class="fas fa-minus"></i></button><button @click="open = false" class="p-1 hover:bg-white/10 rounded-lg transition-colors"><i class="fas fa-times"></i></button></div>
+                </div>
+                <div id="chat-messages" class="h-80 overflow-y-auto custom-scrollbar p-4 space-y-3">
+                    <template x-for="message in messages" :key="message.time + message.from">
+                        <div :class="message.from === 'ai' ? 'flex justify-start' : 'flex justify-end'">
+                            <div :class="message.from === 'ai' ? 'bg-gray-100 dark:bg-dark-800 text-gray-800 dark:text-gray-200' : 'hero-gradient text-white'" class="max-w-[80%] rounded-2xl px-4 py-2 text-sm">
+                                <div x-html="formatMessage(message.content)"></div><p :class="message.from === 'ai' ? 'text-xs text-gray-400' : 'text-xs opacity-70'" class="mt-1 text-right" x-text="message.time"></p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <div class="px-4 pb-2 space-y-2" x-show="messages.length === 1">
+                    <template x-for="action in quickActions" :key="action"><button @click="quickAction(action)" class="w-full text-left bg-gray-50 dark:bg-dark-800 hover:bg-gray-200 dark:hover:bg-dark-700 rounded-lg px-3 py-2 text-sm transition-colors"><i class="fas fa-bolt mr-2 text-primary-500"></i> <span x-text="action"></span></button></template>
+                </div>
+                <div class="border-t border-gray-200 dark:border-dark-700 p-3"><div class="flex items-center space-x-2">
+                    <input type="text" id="ai-message-input" x-model="newMessage" @keyup.enter="sendMessage()" placeholder="Ask me anything about UPSC..." class="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-dark-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-dark-800 text-gray-800 dark:text-gray-200">
+                    <button x-show="newMessage.length > 0" @click="sendMessage()" class="p-2 hero-gradient text-white rounded-lg transition-all hover:opacity-90"><i class="fas fa-paper-plane"></i></button>
+                </div></div>
+            </div>
+        </div>
+        <button @click="minimized ? (minimized = false) : (open = true)" x-show="!open || minimized" class="w-14 h-14 hero-gradient text-white rounded-full shadow-2xl flex items-center justify-center text-xl hover:opacity-90 transition-all transform hover:scale-105"><i class="fas fa-brain"></i></button>
+    </div>
+
+    <!-- Navigation -->
+    <nav x-data="mobileMenu()" class="bg-white dark:bg-dark-900 shadow-sm border-b border-gray-200 dark:border-dark-700 fixed w-full z-50">
+        <div class="container mx-auto px-4 lg:px-6"><div class="flex justify-between items-center h-16 lg:h-20">
+                <div class="flex items-center"><a href="index.html" class="flex items-center space-x-2"><div class="w-10 h-10 hero-gradient rounded-xl flex items-center justify-center"><i class="fas fa-crown text-white text-xl"></i></div><span class="font-display font-bold text-2xl gradient-text dark:text-white">IBEMH ALIAS</span></a></div>
+                <div class="hidden lg:flex items-center space-x-8">
+                    <a href="index.html" class="text-gray-800 dark:text-gray-200 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">Home</a>
+                    <a href="about.html" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">About</a>
+                    <a href="courses.html" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">Courses</a>
+                    <a href="faculty.html" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">Faculty</a>
+                    <a href="toppers.html" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">Success Stories</a>
+                    <a href="ai-assistant.html" class="text-primary-600 dark:text-primary-400 font-medium">AI Assistant</a>
+                    <a href="blog.html" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">Blog</a>
+                    <a href="contact.html" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">Contact</a>
+                    <a href="login.html" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">Student Login</a>
+                </div>
+                <div class="hidden lg:flex items-center space-x-4">
+                    <button @click="toggle()" class="p-2 text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors"><i :class="dark ? 'fas fa-sun' : 'fas fa-moon'" class="text-lg"></i></button>
+                    <a href="contact.html" class="btn-primary">Enroll Now</a>
+                </div>
+                <div class="lg:hidden flex items-center space-x-3">
+                    <button @click="toggle()" class="p-2 text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors"><i :class="dark ? 'fas fa-sun' : 'fas fa-moon'" class="text-lg"></i></button>
+                    <button @click="toggle()" class="p-2 text-gray-800 dark:text-gray-200 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors"><i class="fas" :class="open ? 'fa-times' : 'fa-bars'" class="text-xl"></i></button>
+                </div>
+            </div>
+        </div>
+        <div x-show="open" class="lg:hidden bg-white dark:bg-dark-900 shadow-xl border-t border-gray-200 dark:border-dark-700">
+            <div class="container mx-auto px-4 py-4 space-y-3">
+                <a href="index.html" @click="close()" class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">Home</a>
+                <a href="about.html" @click="close()" class="block px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">About</a>
+                <a href="courses.html" @click="close()" class="block px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">Courses</a>
+                <a href="faculty.html" @click="close()" class="block px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">Faculty</a>
+                <a href="toppers.html" @click="close()" class="block px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">Success Stories</a>
+                <a href="ai-assistant.html" @click="close()" class="block px-4 py-2 text-primary-600 dark:text-primary-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">AI Assistant</a>
+                <a href="blog.html" @click="close()" class="block px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">Blog</a>
+                <a href="contact.html" @click="close()" class="block px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">Contact</a>
+                <a href="login.html" @click="close()" class="block px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">Student Login</a>
+                <div class="pt-2 border-t border-gray-200 dark:border-dark-700"><a href="contact.html" class="block w-full btn-primary text-center">Enroll Now</a></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-gradient py-20 lg:py-32 pt-32 relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10">
+            <div class="absolute top-20 left-10 w-64 h-64 bg-white rounded-full blur-3xl"></div>
+            <div class="absolute bottom-20 right-10 w-48 h-48 bg-purple-500 rounded-full blur-3xl"></div>
+        </div>
+        <div class="container mx-auto px-4 lg:px-6 text-center relative z-10">
+            <h1 class="font-display font-bold text-4xl md:text-5xl lg:text-6xl text-white mb-6">AI Assistant</h1>
+            <p class="text-xl text-gray-200 max-w-3xl mx-auto">Your personal AI-powered study companion for UPSC preparation — available 24/7 to help you succeed.</p>
+        </div>
+    </section>
+
+    <!-- AI Overview -->
+    <section class="py-16 lg:py-24 bg-white dark:bg-dark-900">
+        <div class="container mx-auto px-4 lg:px-6">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <div class="inline-flex items-center bg-primary-50 dark:bg-dark-800 text-primary-600 dark:text-primary-400 px-4 py-2 rounded-full text-sm font-medium mb-6">
+                    <i class="fas fa-brain mr-2"></i> AI-Powered Learning
+                </div>
+                <h2 class="font-display font-bold text-3xl lg:text-4xl gradient-text mb-6">Smart AI Features for UPSC Success</h2>
+                <p class="text-gray-600 dark:text-gray-300 text-lg">Our AI assistant provides personalized support across all aspects of your UPSC preparation.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="feature-card bg-gray-50 dark:bg-dark-950/50 rounded-2xl p-8 border border-gray-200 dark:border-dark-700 text-center">
+                    <div class="w-16 h-16 gradient-bg rounded-xl flex items-center justify-center mx-auto mb-6 text-white"><i class="fas fa-calendar-alt text-2xl"></i></div>
+                    <h3 class="font-display font-bold text-xl text-gray-800 dark:text-white mb-3">AI Study Planner</h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-sm mb-4">Get a personalized daily study plan based on your syllabus coverage, weak areas, and target exam date. Automatically adjusts as you progress.</p>
+                    <a href="ai-assistant.html#study-planner" class="text-primary-600 dark:text-primary-400 font-medium text-sm">Try Now →</a>
+                </div>
+                <div class="feature-card bg-gray-50 dark:bg-dark-950/50 rounded-2xl p-8 border border-gray-200 dark:border-dark-700 text-center">
+                    <div class="w-16 h-16 gradient-bg rounded-xl flex items-center justify-center mx-auto mb-6 text-white"><i class="fas fa-edit text-2xl"></i></div>
+                    <h3 class="font-display font-bold text-xl text-gray-800 dark:text-white mb-3">Answer Evaluator</h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-sm mb-4">Submit your Mains answers and get instant AI feedback with marks out of 15, improvement tips, and model answers for comparison.</p>
+                    <a href="ai-assistant.html#answer-evaluator" class="text-primary-600 dark:text-primary-400 font-medium text-sm">Try Now →</a>
+                </div>
+                <div class="feature-card bg-gray-50 dark:bg-dark-950/50 rounded-2xl p-8 border border-gray-200 dark:border-dark-700 text-center">
+                    <div class="w-16 h-16 gradient-bg rounded-xl flex items-center justify-center mx-auto mb-6 text-white"><i class="fas fa-newspaper text-2xl"></i></div>
+                    <h3 class="font-display font-bold text-xl text-gray-800 dark:text-white mb-3">Current Affairs AI</h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-sm mb-4">Get AI-summarized daily current affairs from 20+ news sources, organized by UPSC syllabus topics with monthly compilations.</p>
+                    <a href="ai-assistant.html#current-affairs" class="text-primary-600 dark:text-primary-400 font-medium text-sm">Try Now →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive AI Demo -->
+    <section class="py-16 lg:py-24 bg-gray-50 dark:bg-dark-950">
+        <div class="container mx-auto px-4 lg:px-6">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <h2 class="font-display font-bold text-3xl lg:text-4xl gradient-text mb-6">Try the AI Assistant</h2>
+                <p class="text-gray-600 dark:text-gray-300 text-lg">Experience the power of AI-powered UPSC preparation. Ask me anything!</p>
+            </div>
+
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-white dark:bg-dark-900 rounded-2xl shadow-xl border border-gray-200 dark:border-dark-700 overflow-hidden">
+                    <div class="hero-gradient p-4 text-white">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center"><i class="fas fa-brain text-lg"></i></div>
+                            <div><h3 class="font-display font-bold">AI Study Assistant</h3><p class="text-xs opacity-80">Online - Ready to help</p></div>
+                        </div>
+                    </div>
+
+                    <div x-data="{
+                        newMessage: '',
+                        messages: [
+                            { from: 'ai', content: 'Hello! I\\'m your AI Study Assistant from IBEMH ALIAS. How can I help with your UPSC preparation today?', time: 'Just now' }
+                        ],
+                        sendMessage() {
+                            if (!this.newMessage.trim()) return;
+                            const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+                            this.messages.push({from:'user', content: this.newMessage, time: time});
+                            const userMsg = this.newMessage;
+                            this.newMessage = '';
+                            let reply = '';
+                            if (userMsg.toLowerCase().includes('study plan')) reply = '**📅 Personalized Study Plan**\\n\\nBased on your profile, here\\'s your recommended study plan:\\n\\n**Phase 1 (Months 1-3):** NCERT Foundation + Current Affairs (last 1 year)\\n**Phase 2 (Months 4-8):** GS Mains + Optional Subject\\n**Phase 3 (Months 9-12):** Test Series + Answer Writing\\n\\nWould you like me to customize this further?'; 
+                            else if (userMsg.toLowerCase().includes('answer')) reply = '**✍️ Answer Writing Tips**\\n\\nKey elements for high-scoring UPSC answers:\\n1. Start with a clear introduction (1-2 lines)\\n2. Structure with subheadings for readability\\n3. Include relevant facts, data, and examples\\n4. Address all parts of the question\\n5. Conclude with a forward-looking statement\\n\\nWant me to evaluate a specific answer? Paste it below!';
+                            else if (userMsg.toLowerCase().includes('current')) reply = '**📰 Today\\'s Current Affairs**\\n\\n1. **Governance:** New criminal law amendments\\n2. **Economy:** RBI MPC meeting outcomes\\n3. **International:** India-Japan summit outcomes\\n4. **Science & Tech:** ISRO NavIC mission update\\n5. **Environment:** Biodiversity framework implementation\\n\\nWould you like detailed analysis of any topic?';
+                            else if (userMsg.toLowerCase().includes('interview')) reply = '**🎤 Mock Interview Mode**\\n\\n**Question:** \"What are the key challenges in implementing NEP 2020?\"\\n\\nTake 2 minutes to formulate your response. Key points to cover:\\n- Implementation in rural areas\\n- Teacher training gaps\\n- Infrastructure requirements\\n- Language medium issues\\n\\nYour turn! Share your answer.';
+                            else reply = 'I\\'m here to help with your UPSC preparation! You can ask me about:\\n\\n• Personalized study plans\\n• Answer writing feedback\\n• Current affairs summaries\\n• Mock interview practice\\n• Syllabus guidance\\n\\nWhat would you like to start with?';
+                            this.messages.push({from:'ai', content: reply, time: 'Just now'});
+                            setTimeout(() => {
+                                const container = document.querySelector('#ai-demo-messages');
+                                container.scrollTop = container.scrollHeight;
+                            }, 100);
+                        },
+                        formatMessage(text) {
+                            return text.replace(/\\n\\n/g, '<br><br>').replace(/\\n/g, '<br>').replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>').replace(/\\n/g, '<br>');
+                        }
+                    }" x-init="setTimeout(() => { document.querySelector('#ai-demo-input')?.focus(); }, 500)">
+
+                        <div id="ai-demo-messages" class="h-80 overflow-y-auto custom-scrollbar p-4 space-y-3">
+                            <template x-for="message in messages" :key="message.time + message.from">
+                                <div :class="message.from === 'ai' ? 'flex justify-start' : 'flex justify-end'">
+                                    <div :class="message.from === 'ai' ? 'bg-gray-100 dark:bg-dark-800 text-gray-800 dark:text-gray-200' : 'hero-gradient text-white'" class="max-w-[80%] rounded-2xl px-4 py-2 text-sm">
+                                        <div x-html="formatMessage(message.content)"></div>
+                                        <p class="text-xs opacity-70 mt-1 text-right" x-text="message.time"></p>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        <div class="border-t border-gray-200 dark:border-dark-700 p-3">
+                            <div class="flex items-center space-x-2">
+                                <input type="text" id="ai-demo-input" x-model="newMessage" @keyup.enter="sendMessage()" placeholder="Ask me anything about UPSC..." class="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-dark-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-dark-800 text-gray-800 dark:text-gray-200">
+                                <button x-show="newMessage.length > 0" @click="sendMessage()" class="p-2 hero-gradient text-white rounded-lg transition-all hover:opacity-90"><i class="fas fa-paper-plane"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Features Details -->
+    <section class="py-16 lg:py-24 bg-white dark:bg-dark-900">
+        <div class="container mx-auto px-4 lg:px-6">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="font-display font-bold text-3xl lg:text-4xl gradient-text mb-12 text-center">Advanced AI Features</h2>
+
+                <div class="space-y-12">
+                    <!-- Study Planner -->
+                    <div class="grid lg:grid-cols-3 gap-8 items-center">
+                        <div class="lg:col-span-1">
+                            <div class="w-12 h-12 gradient-bg rounded-xl flex items-center justify-center text-white mb-4"><i class="fas fa-calendar-alt text-2xl"></i></div>
+                            <h3 class="font-display font-bold text-2xl text-gray-800 dark:text-white mb-2">AI Study Planner</h3>
+                            <p class="text-gray-600 dark:text-gray-300 text-sm">Smart personalized planning</p>
+                        </div>
+                        <div class="lg:col-span-2 space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-gray-50 dark:bg-dark-950/50 p-4 rounded-lg border border-gray-200 dark:border-dark-700">
+                                    <div class="flex justify-between items-center mb-2"><span class="text-sm font-medium text-gray-700 dark:text-gray-300">Daily Targets</span><span class="text-primary-600 dark:text-primary-400 font-bold">85%</span></div>
+                                    <div class="w-full bg-gray-200 dark:bg-dark-700 rounded-full h-2"><div class="bg-gradient-to-r from-primary-500 to-secondary-500 h-2 rounded-full" style="width: 85%"></div></div>
+                                </div>
+                                <div class="bg-gray-50 dark:bg-dark-950/50 p-4 rounded-lg border border-gray-200 dark:border-dark-700">
+                                    <div class="flex justify-between items-center mb-2"><span class="text-sm font-medium text-gray-700 dark:text-gray-300">Weak Areas</span><span class="text-red-500 font-bold">3 Topics</span></div>
+                                    <div class="w-full bg-gray-200 dark:bg-dark-700 rounded-full h-2"><div class="bg-gradient-to-r from-red-500 to-orange-500 h-2 rounded-full" style="width: 30%"></div></div>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">The AI analyzes your performance across all subjects and topics, identifies weak areas, and generates a daily study plan that adjusts in real-time. It considers your available study hours, exam date, and learning pace to optimize your preparation.</p>
+                        </div>
+                    </div>
+
+                    <!-- Answer Evaluator -->
+                    <div class="grid lg:grid-cols-3 gap-8 items-center">
+                        <div class="lg:col-span-1 lg:order-2">
+                            <div class="w-12 h-12 gradient-bg rounded-xl flex items-center justify-center text-white mb-4"><i class="fas fa-edit text-2xl"></i></div>
+                            <h3 class="font-display font-bold text-2xl text-gray-800 dark:text-white mb-2">Answer Evaluator</h3>
+                            <p class="text-gray-600 dark:text-gray-300 text-sm">Instant AI-powered feedback</p>
+                        </div>
+                        <div class="lg:col-span-2 lg:order-1 space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-gray-50 dark:bg-dark-950/50 p-4 rounded-lg border border-gray-200 dark:border-dark-700">
+                                    <div class="flex justify-between items-center mb-2"><span class="text-sm font-medium text-gray-700 dark:text-gray-300">Avg. Score</span><span class="text-success-500 font-bold">9.2/15</span></div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">+2.3 from last month</p>
+                                </div>
+                                <div class="bg-gray-50 dark:bg-dark-950/50 p-4 rounded-lg border border-gray-200 dark:border-dark-700">
+                                    <div class="flex justify-between items-center mb-2"><span class="text-sm font-medium text-gray-700 dark:text-gray-300">Answers Evaluated</span><span class="text-primary-600 dark:text-primary-400 font-bold">247</span></div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 this month</p>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">Our AI answer evaluator provides instant feedback on your Mains answers based on the official UPSC marking scheme. It checks for content coverage, structure, keyword usage, and presentation quality, plus provides model answers for comparison.</p>
+                        </div>
+                    </div>
+
+                    <!-- Interview Simulator -->
+                    <div class="grid lg:grid-cols-3 gap-8 items-center">
+                        <div class="lg:col-span-1">
+                            <div class="w-12 h-12 gradient-bg rounded-xl flex items-center justify-center text-white mb-4"><i class="fas fa-microphone text-2xl"></i></div>
+                            <h3 class="font-display font-bold text-2xl text-gray-800 dark:text-white mb-2">Interview Simulator</h3>
+                            <p class="text-gray-600 dark:text-gray-300 text-sm">Practice with AI mock panels</p>
+                        </div>
+                        <div class="lg:col-span-2 space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-gray-50 dark:bg-dark-950/50 p-4 rounded-lg border border-gray-200 dark:border-dark-700">
+                                    <div class="flex justify-between items-center mb-2"><span class="text-sm font-medium text-gray-700 dark:text-gray-300">Mock Interviews</span><span class="text-primary-600 dark:text-primary-400 font-bold">12</span></div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Completed this month</p>
+                                </div>
+                                <div class="bg-gray-50 dark:bg-dark-950/50 p-4 rounded-lg border border-gray-200 dark:border-dark-700">
+                                    <div class="flex justify-between items-center mb-2"><span class="text-sm font-medium text-gray-700 dark:text-gray-300">Confidence Score</span><span class="text-success-500 font-bold">87%</span></div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">+15% from start</p>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">The AI mock interview simulator creates personalized interview scenarios based on your DAF, optional subject, and personality traits. It provides real-time feedback on body language, voice modulation, and answer quality, with detailed performance analytics.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="py-16 lg:py-24 bg-gradient-to-r from-primary-600 to-secondary-700 text-white text-center">
+        <div class="container mx-auto px-4 lg:px-6">
+            <h2 class="font-display font-bold text-3xl lg:text-4xl text-white mb-6">AI Assistant Pricing</h2>
+            <p class="text-gray-200 text-lg mb-12 max-w-2xl mx-auto">Choose the perfect AI-powered plan for your UPSC journey.</p>
+
+            <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
+                    <h3 class="font-display font-bold text-2xl mb-4">AI Basic</h3>
+                    <div class="text-4xl font-bold mb-6">Free</div>
+                    <ul class="space-y-3 mb-8 text-left">
+                        <li class="flex items-center"><i class="fas fa-check mr-3 text-success-400"></i> Answer Evaluation (3/day)</li>
+                        <li class="flex items-center"><i class="fas fa-check mr-3 text-success-400"></i> Current Affairs Summaries</li>
+                        <li class="flex items-center"><i class="fas fa-times mr-3 text-red-400"></i> AI Study Planner</li>
+                        <li class="flex items-center"><i class="fas fa-times mr-3 text-red-400"></i> Mock Interview</li>
+                    </ul>
+                    <button class="btn-secondary w-full">Get Started</button>
+                </div>
+
+                <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border-2 border-white/50 relative">
+                    <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-amber-400 text-gray-900 px-4 py-1 rounded-full text-sm font-bold">MOST POPULAR</div>
+                    <h3 class="font-display font-bold text-2xl mb-4">AI Pro</h3>
+                    <div class="text-4xl font-bold mb-6">₹9,999</div>
+                    <ul class="space-y-3 mb-8 text-left">
+                        <li class="flex items-center"><i class="fas fa-check mr-3 text-success-400"></i> Unlimited Answer Evaluation</li>
+                        <li class="flex items-center"><i class="fas fa-check mr-3 text-success-400"></i> AI Study Planner</li>
+                        <li class="flex items-center"><i class="fas fa-check mr-3 text-success-400"></i> Mock Interview Simulator</li>
+                        <li class="flex items-center"><i class="fas fa-check mr-3 text-success-400"></i> Performance Analytics</li>
+                        <li class="flex items-center"><i class="fas fa-check mr-3 text-success-400"></i> 24/7 Priority Support</li>
+                    </ul>
+                    <button class="btn-secondary w-full">Start Free Trial</button>
+                </div>
+
+                <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
+                    <h3 class="font-display font-bold text-2xl mb-4">AI Premium</h3>
+                    <div class="text-4xl font-bold mb-6">₹14,999</div>
+                    <ul class="space-y-3 mb-8 text-left">
+                        <li class="flex items-center"><i class="fas fa-check mr-3 text-success-400"></i> Everything in Pro</li>
+                        <li class="flex items-center"><i class="fas fa-check mr-3 text-success-400"></i> 1:1 AI Mentorship</li>
+                        <li class="flex items-center"><i class="fas fa-check mr-3 text-success-400"></i> Personalized Roadmap</li>
+                        <li class="flex items-center"><i class="fas fa-check mr-3 text-success-400"></i> Topper Strategy Sessions</li>
+                        <li class="flex items-center"><i class="fas fa-check mr-3 text-success-400"></i> Exam Day Support</li>
+                    </ul>
+                    <button class="btn-secondary w-full">Get Premium</button>
+                </div>
+            </div>
+
+            <p class="text-gray-300 mt-8 text-sm">* AI Assistant Pro is included free with any course enrollment at IBEMH ALIAS.</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark-900 text-gray-200 pt-16">
+        <div class="container mx-auto px-4 lg:px-6 pb-12">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+                <div>
+                    <div class="flex items-center space-x-2 mb-6"><div class="w-10 h-10 hero-gradient rounded-xl flex items-center justify-center"><i class="fas fa-crown text-white text-xl"></i></div><span class="font-display font-bold text-2xl gradient-text">IBEMH ALIAS</span></div>
+                    <p class="text-gray-400 mb-6">India's next-generation UPSC coaching platform combining traditional mentorship with AI-powered personalized guidance.</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-display font-bold text-white mb-6">Quick Links</h3>
+                    <ul class="space-y-3">
+                        <li><a href="about.html" class="text-gray-400 hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="courses.html" class="text-gray-400 hover:text-white transition-colors">Our Courses</a></li>
+                        <li><a href="faculty.html" class="text-gray-400 hover:text-white transition-colors">Our Faculty</a></li>
+                        <li><a href="toppers.html" class="text-gray-400 hover:text-white transition-colors">Success Stories</a></li>
+                        <li><a href="blog.html" class="text-gray-400 hover:text-white transition-colors">Blog</a></li>
+                        <li><a href="contact.html" class="text-gray-400 hover:text-white transition-colors">Contact Us</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-display font-bold text-white mb-6">AI Features</h3>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">AI Study Planner</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Answer Evaluator</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Current Affairs AI</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Mock Interview</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Performance Analytics</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-display font-bold text-white mb-6">Contact Us</h3>
+                    <ul class="space-y-4">
+                        <li class="flex items-start space-x-3"><i class="fas fa-map-marker-alt text-primary-500 mt-1"></i><span class="text-gray-400">123, Knowledge Park, New Delhi - 110009</span></li>
+                        <li class="flex items-start space-x-3"><i class="fas fa-phone text-primary-500 mt-1"></i><span class="text-gray-400">+91 98765 43210</span></li>
+                        <li class="flex items-start space-x-3"><i class="fas fa-envelope text-primary-500 mt-1"></i><span class="text-gray-400">info@ibemhalias.com</span></li>
+                        <li class="flex items-start space-x-3"><i class="fas fa-clock text-primary-500 mt-1"></i><span class="text-gray-400">Mon-Fri: 9AM - 8PM, Sat: 10AM - 5PM</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-500 text-sm mb-4 md:mb-0">&copy; 2026 IBEMH ALIAS. All rights reserved.</p>
+                <div class="flex space-x-6 text-sm text-gray-500"><a href="#" class="hover:text-gray-300 transition-colors">Privacy Policy</a><a href="#" class="hover:text-gray-300 transition-colors">Terms of Service</a><a href="#" class="hover:text-gray-300 transition-colors">Refund Policy</a></div>
+            </div>
+        </div>
+    </footer>
+
+    <button id="backToTop" class="fixed bottom-6 right-6 w-12 h-12 bg-primary-600 text-white rounded-full shadow-xl flex items-center justify-center opacity-0 invisible transition-all duration-300 hover:bg-primary-700"><i class="fas fa-arrow-up"></i></button>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const btn = document.getElementById('backToTop');
+            if (window.scrollY > 300) { btn.classList.remove('opacity-0', 'invisible'); } else { btn.classList.add('opacity-0', 'invisible'); }
+        });
+        document.getElementById('backToTop').addEventListener('click', () => { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('preloader').style.opacity = '0';
+                setTimeout(() => { document.getElementById('preloader').style.display = 'none'; }, 500);
+            }, 500);
+        });
+    </script>
+</body>
+</html>

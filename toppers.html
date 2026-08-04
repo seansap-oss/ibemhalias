@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Success Stories - IBEMH ALIAS | UPSC Toppers</title>
+    <meta name="description" content="Read success stories of IBEMH ALIAS students who cracked UPSC with top AIR ranks. See how our AI-powered coaching and expert mentorship helped them succeed.">
+    <link rel="icon" href="/assets/images/logo.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="/assets/js/main.js" defer></script>
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { primary: { 500:'#f59e0b', 600:'#d97706', 700:'#b45309' }, secondary: { 500:'#0ea5e9', 600:'#0284c7', 700:'#0369a1' }, dark: { 800:'#262626', 900:'#171717', 950:'#0a0a0a' } }, fontFamily: { sans: ['Inter','sans-serif'], display: ['Poppins','sans-serif'] }, backgroundImage: { 'hero-pattern': 'linear-gradient(135deg, rgba(217,119,6,0.9) 0%, rgba(147,51,234,0.8) 50%, rgba(37,99,235,0.9) 100%)' } } } };
+    </script>
+    <style>
+        body { scroll-behavior: smooth; } .gradient-text { background: linear-gradient(135deg, #d97706 0%, #9333ea 50%, #2563eb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .hero-gradient { background: linear-gradient(135deg, #d97706 0%, #7c3aed 50%, #1e40af 100%); }
+        .btn-primary { background: linear-gradient(135deg, #d97706 0%, #0ea5e9 100%); color: white; font-weight: 600; padding: 0.75rem 1.5rem; border-radius: 0.75rem; transition: all 0.3s; display: inline-flex; gap: 0.5rem; align-items: center; box-shadow: 0 10px 25px rgba(217, 119, 6, 0.3); }
+        .btn-primary:hover { transform: scale(1.05); }
+        .btn-secondary { background: linear-gradient(135deg, #f59e0b 0%, #0ea5e9 100%); color: white; font-weight: 600; padding: 0.75rem 1.5rem; border-radius: 0.75rem; transition: all 0.3s; display: inline-flex; gap: 0.5rem; align-items: center; }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body x-data="darkMode()" x-init="init()" x-cloak>
+
+    <div id="preloader" class="fixed inset-0 bg-white dark:bg-dark-950 z-[200] flex items-center justify-center transition-opacity duration-500">
+        <div class="relative"><div class="w-16 h-16 border-4 border-primary-200 dark:border-dark-700 border-t-primary-600 dark:border-t-primary-400 rounded-full animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center"><span class="text-primary-600 dark:text-primary-400 font-display font-bold text-xl">IBEMH ALIAS</span></div></div>
+    </div>
+
+    <!-- AI Chatbot Widget -->
+    <div x-data="aiChatbot()" x-init="init()" x-cloak>
+        <div x-show="open && !minimized" class="fixed bottom-6 right-6 z-[100]">
+            <div class="bg-white dark:bg-dark-900 rounded-2xl shadow-2xl w-96 max-w-[calc(100vw-48px)] border border-gray-200 dark:border-dark-700 overflow-hidden">
+                <div class="hero-gradient text-white p-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-3"><div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center"><i class="fas fa-brain text-lg"></i></div><div><h3 class="font-display font-bold">AI Study Assistant</h3><p class="text-xs opacity-80">Online - Ready to help</p></div></div>
+                    <div class="flex items-center space-x-2"><button @click="minimize()" class="p-1 hover:bg-white/10 rounded-lg transition-colors"><i class="fas fa-minus"></i></button><button @click="open = false" class="p-1 hover:bg-white/10 rounded-lg transition-colors"><i class="fas fa-times"></i></button></div>
+                </div>
+                <div id="chat-messages" class="h-80 overflow-y-auto custom-scrollbar p-4 space-y-3">
+                    <template x-for="message in messages" :key="message.time + message.from">
+                        <div :class="message.from === 'ai' ? 'flex justify-start' : 'flex justify-end'">
+                            <div :class="message.from === 'ai' ? 'bg-gray-100 dark:bg-dark-800 text-gray-800 dark:text-gray-200' : 'hero-gradient text-white'" class="max-w-[80%] rounded-2xl px-4 py-2 text-sm">
+                                <div x-html="formatMessage(message.content)"></div><p :class="message.from === 'ai' ? 'text-xs text-gray-400' : 'text-xs opacity-70'" class="mt-1 text-right" x-text="message.time"></p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <div class="px-4 pb-2 space-y-2" x-show="messages.length === 1">
+                    <template x-for="action in quickActions" :key="action"><button @click="quickAction(action)" class="w-full text-left bg-gray-50 dark:bg-dark-800 hover:bg-gray-200 dark:hover:bg-dark-700 rounded-lg px-3 py-2 text-sm transition-colors"><i class="fas fa-bolt mr-2 text-primary-500"></i> <span x-text="action"></span></button></template>
+                </div>
+                <div class="border-t border-gray-200 dark:border-dark-700 p-3"><div class="flex items-center space-x-2">
+                    <input type="text" id="ai-message-input" x-model="newMessage" @keyup.enter="sendMessage()" placeholder="Ask me anything about UPSC..." class="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-dark-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-dark-800 text-gray-800 dark:text-gray-200">
+                    <button x-show="newMessage.length > 0" @click="sendMessage()" class="p-2 hero-gradient text-white rounded-lg transition-all hover:opacity-90"><i class="fas fa-paper-plane"></i></button>
+                </div></div>
+            </div>
+        </div>
+        <button @click="minimized ? (minimized = false) : (open = true)" x-show="!open || minimized" class="w-14 h-14 hero-gradient text-white rounded-full shadow-2xl flex items-center justify-center text-xl hover:opacity-90 transition-all transform hover:scale-105"><i class="fas fa-brain"></i></button>
+    </div>
+
+    <!-- Navigation -->
+    <nav x-data="mobileMenu()" class="bg-white dark:bg-dark-900 shadow-sm border-b border-gray-200 dark:border-dark-700 fixed w-full z-50">
+        <div class="container mx-auto px-4 lg:px-6"><div class="flex justify-between items-center h-16 lg:h-20">
+                <div class="flex items-center"><a href="index.html" class="flex items-center space-x-2"><div class="w-10 h-10 hero-gradient rounded-xl flex items-center justify-center"><i class="fas fa-crown text-white text-xl"></i></div><span class="font-display font-bold text-2xl gradient-text dark:text-white">IBEMH ALIAS</span></a></div>
+                <div class="hidden lg:flex items-center space-x-8">
+                    <a href="index.html" class="text-gray-800 dark:text-gray-200 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">Home</a>
+                    <a href="about.html" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">About</a>
+                    <a href="courses.html" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">Courses</a>
+                    <a href="faculty.html" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">Faculty</a>
+                    <a href="toppers.html" class="text-primary-600 dark:text-primary-400 font-medium">Success Stories</a>
+                    <a href="ai-assistant.html" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">AI Assistant</a>
+                    <a href="blog.html" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">Blog</a>
+                    <a href="contact.html" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">Contact</a>
+                    <a href="login.html" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">Student Login</a>
+                </div>
+                <div class="hidden lg:flex items-center space-x-4">
+                    <button @click="toggle()" class="p-2 text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors"><i :class="dark ? 'fas fa-sun' : 'fas fa-moon'" class="text-lg"></i></button>
+                    <a href="contact.html" class="btn-primary">Enroll Now</a>
+                </div>
+                <div class="lg:hidden flex items-center space-x-3">
+                    <button @click="toggle()" class="p-2 text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors"><i :class="dark ? 'fas fa-sun' : 'fas fa-moon'" class="text-lg"></i></button>
+                    <button @click="toggle()" class="p-2 text-gray-800 dark:text-gray-200 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors"><i class="fas" :class="open ? 'fa-times' : 'fa-bars'" class="text-xl"></i></button>
+                </div>
+            </div>
+        </div>
+        <div x-show="open" class="lg:hidden bg-white dark:bg-dark-900 shadow-xl border-t border-gray-200 dark:border-dark-700">
+            <div class="container mx-auto px-4 py-4 space-y-3">
+                <a href="index.html" @click="close()" class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">Home</a>
+                <a href="about.html" @click="close()" class="block px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">About</a>
+                <a href="courses.html" @click="close()" class="block px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">Courses</a>
+                <a href="faculty.html" @click="close()" class="block px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">Faculty</a>
+                <a href="toppers.html" @click="close()" class="block px-4 py-2 text-primary-600 dark:text-primary-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">Success Stories</a>
+                <a href="ai-assistant.html" @click="close()" class="block px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">AI Assistant</a>
+                <a href="blog.html" @click="close()" class="block px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">Blog</a>
+                <a href="contact.html" @click="close()" class="block px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">Contact</a>
+                <a href="login.html" @click="close()" class="block px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">Student Login</a>
+                <div class="pt-2 border-t border-gray-200 dark:border-dark-700"><a href="contact.html" class="block w-full btn-primary text-center">Enroll Now</a></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-gradient py-20 lg:py-32 pt-32 relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10">
+            <div class="absolute top-20 left-10 w-64 h-64 bg-white rounded-full blur-3xl"></div>
+            <div class="absolute bottom-20 right-10 w-48 h-48 bg-purple-500 rounded-full blur-3xl"></div>
+        </div>
+        <div class="container mx-auto px-4 lg:px-6 text-center relative z-10">
+            <h1 class="font-display font-bold text-4xl md:text-5xl lg:text-6xl text-white mb-6">Success Stories</h1>
+            <p class="text-xl text-gray-200 max-w-3xl mx-auto">Real stories from real civil servants who cracked UPSC with IBEMH ALIAS guidance.</p>
+        </div>
+    </section>
+
+    <!-- Year Filter & Stats -->
+    <section class="py-16 bg-white dark:bg-dark-900">
+        <div class="container mx-auto px-4 lg:px-6">
+            <div class="flex justify-center space-x-4 mb-12 flex-wrap gap-2">
+                <button class="px-6 py-2 hero-gradient text-white rounded-full font-medium">All Years</button>
+                <button class="px-6 py-2 bg-gray-100 dark:bg-dark-800 text-gray-700 dark:text-gray-300 rounded-full font-medium hover:bg-primary-50 dark:hover:bg-dark-700 transition-colors">2024</button>
+                <button class="px-6 py-2 bg-gray-100 dark:bg-dark-800 text-gray-700 dark:text-gray-300 rounded-full font-medium hover:bg-primary-50 dark:hover:bg-dark-700 transition-colors">2023</button>
+                <button class="px-6 py-2 bg-gray-100 dark:bg-dark-800 text-gray-700 dark:text-gray-300 rounded-full font-medium hover:bg-primary-50 dark:hover:bg-dark-700 transition-colors">2022</button>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center mb-16">
+                <div><div class="text-4xl font-bold gradient-text mb-2">1,850+</div><p class="text-gray-500 dark:text-gray-400">UPSC Selections</p></div>
+                <div><div class="text-4xl font-bold gradient-text mb-2">47</div><p class="text-gray-500 dark:text-gray-400">AIR 1 Toppers</p></div>
+                <div><div class="text-4xl font-bold gradient-text mb-2">26.3%</div><p class="text-gray-500 dark:text-gray-400">Cohort Success Rate</p></div>
+                <div><div class="text-4xl font-bold gradient-text mb-2">15+</div><p class="text-gray-500 dark:text-gray-400">States Covered</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Toppers -->
+    <section class="py-16 lg:py-24 bg-gray-50 dark:bg-dark-950">
+        <div class="container mx-auto px-4 lg:px-6">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <h2 class="font-display font-bold text-3xl lg:text-4xl gradient-text mb-6">Featured Toppers</h2>
+                <p class="text-gray-600 dark:text-gray-300">Students who achieved top ranks with IBEMH ALIAS</p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-12">
+                <!-- Top Topper 1 -->
+                <div class="bg-white dark:bg-dark-900 rounded-2xl shadow-xl border border-gray-200 dark:border-dark-700 overflow-hidden">
+                    <div class="grid md:grid-cols-3 gap-0">
+                        <div class="md:col-span-1 bg-gradient-to-br from-primary-600 to-secondary-700 text-white p-8 flex flex-col items-center justify-center text-center">
+                            <div class="w-32 h-32 bg-white/20 rounded-full overflow-hidden mb-4 border-4 border-white/30">
+                                <img src="/assets/images/toppers/anjali.jpg" alt="Anjali Verma" class="w-full h-full object-cover">
+                            </div>
+                            <h3 class="font-display font-bold text-2xl mb-1">Anjali Verma</h3>
+                            <p class="text-3xl font-bold mb-2">AIR 18</p>
+                            <p class="text-gray-200 text-sm">UPSC CSE 2024</p>
+                        </div>
+                        <div class="md:col-span-2 p-8">
+                            <span class="inline-block bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-medium mb-4">Gold Batch | 1st Attempt</span>
+                            <blockquote class="text-gray-700 dark:text-gray-300 italic mb-6 leading-relaxed">
+                                "IBEMH ALIAS's AI-powered study planner completely changed my preparation. The daily answer evaluation helped me improve my GS Mains score by 80 marks. The mentorship from Dr. Verma was invaluable. I couldn't have done this without their personalized approach."
+                            </blockquote>
+                            <div class="space-y-3">
+                                <div class="flex items-center space-x-4">
+                                    <div class="flex -space-x-2">
+                                        <div class="w-8 h-8 hero-gradient rounded-full border-2 border-white dark:border-dark-900"></div>
+                                        <div class="w-8 h-8 hero-gradient rounded-full border-2 border-white dark:border-dark-900"></div>
+                                    </div>
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">AI Study Plan + Expert Mentorship</span>
+                                </div>
+                            </div>
+                            <div class="mt-4 pt-4 border-t border-gray-200 dark:border-dark-700">
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Key Features Used:</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="text-xs bg-gray-100 dark:bg-dark-800 text-gray-700 dark:text-gray-300 px-2 py-1 rounded">AI Study Planner</span>
+                                    <span class="text-xs bg-gray-100 dark:bg-dark-800 text-gray-700 dark:text-gray-300 px-2 py-1 rounded">Answer Evaluation</span>
+                                    <span class="text-xs bg-gray-100 dark:bg-dark-800 text-gray-700 dark:text-gray-300 px-2 py-1 rounded">Test Series</span>
+                                    <span class="text-xs bg-gray-100 dark:bg-dark-800 text-gray-700 dark:text-gray-300 px-2 py-1 rounded">Mock Interview</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Topper 2 -->
+                <div class="bg-white dark:bg-dark-900 rounded-2xl shadow-xl border border-gray-200 dark:border-dark-700 overflow-hidden">
+                    <div class="grid md:grid-cols-3 gap-0">
+                        <div class="md:col-span-1 bg-gradient-to-br from-gray-700 to-gray-900 dark:from-dark-800 dark:to-dark-700 text-white p-8 flex flex-col items-center justify-center text-center">
+                            <div class="w-32 h-32 bg-white/20 rounded-full overflow-hidden mb-4 border-4 border-white/30">
+                                <img src="/assets/images/toppers/rajesh.jpg" alt="Rajesh Kumar" class="w-full h-full object-cover">
+                            </div>
+                            <h3 class="font-display font-bold text-2xl mb-1">Rajesh Kumar</h3>
+                            <p class="text-3xl font-bold mb-2">AIR 35</p>
+                            <p class="text-gray-200 text-sm">UPSC CSE 2024 | 2nd Attempt</p>
+                        </div>
+                        <div class="md:col-span-2 p-8">
+                            <span class="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium mb-4">Gold Batch | 2nd Attempt</span>
+                            <blockquote class="text-gray-700 dark:text-gray-300 italic mb-6 leading-relaxed">
+                                "After failing in my first attempt, I joined IBEMH ALIAS for their Gold Batch. The AI answer evaluator gave me detailed feedback that improved my Mains score by 120 marks. The weekly test series and faculty mentoring helped me crack UPSC in my second attempt."
+                            </blockquote>
+                            <div class="mt-4 pt-4 border-t border-gray-200 dark:border-dark-700">
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Key Features Used:</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="text-xs bg-gray-100 dark:bg-dark-800 text-gray-700 dark:text-gray-300 px-2 py-1 rounded">Answer Evaluator</span>
+                                    <span class="text-xs bg-gray-100 dark:bg-dark-800 text-gray-700 dark:text-gray-300 px-2 py-1 rounded">Weekly Tests</span>
+                                    <span class="text-xs bg-gray-100 dark:bg-dark-800 text-gray-700 dark:text-gray-300 px-2 py-1 rounded">Current Affairs</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- All Toppers Grid -->
+    <section class="py-16 lg:py-24 bg-white dark:bg-dark-900">
+        <div class="container mx-auto px-4 lg:px-6">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <h2 class="font-display font-bold text-3xl lg:text-4xl gradient-text mb-6">All Our Toppers</h2>
+                <p class="text-gray-600 dark:text-gray-300">Congratulations to all our successful candidates!</p>
+            </div>
+
+            <div class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                <!-- Topper Card Template - will repeat for all toppers -->
+                <div class="bg-gray-50 dark:bg-dark-950/50 rounded-xl p-6 text-center border border-gray-200 dark:border-dark-700 group hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                        18
+                    </div>
+                    <h3 class="font-display font-bold text-xl text-gray-800 dark:text-white mb-1">Anjali Verma</h3>
+                    <p class="text-primary-600 dark:text-primary-400 font-semibold mb-2">AIR 18</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">UPSC CSE 2024 | Gold Batch</p>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-dark-950/50 rounded-xl p-6 text-center border border-gray-200 dark:border-dark-700 group hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-gray-600 to-gray-800 dark:from-dark-700 dark:to-dark-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                        35
+                    </div>
+                    <h3 class="font-display font-bold text-xl text-gray-800 dark:text-white mb-1">Rajesh Kumar</h3>
+                    <p class="text-primary-600 dark:text-primary-400 font-semibold mb-2">AIR 35</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">UPSC CSE 2024 | Gold Batch</p>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-dark-950/50 rounded-xl p-6 text-center border border-gray-200 dark:border-dark-700 group hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                        47
+                    </div>
+                    <h3 class="font-display font-bold text-xl text-gray-800 dark:text-white mb-1">Priya Sharma</h3>
+                    <p class="text-primary-600 dark:text-primary-400 font-semibold mb-2">AIR 47</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">UPSC CSE 2024 | Platinum Batch</p>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-dark-950/50 rounded-xl p-6 text-center border border-gray-200 dark:border-dark-700 group hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-green-500 to-teal-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                        62
+                    </div>
+                    <h3 class="font-display font-bold text-xl text-gray-800 dark:text-white mb-1">Amit Patel</h3>
+                    <p class="text-primary-600 dark:text-primary-400 font-semibold mb-2">AIR 62</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">UPSC CSE 2024 | Silver Batch</p>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-dark-950/50 rounded-xl p-6 text-center border border-gray-200 dark:border-dark-700 group hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                        78
+                    </div>
+                    <h3 class="font-display font-bold text-xl text-gray-800 dark:text-white mb-1">Sneha Gupta</h3>
+                    <p class="text-primary-600 dark:text-primary-400 font-semibold mb-2">AIR 78</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">UPSC CSE 2024 | Gold Batch</p>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-dark-950/50 rounded-xl p-6 text-center border border-gray-200 dark:border-dark-700 group hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                        91
+                    </div>
+                    <h3 class="font-display font-bold text-xl text-gray-800 dark:text-white mb-1">Rohan Mehta</h3>
+                    <p class="text-primary-600 dark:text-primary-400 font-semibold mb-2">AIR 91</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">UPSC CSE 2024 | Platinum Batch</p>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-dark-950/50 rounded-xl p-6 text-center border border-gray-200 dark:border-dark-700 group hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                        112
+                    </div>
+                    <h3 class="font-display font-bold text-xl text-gray-800 dark:text-white mb-1">Neha Singh</h3>
+                    <p class="text-primary-600 dark:text-primary-400 font-semibold mb-2">AIR 112</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">UPSC CSE 2024 | Gold Batch</p>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-dark-950/50 rounded-xl p-6 text-center border border-gray-200 dark:border-dark-700 group hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                        134
+                    </div>
+                    <h3 class="font-display font-bold text-xl text-gray-800 dark:text-white mb-1">Vikas Rao</h3>
+                    <p class="text-primary-600 dark:text-primary-400 font-semibold mb-2">AIR 134</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">UPSC CSE 2024 | Gold Batch</p>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-dark-950/50 rounded-xl p-6 text-center border border-gray-200 dark:border-dark-700 group hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                        156
+                    </div>
+                    <h3 class="font-display font-bold text-xl text-gray-800 dark:text-white mb-1">Pooja Reddy</h3>
+                    <p class="text-primary-600 dark:text-primary-400 font-semibold mb-2">AIR 156</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">UPSC CSE 2024 | Gold Batch</p>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-dark-950/50 rounded-xl p-6 text-center border border-gray-200 dark:border-dark-700 group hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-fuchsia-500 to-pink-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                        178
+                    </div>
+                    <h3 class="font-display font-bold text-xl text-gray-800 dark:text-white mb-1">Sanjay Tiwari</h3>
+                    <p class="text-primary-600 dark:text-primary-400 font-semibold mb-2">AIR 178</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">UPSC CSE 2024 | Gold Batch</p>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-dark-950/50 rounded-xl p-6 text-center border border-gray-200 dark:border-dark-700 group hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                        195
+                    </div>
+                    <h3 class="font-display font-bold text-xl text-gray-800 dark:text-white mb-1">Deepika Nair</h3>
+                    <p class="text-primary-600 dark:text-primary-400 font-semibold mb-2">AIR 195</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">UPSC CSE 2024 | Gold Batch</p>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-dark-950/50 rounded-xl p-6 text-center border border-gray-200 dark:border-dark-700 group hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-lime-500 to-green-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                        223
+                    </div>
+                    <h3 class="font-display font-bold text-xl text-gray-800 dark:text-white mb-1">Manoj Verma</h3>
+                    <p class="text-primary-600 dark:text-primary-400 font-semibold mb-2">AIR 223</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">UPSC CSE 2024 | Gold Batch</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Student Videos -->
+    <section class="py-16 lg:py-24 bg-gradient-to-r from-primary-600 to-secondary-700 text-white">
+        <div class="container mx-auto px-4 lg:px-6">
+            <div class="text-center mb-16">
+                <h2 class="font-display font-bold text-3xl lg:text-4xl text-white mb-6">Watch Their Journey</h2>
+                <p class="text-gray-200 text-lg">Hear directly from our successful students.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl overflow-hidden shadow-xl border border-white/20">
+                    <div class="aspect-w-16 aspect-h-9 relative">
+                        <iframe class="w-full h-48 rounded-t-xl" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Student Testimonial 1" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-display font-bold text-lg mb-2">Anjali's UPSC Story</h3>
+                        <p class="text-sm text-gray-200 opacity-80">How AIR 18 cracked UPSC with AI-powered preparation in her first attempt.</p>
+                    </div>
+                </div>
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl overflow-hidden shadow-xl border border-white/20">
+                    <div class="aspect-w-16 aspect-h-9 relative">
+                        <iframe class="w-full h-48 rounded-t-xl" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Student Testimonial 2" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-display font-bold text-lg mb-2">Rajesh's Second Attempt</h3>
+                        <p class="text-sm text-gray-200 opacity-80">How AIR 35 improved from 170 marks to clear UPSC with our Gold Batch.</p>
+                    </div>
+                </div>
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl overflow-hidden shadow-xl border border-white/20">
+                    <div class="aspect-w-16 aspect-h-9 relative">
+                        <iframe class="w-full h-48 rounded-t-xl" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Student Testimonial 3" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-display font-bold text-lg mb-2">Priya's Platinum Journey</h3>
+                        <p class="text-sm text-gray-200 opacity-80">Platinum Batch student shares her 1-year UPSC preparation strategy.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="py-16 bg-gray-50 dark:bg-dark-950">
+        <div class="container mx-auto px-4 lg:px-6 text-center">
+            <h2 class="font-display font-bold text-3xl lg:text-4xl gradient-text mb-6">Want to Be Our Next Success Story?</h2>
+            <p class="text-gray-600 dark:text-gray-300 text-lg mb-8 max-w-2xl mx-auto">Join IBEMH ALIAS today and become part of our growing family of civil servants.</p>
+            <a href="contact.html" class="btn-primary">Start Your Journey</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark-900 text-gray-200 pt-16">
+        <div class="container mx-auto px-4 lg:px-6 pb-12">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+                <div>
+                    <div class="flex items-center space-x-2 mb-6"><div class="w-10 h-10 hero-gradient rounded-xl flex items-center justify-center"><i class="fas fa-crown text-white text-xl"></i></div><span class="font-display font-bold text-2xl gradient-text">IBEMH ALIAS</span></div>
+                    <p class="text-gray-400 mb-6">India's next-generation UPSC coaching platform combining traditional mentorship with AI-powered personalized guidance.</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-display font-bold text-white mb-6">Quick Links</h3>
+                    <ul class="space-y-3">
+                        <li><a href="about.html" class="text-gray-400 hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="courses.html" class="text-gray-400 hover:text-white transition-colors">Our Courses</a></li>
+                        <li><a href="faculty.html" class="text-gray-400 hover:text-white transition-colors">Our Faculty</a></li>
+                        <li><a href="toppers.html" class="text-gray-400 hover:text-white transition-colors">Success Stories</a></li>
+                        <li><a href="ai-assistant.html" class="text-gray-400 hover:text-white transition-colors">AI Assistant</a></li>
+                        <li><a href="contact.html" class="text-gray-400 hover:text-white transition-colors">Contact Us</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-display font-bold text-white mb-6">Popular Courses</h3>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Platinum Batch (AI)</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Gold Batch</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Optional Coaching</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Test Series</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Weekend Batch</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Live Online Classes</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-display font-bold text-white mb-6">Contact Us</h3>
+                    <ul class="space-y-4">
+                        <li class="flex items-start space-x-3"><i class="fas fa-map-marker-alt text-primary-500 mt-1"></i><span class="text-gray-400">123, Knowledge Park, New Delhi - 110009</span></li>
+                        <li class="flex items-start space-x-3"><i class="fas fa-phone text-primary-500 mt-1"></i><span class="text-gray-400">+91 98765 43210</span></li>
+                        <li class="flex items-start space-x-3"><i class="fas fa-envelope text-primary-500 mt-1"></i><span class="text-gray-400">info@ibemhalias.com</span></li>
+                        <li class="flex items-start space-x-3"><i class="fas fa-clock text-primary-500 mt-1"></i><span class="text-gray-400">Mon-Fri: 9AM - 8PM, Sat: 10AM - 5PM</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-500 text-sm mb-4 md:mb-0">&copy; 2026 IBEMH ALIAS. All rights reserved.</p>
+                <div class="flex space-x-6 text-sm text-gray-500"><a href="#" class="hover:text-gray-300 transition-colors">Privacy Policy</a><a href="#" class="hover:text-gray-300 transition-colors">Terms of Service</a><a href="#" class="hover:text-gray-300 transition-colors">Refund Policy</a></div>
+            </div>
+        </div>
+    </footer>
+
+    <button id="backToTop" class="fixed bottom-6 right-6 w-12 h-12 bg-primary-600 text-white rounded-full shadow-xl flex items-center justify-center opacity-0 invisible transition-all duration-300 hover:bg-primary-700"><i class="fas fa-arrow-up"></i></button>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const btn = document.getElementById('backToTop');
+            if (window.scrollY > 300) { btn.classList.remove('opacity-0', 'invisible'); } else { btn.classList.add('opacity-0', 'invisible'); }
+        });
+        document.getElementById('backToTop').addEventListener('click', () => { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('preloader').style.opacity = '0';
+                setTimeout(() => { document.getElementById('preloader').style.display = 'none'; }, 500);
+            }, 500);
+        });
+    </script>
+</body>
+</html>

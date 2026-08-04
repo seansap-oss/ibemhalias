@@ -1,0 +1,31 @@
+{
+  "name": "ibemhalias",
+  "version": "1.0.0",
+  "description": "IBEMH ALIAS - Modern UPSC Coaching Platform with AI Features",
+  "scripts": {
+    "build:css": "tailwindcss -i ./assets/css/input.css -o ./assets/css/style.css --minify",
+    "watch:css": "tailwindcss -i ./assets/css/input.css -o ./assets/css/style.css --watch",
+    "build": "npm run build:css",
+    "dev": "npm run watch:css"
+  },
+  "devDependencies": {
+    "autoprefixer": "^3.4.1",
+    "cssnano": "^7.0.1",
+    "postcss": "^3.4.1",
+    "tailwindcss": "^3.4.1"
+  },
+  "keywords": [
+    "upsc",
+    "ias",
+    "coaching",
+    "ai",
+    "tailwindcss",
+    "education"
+  ],
+  "author": "IBEMH ALIAS",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seansap-oss/ibemhalias.git"
+  }
+}

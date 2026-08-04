@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courses - IBEMH ALIAS | UPSC Coaching with AI Features</title>
+    <meta name="description" content="Explore IBEMH ALIAS courses - AI-powered UPSC coaching with personalized study plans, live classes, test series, and answer writing evaluation. Platinum, Gold, and Silver batches available.">
+    <link rel="icon" href="/assets/images/logo.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="/assets/js/main.js" defer></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 50: '#fffaf0', 100: '#fef3c0', 200: '#fde68a', 300: '#fdcb6e', 400: '#f59e0b', 500: '#f59e0b', 600: '#d97706', 700: '#b45309', 800: '#92400e', 900: '#78350f' },
+                        secondary: { 50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e' },
+                        dark: { 50: '#fafafa', 100: '#f5f5f5', 200: '#e4e4e4', 300: '#d4d4d4', 400: '#a3a3a3', 500: '#737373', 600: '#525252', 700: '#404040', 800: '#262626', 900: '#171717', 950: '#0a0a0a' },
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Poppins', 'sans-serif'] },
+                    backgroundImage: { 'hero-pattern': 'linear-gradient(135deg, rgba(217,119,6,0.9) 0%, rgba(147,51,234,0.8) 50%, rgba(37,99,235,0.9) 100%)' },
+                },
+            },
+        }
+    </script>
+    <style>
+        body { scroll-behavior: smooth; }
+        .gradient-text { background: linear-gradient(135deg, #d97706 0%, #9333ea 50%, #2563eb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .hero-gradient { background: linear-gradient(135deg, #d97706 0%, #7c3aed 50%, #1e40af 100%); }
+        .btn-primary { background: linear-gradient(135deg, #d97706 0%, #0ea5e9 100%); color: white; font-weight: 600; padding: 0.75rem 1.5rem; border-radius: 0.75rem; transition: all 0.3s; display: inline-flex; gap: 0.5rem; align-items: center; box-shadow: 0 10px 25px rgba(217, 119, 6, 0.3); }
+        .btn-primary:hover { transform: scale(1.05); box-shadow: 0 15px 35px rgba(217, 119, 6, 0.4); }
+        .btn-secondary { background: linear-gradient(135deg, #f59e0b 0%, #0ea5e9 100%); color: white; font-weight: 600; padding: 0.75rem 1.5rem; border-radius: 0.75rem; transition: all 0.3s; display: inline-flex; gap: 0.5rem; align-items: center; box-shadow: 0 10px 25px rgba(245, 158, 11, 0.3); }
+        .btn-secondary:hover { transform: scale(1.05); box-shadow: 0 15px 35px rgba(245, 158, 11, 0.4); }
+        .btn-outline { border: 2px solid white; color: white; font-weight: 600; padding: 0.75rem 1.5rem; border-radius: 0.75rem; transition: all 0.3s; display: inline-flex; gap: 0.5rem; align-items: center; }
+        .btn-outline:hover { background: white; color: #1f2937; transform: scale(1.05); }
+        .btn-outline-dark { border: 2px solid #d97706; color: #d97706; font-weight: 600; padding: 0.75rem 1.5rem; border-radius: 0.75rem; transition: all 0.3s; display: inline-flex; gap: 0.5rem; align-items: center; }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body x-data="darkMode()" x-init="init()" x-cloak>
+
+    <!-- Preloader -->
+    <div id="preloader" class="fixed inset-0 bg-white dark:bg-dark-950 z-[200] flex items-center justify-center transition-opacity duration-500">
+        <div class="relative">
+            <div class="w-16 h-16 border-4 border-primary-200 dark:border-dark-700 border-t-primary-600 dark:border-t-primary-400 rounded-full animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center"><span class="text-primary-600 dark:text-primary-400 font-display font-bold text-xl">IBEMH ALIAS</span></div>
+        </div>
+    </div>
+
+    <!-- AI Chatbot Widget (same as index) -->
+    <div x-data="aiChatbot()" x-init="init()" x-cloak>
+        <div x-show="open && !minimized" class="fixed bottom-6 right-6 z-[100]">
+            <div class="bg-white dark:bg-dark-900 rounded-2xl shadow-2xl w-96 max-w-[calc(100vw-48px)] border border-gray-200 dark:border-dark-700 overflow-hidden">
+                <div class="hero-gradient text-white p-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-3"><div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center"><i class="fas fa-brain text-lg"></i></div><div><h3 class="font-display font-bold">AI Study Assistant</h3><p class="text-xs opacity-80">Online - Ready to help</p></div></div>
+                    <div class="flex items-center space-x-2"><button @click="minimize()" class="p-1 hover:bg-white/10 rounded-lg transition-colors"><i class="fas fa-minus"></i></button><button @click="open = false" class="p-1 hover:bg-white/10 rounded-lg transition-colors"><i class="fas fa-times"></i></button></div>
+                </div>
+                <div id="chat-messages" class="h-80 overflow-y-auto custom-scrollbar p-4 space-y-3">
+                    <template x-for="message in messages" :key="message.time + message.from">
+                        <div :class="message.from === 'ai' ? 'flex justify-start' : 'flex justify-end'">
+                            <div :class="message.from === 'ai' ? 'bg-gray-100 dark:bg-dark-800 text-gray-800 dark:text-gray-200' : 'hero-gradient text-white'" class="max-w-[80%] rounded-2xl px-4 py-2 text-sm">
+                                <div x-html="formatMessage(message.content)"></div>
+                                <p :class="message.from === 'ai' ? 'text-xs text-gray-400' : 'text-xs opacity-70'" class="mt-1 text-right" x-text="message.time"></p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <div class="px-4 pb-2 space-y-2" x-show="messages.length === 1">
+                    <template x-for="action in quickActions" :key="action"><button @click="quickAction(action)" class="w-full text-left bg-gray-50 dark:bg-dark-800 hover:bg-gray-200 dark:hover:bg-dark-700 rounded-lg px-3 py-2 text-sm transition-colors"><i class="fas fa-bolt mr-2 text-primary-500"></i> <span x-text="action"></span></button></template>
+                </div>
+                <div class="border-t border-gray-200 dark:border-dark-700 p-3"><div class="flex items-center space-x-2">
+                    <input type="text" id="ai-message-input" x-model="newMessage" @keyup.enter="sendMessage()" placeholder="Ask me anything about UPSC..." class="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-dark-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-dark-800 text-gray-800 dark:text-gray-200">
+                    <button x-show="newMessage.length > 0" @click="sendMessage()" class="p-2 hero-gradient text-white rounded-lg transition-all hover:opacity-90"><i class="fas fa-paper-plane"></i></button>
+                </div></div>
+            </div>
+        </div>
+        <button @click="minimized ? (minimized = false) : (open = true)" x-show="!open || minimized" class="w-14 h-14 hero-gradient text-white rounded-full shadow-2xl flex items-center justify-center text-xl hover:opacity-90 transition-all transform hover:scale-105"><i class="fas fa-brain"></i></button>
+    </div>
+
+    <!-- Navigation -->
+    <nav x-data="mobileMenu()" class="bg-white dark:bg-dark-900 shadow-sm border-b border-gray-200 dark:border-dark-700 fixed w-full z-50">
+        <div class="container mx-auto px-4 lg:px-6">
+            <div class="flex justify-between items-center h-16 lg:h-20">
+                <div class="flex items-center">
+                    <a href="index.html" class="flex items-center space-x-2">
+                        <div class="w-10 h-10 hero-gradient rounded-xl flex items-center justify-center"><i class="fas fa-crown text-white text-xl"></i></div>
+                        <span class="font-display font-bold text-2xl gradient-text dark:text-white">IBEMH ALIAS</span>
+                    </a>
+                </div>
+                <div class="hidden lg:flex items-center space-x-8">
+                    <a href="index.html" class="text-gray-800 dark:text-gray-200 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">Home</a>
+                    <a href="about.html" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">About</a>
+                    <a href="courses.html" class="text-primary-600 dark:text-primary-400 font-medium">Courses</a>
+                    <a href="faculty.html" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">Faculty</a>
+                    <a href="toppers.html" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">Success Stories</a>
+                    <a href="ai-assistant.html" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">AI Assistant</a>
+                    <a href="blog.html" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">Blog</a>
+                    <a href="contact.html" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">Contact</a>
+                    <a href="login.html" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">Student Login</a>
+                </div>
+                <div class="hidden lg:flex items-center space-x-4">
+                    <button @click="toggle()" class="p-2 text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors"><i :class="dark ? 'fas fa-sun' : 'fas fa-moon'" class="text-lg"></i></button>
+                    <a href="contact.html" class="btn-primary">Enroll Now</a>
+                </div>
+                <div class="lg:hidden flex items-center space-x-3">
+                    <button @click="toggle()" class="p-2 text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors"><i :class="dark ? 'fas fa-sun' : 'fas fa-moon'" class="text-lg"></i></button>
+                    <button @click="toggle()" class="p-2 text-gray-800 dark:text-gray-200 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors"><i class="fas" :class="open ? 'fa-times' : 'fa-bars'" class="text-xl"></i></button>
+                </div>
+            </div>
+        </div>
+        <div x-show="open" class="lg:hidden bg-white dark:bg-dark-900 shadow-xl border-t border-gray-200 dark:border-dark-700">
+            <div class="container mx-auto px-4 py-4 space-y-3">
+                <a href="index.html" @click="close()" class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">Home</a>
+                <a href="about.html" @click="close()" class="block px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">About</a>
+                <a href="courses.html" @click="close()" class="block px-4 py-2 text-primary-600 dark:text-primary-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">Courses</a>
+                <a href="faculty.html" @click="close()" class="block px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">Faculty</a>
+                <a href="toppers.html" @click="close()" class="block px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">Success Stories</a>
+                <a href="ai-assistant.html" @click="close()" class="block px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">AI Assistant</a>
+                <a href="blog.html" @click="close()" class="block px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">Blog</a>
+                <a href="contact.html" @click="close()" class="block px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">Contact</a>
+                <a href="login.html" @click="close()" class="block px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-lg">Student Login</a>
+                <div class="pt-2 border-t border-gray-200 dark:border-dark-700"><a href="contact.html" class="block w-full btn-primary text-center">Enroll Now</a></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-gradient py-20 lg:py-32 pt-32 relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10">
+            <div class="absolute top-20 left-10 w-64 h-64 bg-white rounded-full blur-3xl"></div>
+            <div class="absolute bottom-20 right-10 w-48 h-48 bg-purple-500 rounded-full blur-3xl"></div>
+        </div>
+        <div class="container mx-auto px-4 lg:px-6 text-center relative z-10">
+            <h1 class="font-display font-bold text-4xl md:text-5xl lg:text-6xl text-white mb-6">Our Courses</h1>
+            <p class="text-xl text-gray-200 max-w-3xl mx-auto">Choose the perfect program tailored to your UPSC preparation needs with AI-powered support.</p>
+        </div>
+    </section>
+
+    <!-- Course Filters -->
+    <section class="py-16 bg-white dark:bg-dark-900">
+        <div class="container mx-auto px-4 lg:px-6">
+            <div class="text-center mb-12">
+                <div class="flex flex-wrap justify-center gap-4 mb-8">
+                    <button class="px-6 py-2 hero-gradient text-white rounded-full font-medium">All Courses</button>
+                    <button class="px-6 py-2 bg-gray-100 dark:bg-dark-800 text-gray-700 dark:text-gray-300 rounded-full font-medium hover:bg-primary-50 dark:hover:bg-dark-700 transition-colors">Classroom</button>
+                    <button class="px-6 py-2 bg-gray-100 dark:bg-dark-800 text-gray-700 dark:text-gray-300 rounded-full font-medium hover:bg-primary-50 dark:hover:bg-dark-700 transition-colors">Online</button>
+                    <button class="px-6 py-2 bg-gray-100 dark:bg-dark-800 text-gray-700 dark:text-gray-300 rounded-full font-medium hover:bg-primary-50 dark:hover:bg-dark-700 transition-colors">Test Series</button>
+                    <button class="px-6 py-2 bg-gray-100 dark:bg-dark-800 text-gray-700 dark:text-gray-300 rounded-full font-medium hover:bg-primary-50 dark:hover:bg-dark-700 transition-colors">AI Tools</button>
+                </div>
+            </div>
+
+            <!-- Platinum Batch -->
+            <div class="mb-16">
+                <div class="bg-white dark:bg-dark-900 rounded-2xl shadow-2xl border-2 border-primary-500 dark:border-primary-400 overflow-hidden">
+                    <div class="grid lg:grid-cols-5 gap-0">
+                        <div class="lg:col-span-2 bg-gradient-to-br from-primary-600 to-secondary-600 p-8 text-white">
+                            <span class="bg-white/20 px-3 py-1 rounded-full text-xs font-medium mb-4 inline-block">MOST POPULAR</span>
+                            <h2 class="font-display font-bold text-3xl lg:text-4xl mb-4">Platinum Batch</h2>
+                            <p class="text-lg opacity-90 mb-6">Complete UPSC preparation with AI-powered personalized mentorship — the ultimate program for serious aspirants.</p>
+                            <div class="text-5xl font-bold mb-6">₹95,500</div>
+                            <ul class="space-y-3 mb-6">
+                                <li class="flex items-center"><i class="fas fa-check mr-2"></i> AI Personalized Study Plan</li>
+                                <li class="flex items-center"><i class="fas fa-check mr-2"></i> Live Classes (Online + Offline)</li>
+                                <li class="flex items-center"><i class="fas fa-check mr-2"></i> Answer Writing Evaluation</li>
+                                <li class="flex items-center"><i class="fas fa-check mr-2"></i> Daily Current Affairs</li>
+                                <li class="flex items-center"><i class="fas fa-check mr-2"></i> Prelims + Mains Test Series</li>
+                                <li class="flex items-center"><i class="fas fa-check mr-2"></i> Optional Subject Coaching</li>
+                                <li class="flex items-center"><i class="fas fa-check mr-2"></i> AI Mock Interview</li>
+                                <li class="flex items-center"><i class="fas fa-check mr-2"></i> DAF Analysis + Guidance</li>
+                                <li class="flex items-center"><i class="fas fa-check mr-2"></i> Study Material + Notes</li>
+                                <li class="flex items-center"><i class="fas fa-check mr-2"></i> Doubt Clearing Sessions</li>
+                            </ul>
+                            <a href="contact.html" class="btn-secondary w-full text-center">
+                                <i class="fas fa-rocket mr-2"></i> Enroll Now
+                            </a>
+                        </div>
+                        <div class="lg:col-span-3 p-8">
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6">
+                                <div class="text-center"><div class="text-3xl font-bold text-primary-600 dark:text-primary-400">9</div><p class="text-sm text-gray-500 dark:text-gray-400">Months Duration</p></div>
+                                <div class="text-center"><div class="text-3xl font-bold text-primary-600 dark:text-primary-400">Bilingual</div><p class="text-sm text-gray-500 dark:text-gray-400">English & Hindi</p></div>
+                                <div class="text-center"><div class="text-3xl font-bold text-primary-600 dark:text-primary-400">24x7</div><p class="text-sm text-gray-500 dark:text-gray-400">Support</p></div>
+                            </div>
+                            <h3 class="font-display font-bold text-xl text-gray-800 dark:text-white mb-4">What You'll Learn</h3>
+                            <div class="space-y-4 mb-6">
+                                <div class="p-4 bg-gray-50 dark:bg-dark-800/50 rounded-lg"><h4 class="font-semibold text-gray-800 dark:text-white mb-2">Prelims Foundation (2 Months)</h4><p class="text-sm text-gray-600 dark:text-gray-300">NCERT covering, GS fundamentals, CSAT basics with weekly tests</p></div>
+                                <div class="p-4 bg-gray-50 dark:bg-dark-800/50 rounded-lg"><h4 class="font-semibold text-gray-800 dark:text-white mb-2">Mains Intensive (5 Months)</h4><p class="text-sm text-gray-600 dark:text-gray-300">GS papers 1-4, Essay, Ethics with daily answer writing practice</p></div>
+                                <div class="p-4 bg-gray-50 dark:bg-dark-800/50 rounded-lg"><h4 class="font-semibold text-gray-800 dark:text-white mb-2">Optional & Interview (2 Months)</h4><p class="text-sm text-gray-600 dark:text-gray-300">Optional subject, interview guidance with AI mock practice</p></div>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <a href="contact.html" class="btn-primary"><i class="fas fa-phone-alt"></i> Talk to Counselor</a>
+                                <a href="#syllabus" class="text-primary-600 dark:text-primary-400 font-medium">Download Syllabus <i class="fas fa-download"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gold Batch -->
+            <div class="mb-16">
+                <div class="bg-white dark:bg-dark-900 rounded-2xl shadow-xl border border-gray-200 dark:border-dark-700 overflow-hidden">
+                    <div class="grid lg:grid-cols-5 gap-0">
+                        <div class="lg:col-span-2 bg-gradient-to-br from-gray-700 to-gray-900 dark:from-dark-800 dark:to-dark-700 p-8 text-white">
+                            <span class="bg-white/10 px-3 py-1 rounded-full text-xs font-medium mb-4 inline-block">BEST VALUE</span>
+                            <h2 class="font-display font-bold text-3xl lg:text-4xl mb-4">Gold Batch</h2>
+                            <p class="text-lg opacity-90 mb-6">GS Foundation + Optional + Test Series for aspirants who need structured guidance.</p>
+                            <div class="text-5xl font-bold mb-6">₹55,500</div>
+                            <ul class="space-y-3 mb-6">
+                                <li class="flex items-center"><i class="fas fa-check mr-2"></i> GS Prelims & Mains Integrated</li>
+                                <li class="flex items-center"><i class="fas fa-check mr-2"></i> One Optional Subject</li>
+                                <li class="flex items-center"><i class="fas fa-check mr-2"></i> Weekly Test Series</li>
+                                <li class="flex items-center"><i class="fas fa-check mr-2"></i> Current Affairs Module</li>
+                                <li class="flex items-center"><i class="fas fa-check mr-2"></i> Study Material + Notes</li>
+                                <li class="flex items-center"><i class="fas fa-check mr-2"></i> Monthly Mentorship Calls</li>
+                            </ul>
+                            <a href="contact.html" class="btn-secondary w-full text-center">Get Started</a>
+                        </div>
+                        <div class="lg:col-span-3 p-8">
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6">
+                                <div class="text-center"><div class="text-3xl font-bold text-primary-600 dark:text-primary-400">11</div><p class="text-sm text-gray-500 dark:text-gray-400">Months Duration</p></div>
+                                <div class="text-center"><div class="text-3xl font-bold text-primary-600 dark:text-primary-400">2</div><p class="text-sm text-gray-500 dark:text-gray-400">Languages</p></div>
+                                <div class="text-center"><div class="text-3xl font-bold text-primary-600 dark:text-primary-400">12</div><p class="text-sm text-gray-500 dark:text-gray-400">Tests Included</p></div>
+                            </div>
+                            <h3 class="font-display font-bold text-xl text-gray-800 dark:text-white mb-4">Batch Features</h3>
+                            <div class="space-y-4 mb-6">
+                                <div class="p-4 bg-gray-50 dark:bg-dark-800/50 rounded-lg"><h4 class="font-semibold text-gray-800 dark:text-white mb-2">Live Classes</h4><p class="text-sm text-gray-600 dark:text-gray-300">Interactive live sessions with expert faculty, recordings available</p></div>
+                                <div class="p-4 bg-gray-50 dark:bg-dark-800/50 rounded-lg"><h4 class="font-semibold text-gray-800 dark:text-white mb-2">Weekly Tests</h4><p class="text-sm text-gray-600 dark:text-gray-300">Weekly prelims and mains tests with detailed solutions and performance analysis</p></div>
+                                <div class="p-4 bg-gray-50 dark:bg-dark-800/50 rounded-lg"><h4 class="font-semibold text-gray-800 dark:text-white mb-2">Monthly Mentoring</h4><p class="text-sm text-gray-600 dark:text-gray-300">One-on-one mentoring sessions to track your progress and address concerns</p></div>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <a href="contact.html" class="btn-primary">Enroll Now</a>
+                                <a href="#syllabus" class="text-primary-600 dark:text-primary-400 font-medium">Download Syllabus <i class="fas fa-download"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Silver + Weekend + Other Courses -->
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Silver Batch -->
+                <div class="bg-white dark:bg-dark-900 rounded-2xl shadow-xl border border-gray-200 dark:border-dark-700 overflow-hidden group hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="bg-gradient-to-br from-amber-600 to-orange-600 p-8 text-white">
+                        <h3 class="font-display font-bold text-2xl mb-4">Silver Batch</h3>
+                        <div class="text-4xl font-bold mb-2">₹45,500</div>
+                        <p class="opacity-90">Optional coaching only</p>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <ul class="space-y-2">
+                            <li class="flex items-center text-sm"><i class="fas fa-check text-success-500 mr-2"></i> Expert Optional Faculty</li>
+                            <li class="flex items-center text-sm"><i class="fas fa-check text-success-500 mr-2"></i> Study Material + Notes</li>
+                            <li class="flex items-center text-sm"><i class="fas fa-check text-success-500 mr-2"></i> Test Series for Optional</li>
+                            <li class="flex items-center text-sm"><i class="fas fa-check text-success-500 mr-2"></i> 6-Month Duration</li>
+                        </ul>
+                        <a href="contact.html" class="btn-outline-dark w-full text-center">Explore</a>
+                    </div>
+                </div>
+
+                <!-- Weekend Batch -->
+                <div class="bg-white dark:bg-dark-900 rounded-2xl shadow-xl border border-gray-200 dark:border-dark-700 overflow-hidden group hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="bg-gradient-to-br from-green-600 to-teal-600 p-8 text-white">
+                        <h3 class="font-display font-bold text-2xl mb-4">Weekend Batch</h3>
+                        <div class="text-4xl font-bold mb-2">₹65,500</div>
+                        <p class="opacity-90">For working professionals</p>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <ul class="space-y-2">
+                            <li class="flex items-center text-sm"><i class="fas fa-check text-success-500 mr-2"></i> Saturday + Sunday Classes</li>
+                            <li class="flex items-center text-sm"><i class="fas fa-check text-success-500 mr-2"></i> GS Prelims & Mains</li>
+                            <li class="flex items-center text-sm"><i class="fas fa-check text-success-500 mr-2"></i> Live + Recorded</li>
+                            <li class="flex items-center text-sm"><i class="fas fa-check text-success-500 mr-2"></i> 14-16 Month Program</li>
+                        </ul>
+                        <a href="contact.html" class="btn-outline-dark w-full text-center">Join Now</a>
+                    </div>
+                </div>
+
+                <!-- AI Assistant -->
+                <div class="bg-white dark:bg-dark-900 rounded-2xl shadow-xl border-2 border-secondary-500 dark:border-secondary-400 overflow-hidden group hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="bg-gradient-to-br from-purple-600 to-blue-600 p-8 text-white">
+                        <h3 class="font-display font-bold text-2xl mb-4">AI Assistant Pro</h3>
+                        <div class="text-4xl font-bold mb-2">₹9,999</div>
+                        <p class="opacity-90">Standalone AI tools</p>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <ul class="space-y-2">
+                            <li class="flex items-center text-sm"><i class="fas fa-check text-success-500 mr-2"></i> AI Study Planner</li>
+                            <li class="flex items-center text-sm"><i class="fas fa-check text-success-500 mr-2"></i> Answer Evaluator</li>
+                            <li class="flex items-center text-sm"><i class="fas fa-check text-success-500 mr-2"></i> Current Affairs AI</li>
+                            <li class="flex items-center text-sm"><i class="fas fa-check text-success-500 mr-2"></i> Mock Interview Pro</li>
+                        </ul>
+                        <a href="ai-assistant.html" class="btn-outline-dark w-full text-center">Try for Free</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="py-16 lg:py-24 bg-gray-50 dark:bg-dark-950">
+        <div class="container mx-auto px-4 lg:px-6">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <h2 class="font-display font-bold text-3xl lg:text-4xl gradient-text mb-6">Frequently Asked Questions</h2>
+                <p class="text-gray-600 dark:text-gray-300">Everything you need to know about our courses and programs.</p>
+            </div>
+            <div class="max-w-3xl mx-auto space-y-4">
+                <div class="bg-white dark:bg-dark-900 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-dark-700">
+                    <h3 class="font-display font-bold text-lg text-gray-800 dark:text-white mb-2 flex items-center"><i class="fas fa-question-circle text-primary-600 dark:text-primary-400 mr-3"></i> Can I switch between online and offline modes?</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Yes, you can switch between online and offline modes anytime during your course duration. Your course materials and progress will be synced across both platforms.</p>
+                </div>
+                <div class="bg-white dark:bg-dark-900 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-dark-700">
+                    <h3 class="font-display font-bold text-lg text-gray-800 dark:text-white mb-2 flex items-center"><i class="fas fa-question-circle text-primary-600 dark:text-primary-400 mr-3"></i> What is the class schedule for online batches?</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Classes are conducted live Monday to Friday from 7:00 AM to 11:00 AM and 3:00 PM to 8:00 PM. Recordings are available 24x7 for revision.</p>
+                </div>
+                <div class="bg-white dark:bg-dark-900 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-dark-700">
+                    <h3 class="font-display font-bold text-lg text-gray-800 dark:text-white mb-2 flex items-center"><i class="fas fa-question-circle text-primary-600 dark:text-primary-400 mr-3"></i> Do you provide study material?</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Yes, we provide comprehensive study material including GS notes, optional subject guides, current affairs monthly compilations, and digital resources through our LMS.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="py-16 bg-gradient-to-r from-gray-900 to-dark-950 text-center">
+        <div class="container mx-auto px-4 lg:px-6">
+            <h2 class="font-display font-bold text-3xl lg:text-4xl text-white mb-6">Not Sure Which Course is Right for You?</h2>
+            <p class="text-gray-300 text-lg mb-8 max-w-2xl mx-auto">Take our free AI-powered course recommendation quiz or talk to our counselors for personalized guidance.</p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4"><a href="contact.html" class="btn-secondary">Talk to Counselor</a><a href="ai-assistant.html" class="btn-outline">Try AI Advisor</a></div>
+        </div>
+    </section>
+
+    <!-- Footer (same as index) -->
+    <footer class="bg-dark-900 text-gray-200 pt-16">
+        <div class="container mx-auto px-4 lg:px-6 pb-12">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+                <div>
+                    <div class="flex items-center space-x-2 mb-6"><div class="w-10 h-10 hero-gradient rounded-xl flex items-center justify-center"><i class="fas fa-crown text-white text-xl"></i></div><span class="font-display font-bold text-2xl gradient-text">IBEMH ALIAS</span></div>
+                    <p class="text-gray-400 mb-6">India's next-generation UPSC coaching platform combining traditional mentorship with AI-powered personalized guidance.</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-display font-bold text-white mb-6">Quick Links</h3>
+                    <ul class="space-y-3">
+                        <li><a href="about.html" class="text-gray-400 hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Our Courses</a></li>
+                        <li><a href="faculty.html" class="text-gray-400 hover:text-white transition-colors">Our Faculty</a></li>
+                        <li><a href="toppers.html" class="text-gray-400 hover:text-white transition-colors">Success Stories</a></li>
+                        <li><a href="ai-assistant.html" class="text-gray-400 hover:text-white transition-colors">AI Assistant</a></li>
+                        <li><a href="contact.html" class="text-gray-400 hover:text-white transition-colors">Contact Us</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-display font-bold text-white mb-6">Popular Courses</h3>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Platinum Batch (AI)</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Gold Batch</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Optional Coaching</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Test Series</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Weekend Batch</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Live Online Classes</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-display font-bold text-white mb-6">Contact Us</h3>
+                    <ul class="space-y-4">
+                        <li class="flex items-start space-x-3"><i class="fas fa-map-marker-alt text-primary-500 mt-1"></i><span class="text-gray-400">123, Knowledge Park, New Delhi - 110009</span></li>
+                        <li class="flex items-start space-x-3"><i class="fas fa-phone text-primary-500 mt-1"></i><span class="text-gray-400">+91 98765 43210</span></li>
+                        <li class="flex items-start space-x-3"><i class="fas fa-envelope text-primary-500 mt-1"></i><span class="text-gray-400">info@ibemhalias.com</span></li>
+                        <li class="flex items-start space-x-3"><i class="fas fa-clock text-primary-500 mt-1"></i><span class="text-gray-400">Mon-Fri: 9AM - 8PM, Sat: 10AM - 5PM</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-500 text-sm mb-4 md:mb-0">&copy; 2026 IBEMH ALIAS. All rights reserved.</p>
+                <div class="flex space-x-6 text-sm text-gray-500"><a href="#" class="hover:text-gray-300 transition-colors">Privacy Policy</a><a href="#" class="hover:text-gray-300 transition-colors">Terms of Service</a><a href="#" class="hover:text-gray-300 transition-colors">Refund Policy</a></div>
+            </div>
+        </div>
+    </footer>
+
+    <button id="backToTop" class="fixed bottom-6 right-6 w-12 h-12 bg-primary-600 text-white rounded-full shadow-xl flex items-center justify-center opacity-0 invisible transition-all duration-300 hover:bg-primary-700"><i class="fas fa-arrow-up"></i></button>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const btn = document.getElementById('backToTop');
+            if (window.scrollY > 300) { btn.classList.remove('opacity-0', 'invisible'); } else { btn.classList.add('opacity-0', 'invisible'); }
+        });
+        document.getElementById('backToTop').addEventListener('click', () => { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('preloader').style.opacity = '0';
+                setTimeout(() => { document.getElementById('preloader').style.display = 'none'; }, 500);
+            }, 500);
+        });
+    </script>
+</body>
+</html>

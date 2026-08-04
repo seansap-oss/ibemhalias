@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
+  <defs>
+    <linearGradient id="top1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d97706"/><stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+  </defs>
+  <rect width="300" height="300" fill="url(#top1)" rx="20"/>
+  <circle cx="150" cy="110" r="50" fill="rgba(255,255,255,0.3)"/>
+  <text x="150" y="200" text-anchor="middle" fill="white" font-family="Poppins,sans-serif" font-size="16" font-weight="600">Anjali Verma</text>
+  <text x="150" y="220" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="Inter,sans-serif" font-size="12">AIR 18, 2024</text>
+  <text x="290" y="285" text-anchor="end" fill="rgba(255,255,255,0.5)" font-family="Inter,sans-serif" font-size="9">Topper Photo</text>
+</svg>

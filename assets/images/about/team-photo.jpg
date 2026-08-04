@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <defs>
+    <linearGradient id="about1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d97706"/><stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#about1)" rx="12"/>
+  <text x="200" y="150" text-anchor="middle" fill="white" font-family="Poppins,sans-serif" font-size="20" font-weight="600">IBEMH ALIAS</text>
+  <text x="200" y="175" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="Inter,sans-serif" font-size="12">Team Photo</text>
+  <text x="380" y="285" text-anchor="end" fill="rgba(255,255,255,0.5)" font-family="Inter,sans-serif" font-size="9">Team Photo</text>
+</svg>

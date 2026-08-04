@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - IBEMH ALIAS | Student Registration</title>
+    <meta name="description" content="Register for IBEMH ALIAS student account. Access AI-powered UPSC coaching, personalized study plans, and expert mentorship.">
+    <link rel="icon" href="/assets/images/logo.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="/assets/js/main.js" defer></script>
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { primary: { 500:'#f59e0b', 600:'#d97706', 700:'#b45309' }, secondary: { 500:'#0ea5e9', 600:'#0284c7', 700:'#0369a1' }, dark: { 800:'#262626', 900:'#171717', 950:'#0a0a0a' } }, fontFamily: { sans: ['Inter','sans-serif'], display: ['Poppins','sans-serif'] } } } };
+    </script>
+    <style>
+        body { scroll-behavior: smooth; }
+        .hero-gradient { background: linear-gradient(135deg, #d97706 0%, #7c3aed 50%, #1e40af 100%); }
+        .gradient-text { background: linear-gradient(135deg, #d97706 0%, #9333ea 50%, #2563eb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .btn-primary { background: linear-gradient(135deg, #d97706 0%, #0ea5e9 100%); color: white; font-weight: 600; padding: 0.75rem 1.5rem; border-radius: 0.75rem; transition: all 0.3s; display: inline-flex; gap: 0.5rem; align-items: center; }
+        .btn-primary:hover { transform: scale(1.05); }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body x-data="darkMode()" x-init="init()" x-cloak class="bg-gray-50 dark:bg-dark-950 min-h-screen flex items-center">
+
+    <div id="preloader" class="fixed inset-0 bg-white dark:bg-dark-950 z-[200] flex items-center justify-center transition-opacity duration-500">
+        <div class="relative"><div class="w-16 h-16 border-4 border-primary-200 dark:border-dark-700 border-t-primary-600 dark:border-t-primary-400 rounded-full animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center"><span class="text-primary-600 dark:text-primary-400 font-display font-bold text-xl">IBEMH ALIAS</span></div></div>
+    </div>
+
+    <!-- Signup section -->
+    <div class="container mx-auto px-4 lg:px-6 py-12">
+        <div class="max-w-2xl mx-auto">
+            <div class="text-center mb-8">
+                <div class="flex items-center justify-center space-x-3 mb-6">
+                    <div class="w-12 h-12 hero-gradient rounded-xl flex items-center justify-center"><i class="fas fa-crown text-white text-2xl"></i></div>
+                    <span class="font-display font-bold text-3xl gradient-text dark:text-white">IBEMH ALIAS</span>
+                </div>
+                <h1 class="font-display font-bold text-3xl text-gray-800 dark:text-white mb-2">Create Your Account</h1>
+                <p class="text-gray-500 dark:text-gray-400">Start your UPSC preparation journey with AI-powered coaching</p>
+            </div>
+
+            <div class="bg-white dark:bg-dark-900 rounded-2xl shadow-xl border border-gray-200 dark:border-dark-700 p-8">
+                <div x-data="{
+                    step: 1,
+                    firstName: '', lastName: '', email: '', phone: '',
+                    password: '', confirmPassword: '', course: '', targetYear: '2026',
+                    agree: false,
+                    submitForm() {
+                        if (!this.firstName || !this.email || !this.phone || !this.password || !this.course) {
+                            alert('Please fill all required fields'); return;
+                        }
+                        if (this.password !== this.confirmPassword) {
+                            alert('Passwords do not match'); return;
+                        }
+                        if (!this.agree) {
+                            alert('Please agree to the terms and conditions'); return;
+                        }
+                        alert('Registration successful! Please check your email for verification.');
+                        window.location.href = 'login.html';
+                    }
+                }">
+                    <!-- Step Indicator -->
+                    <div class="mb-8">
+                        <div class="flex items-center justify-center space-x-4">
+                            <div :class="step >= 1 ? 'hero-gradient text-white' : 'bg-gray-200 dark:bg-dark-700 text-gray-500'" class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm">1</div>
+                            <div :class="step >= 2 ? 'hero-gradient' : 'bg-gray-200 dark:bg-dark-700'" class="flex-1 h-1 rounded-full"></div>
+                            <div :class="step >= 2 ? 'hero-gradient text-white' : 'bg-gray-200 dark:bg-dark-700 text-gray-500'" class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm">2</div>
+                            <div :class="step >= 2 ? 'hero-gradient' : 'bg-gray-200 dark:bg-dark-700'" class="flex-1 h-1 rounded-full"></div>
+                            <div :class="step >= 3 ? 'hero-gradient text-white' : 'bg-gray-200 dark:bg-dark-700 text-gray-500'" class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm">3</div>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-2">
+                            <span>Personal Info</span><span>Academic Details</span><span>Confirmation</span>
+                        </div>
+                    </div>
+
+                    <!-- Step 1: Personal Information -->
+                    <div x-show="step === 1" x-transition>
+                        <h3 class="font-display font-bold text-xl text-gray-800 dark:text-white mb-6">Personal Information</h3>
+                        <form @submit.prevent="step = 2" class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">First Name *</label>
+                                    <input type="text" x-model="firstName" required class="w-full px-4 py-3 border border-gray-300 dark:border-dark-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-dark-800 text-gray-800 dark:text-gray-200">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Last Name *</label>
+                                    <input type="text" x-model="lastName" required class="w-full px-4 py-3 border border-gray-300 dark:border-dark-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-dark-800 text-gray-800 dark:text-gray-200">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email Address *</label>
+                                <input type="email" x-model="email" required class="w-full px-4 py-3 border border-gray-300 dark:border-dark-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-dark-800 text-gray-800 dark:text-gray-200">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone Number *</label>
+                                <input type="tel" x-model="phone" required pattern="[0-9]{10}" maxlength="10" class="w-full px-4 py-3 border border-gray-300 dark:border-dark-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-dark-800 text-gray-800 dark:text-gray-200" placeholder="10-digit mobile number">
+                            </div>
+                            <div class="flex justify-end"><button type="submit" class="btn-primary">Continue</button></div>
+                        </form>
+                    </div>
+
+                    <!-- Step 2: Academic Details -->
+                    <div x-show="step === 2" x-cloak x-transition>
+                        <h3 class="font-display font-bold text-xl text-gray-800 dark:text-white mb-6">Academic & Course Details</h3>
+                        <form @submit.prevent="step = 3" class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">UPSC Target Year *</label>
+                                <select x-model="targetYear" required class="w-full px-4 py-3 border border-gray-300 dark:border-dark-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-dark-800 text-gray-800 dark:text-gray-200">
+                                    <option value="2026">2026</option>
+                                    <option value="2025">2025</option>
+                                    <option value="2027">2027</option>
+                                    <option value="2028">2028</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Interested Course *</label>
+                                <select x-model="course" required class="w-full px-4 py-3 border border-gray-300 dark:border-dark-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-dark-800 text-gray-800 dark:text-gray-200">
+                                    <option value="">Select a course</option>
+                                    <option value="platinum">Platinum Batch (AI-Powered)</option>
+                                    <option value="gold">Gold Batch</option>
+                                    <option value="silver">Silver Batch</option>
+                                    <option value="weekend">Weekend Batch</option>
+                                    <option value="optional">Optional Coaching Only</option>
+                                    <option value="test-series">Test Series Only</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Educational Qualification</label>
+                                <input type="text" placeholder="e.g., B.Tech, B.A (Hons), M.Com..." class="w-full px-4 py-3 border border-gray-300 dark:border-dark-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-dark-800 text-gray-800 dark:text-gray-200">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Optional Subject (if decided)</label>
+                                <input type="text" placeholder="e.g., Sociology, Geography, PSIR, History..." class="w-full px-4 py-3 border border-gray-300 dark:border-dark-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-dark-800 text-gray-800 dark:text-gray-200">
+                            </div>
+                            <div class="flex justify-between"><button type="button" @click="step = 1" class="text-gray-600 dark:text-gray-400 font-medium hover:underline">← Back</button><button type="submit" class="btn-primary">Continue</button></div>
+                        </form>
+                    </div>
+
+                    <!-- Step 3: Confirmation -->
+                    <div x-show="step === 3" x-cloak x-transition>
+                        <h3 class="font-display font-bold text-xl text-gray-800 dark:text-white mb-6">Account Setup</h3>
+                        <form @submit.prevent="submitForm()" class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password *</label>
+                                <input type="password" x-model="password" required minlength="8" class="w-full px-4 py-3 border border-gray-300 dark:border-dark-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-dark-800 text-gray-800 dark:text-gray-200" placeholder="Minimum 8 characters">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirm Password *</label>
+                                <input type="password" x-model="confirmPassword" required minlength="8" class="w-full px-4 py-3 border border-gray-300 dark:border-dark-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-dark-800 text-gray-800 dark:text-gray-200" placeholder="Re-enter password">
+                            </div>
+                            <div class="flex items-start">
+                                <input type="checkbox" id="agree" x-model="agree" required class="mt-1 mr-3 rounded text-primary-600 focus:ring-primary-500">
+                                <label for="agree" class="text-sm text-gray-600 dark:text-gray-300">I agree to the <a href="#" class="text-primary-600 dark:text-primary-400 hover:underline">Terms & Conditions</a> and <a href="#" class="text-primary-600 dark:text-primary-400 hover:underline">Privacy Policy</a>.</label>
+                            </div>
+                            <div class="flex justify-between"><button type="button" @click="step = 2" class="text-gray-600 dark:text-gray-400 font-medium hover:underline">← Back</button><button type="submit" class="btn-primary">Create Account</button></div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="mt-6 text-center"><p class="text-gray-500 dark:text-gray-400">Already have an account? <a href="login.html" class="text-primary-600 dark:text-primary-400 font-medium hover:underline">Login</a></p></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener('load', () => {
+            setTimeout(() => { document.getElementById('preloader').style.opacity = '0'; setTimeout(() => { document.getElementById('preloader').style.display = 'none'; }, 500); }, 300);
+        });
+    </script>
+</body>
+</html>

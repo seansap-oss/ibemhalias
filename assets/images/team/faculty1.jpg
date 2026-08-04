@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#grad1)" rx="12"/>
+  <circle cx="200" cy="110" r="45" fill="rgba(255,255,255,0.2)"/>
+  <text x="200" y="185" text-anchor="middle" fill="white" font-family="Poppins,sans-serif" font-size="18" font-weight="600">Dr. Rameshwar</text>
+  <text x="200" y="205" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="Inter,sans-serif" font-size="12">Founder &amp; Director</text>
+  <text x="380" y="290" text-anchor="end" fill="rgba(255,255,255,0.5)" font-family="Inter,sans-serif" font-size="10">Faculty Photo</text>
+</svg>
