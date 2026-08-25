@@ -1,4 +1,4 @@
-import { PortalPageShell } from "@/components/portal/portal-page-shell";
+﻿import { PortalPageShell } from "@/components/portal/portal-page-shell";
 import { Building2, Eye, Flag, MessageSquareQuote, Sparkles } from "lucide-react";
 
 const sections = [
@@ -20,7 +20,7 @@ export default function AboutPage() {
           <div className="text-sm font-black uppercase tracking-[0.18em] text-blue-200">Ibemhal IAS</div>
           <h2 className="mt-3 text-3xl font-black">A low-fee Institute</h2>
           <p className="mt-4 text-sm leading-relaxed text-blue-100">
-            This page is reserved for the institute's official profile and client-approved copy.
+            This page is reserved for the institute&apos;s official profile and client-approved copy.
           </p>
           <div className="mt-6 flex items-center gap-2 rounded-2xl bg-white/10 p-4">
             <Building2 className="h-5 w-5" />
@@ -41,3 +41,4 @@ export default function AboutPage() {
     </PortalPageShell>
   );
 }
+
