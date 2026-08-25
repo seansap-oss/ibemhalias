@@ -50,3 +50,8 @@ next-env.d.ts
 *.aab
 android/local.properties
 android/.gradle/
+
+# Local build backups
+_*-backup-*/
+*backup*/
+*.backup-*
