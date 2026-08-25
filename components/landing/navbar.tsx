@@ -3,35 +3,38 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { Menu, X, GraduationCap } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  BookOpen,
+  Building2,
+  CalendarDays,
+  FileQuestion,
+  GraduationCap,
+  Mail,
+  Menu,
+  Newspaper,
+  ShieldCheck,
+  Sparkles,
+  UserRound,
+  X,
+} from "lucide-react";
 import { useLongPress } from "@/hooks/use-long-press";
 import { LocalAdminAuthModal } from "@/components/admin/local-admin-auth-modal";
 import { LONG_PRESS_MS, hasLocalAdminSession } from "@/lib/local-admin";
-
-const navLinks = [
-  { href: "#courses", label: "Courses" },
-  { href: "#toppers", label: "Toppers" },
-  { href: "#pricing", label: "Pricing" },
-  { href: "#campus", label: "Campus" },
-  { href: "#ai-tutor", label: "AI Tutor" },
-];
+import { portalNavItems } from "@/components/portal/nav-items";
 
 export function Navbar() {
   const router = useRouter();
-  const [mobileOpen, setMobileOpen] = React.useState(false);
-  const [scrolled, setScrolled] = React.useState(false);
+  const [menuOpen, setMenuOpen] = React.useState(false);
   const [authOpen, setAuthOpen] = React.useState(false);
 
   React.useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
 
-  // Stealth: hold the logo for 5 seconds to reveal the local institute console.
   const { handlers, progress, isPressing } = useLongPress({
     durationMs: LONG_PRESS_MS,
     onLongPress: () => {
@@ -42,112 +45,138 @@ export function Navbar() {
   });
 
   return (
-    <motion.header
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-        scrolled
-          ? "bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-lg border-b border-gray-200/50 dark:border-gray-700/50"
-          : "bg-transparent"
-      )}
-    >
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-        <div
-          {...handlers}
-          role="link"
-          tabIndex={0}
-          aria-label="Ibemhal IAS home"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") router.push("/");
-          }}
-          className="relative flex items-center gap-2 group cursor-pointer select-none no-tap-highlight"
-        >
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg group-hover:shadow-blue-500/25 transition-shadow overflow-hidden">
-            <GraduationCap className="h-6 w-6 text-white relative z-10" />
-            {isPressing && (
-              <span
-                className="absolute inset-x-0 bottom-0 bg-amber-400/70 transition-[height] duration-100 ease-linear"
-                style={{ height: `${progress}%` }}
-                aria-hidden
-              />
-            )}
-          </div>
-          <div className="flex flex-col">
-            <span className="text-lg font-bold leading-tight">Ibemhal</span>
-            <span className="text-xs text-blue-600 dark:text-blue-400 font-medium -mt-0.5">IAS ACADEMY</span>
-          </div>
-          {isPressing && progress > 35 && (
-            <motion.span
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="absolute -bottom-7 left-0 whitespace-nowrap rounded-full bg-amber-500/95 px-2.5 py-1 text-[10px] font-semibold text-white shadow-lg"
-            >
-              {progress >= 99 ? "Unlocking…" : `Hold ${Math.ceil((100 - progress) / 20)}s…`}
-            </motion.span>
-          )}
-        </div>
+    <>
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/75 bg-white/95 backdrop-blur-xl">
+        <nav className="mx-auto flex h-[76px] max-w-[1500px] items-center gap-3 px-4 sm:px-6 lg:px-8">
+          <button
+            onClick={() => setMenuOpen(true)}
+            aria-label="Open navigation"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-[#14256f] shadow-sm lg:hidden"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
 
-        <div className="hidden md:flex items-center gap-1">
-          {navLinks.map((link) => (
+          <div
+            {...handlers}
+            role="link"
+            tabIndex={0}
+            className="relative flex cursor-pointer select-none items-center gap-2"
+          >
+            <div className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-lg bg-[#14256f] shadow-md">
+              <span className="relative z-10 text-[22px] font-black tracking-tight text-white">Ib</span>
+              {isPressing && (
+                <span
+                  className="absolute inset-x-0 bottom-0 bg-amber-400/85"
+                  style={{ height: `${progress}%` }}
+                />
+              )}
+            </div>
+            <div className="leading-none">
+              <div className="text-lg font-black text-[#16236b] sm:text-xl">Ibemhal IAS</div>
+              <div className="mt-1 text-[10px] font-bold text-[#16236b] sm:text-[11px]">
+                A low-fee Institute
+              </div>
+            </div>
+          </div>
+
+          <div className="ml-auto hidden items-center gap-2 xl:flex">
+            <Mail className="h-4 w-4 text-amber-500" />
+            <span className="text-sm font-semibold text-slate-700">Studenthelpdesk@.....com</span>
+          </div>
+
+          <div className="ml-auto flex items-center gap-2 xl:ml-5">
             <Link
-              key={link.href}
-              href={link.href}
-              className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors"
+              href="/login"
+              className="hidden min-h-11 items-center gap-2 rounded-xl bg-[#14256f] px-4 text-sm font-black text-white shadow-md sm:inline-flex"
             >
-              {link.label}
+              <UserRound className="h-4 w-4" />
+              Student Login
             </Link>
-          ))}
-        </div>
-
-        <div className="hidden md:flex items-center gap-3">
-          <Link href="/dashboard">
-            <Button variant="outline" size="sm">Student Login</Button>
-          </Link>
-          <Link href="/dashboard">
-            <Button size="sm" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
-              Get Started
-            </Button>
-          </Link>
-        </div>
-
-        <button
-          className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="Toggle menu"
-        >
-          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
-      </nav>
-
-      {mobileOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="md:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50 px-4 py-4 space-y-1"
-        >
-          {navLinks.map((link) => (
             <Link
-              key={link.href}
-              href={link.href}
-              className="block px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg"
-              onClick={() => setMobileOpen(false)}
+              href="/admin/login"
+              className="hidden min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-[#14256f] shadow-sm md:inline-flex"
             >
-              {link.label}
+              <ShieldCheck className="h-4 w-4" />
+              Admin Login
             </Link>
-          ))}
-          <div className="pt-3 border-t border-gray-200 dark:border-gray-700 flex flex-col gap-2">
-            <Link href="/dashboard">
-              <Button variant="outline" className="w-full">Student Login</Button>
-            </Link>
-            <Link href="/dashboard">
-              <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600">Get Started</Button>
+            <Link
+              href="/login"
+              aria-label="Student login"
+              className="grid h-11 w-11 place-items-center rounded-xl bg-[#14256f] text-white sm:hidden"
+            >
+              <UserRound className="h-5 w-5" />
             </Link>
           </div>
-        </motion.div>
-      )}
+        </nav>
+      </header>
+
+      <AnimatePresence>
+        {menuOpen && (
+          <>
+            <motion.button
+              className="fixed inset-0 z-[60] bg-slate-950/40 backdrop-blur-[2px]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMenuOpen(false)}
+              aria-label="Close menu overlay"
+            />
+            <motion.aside
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", stiffness: 320, damping: 32 }}
+              className="fixed inset-y-0 left-0 z-[70] flex w-[88vw] max-w-[360px] flex-col bg-gradient-to-b from-[#14256f] via-[#15327f] to-[#0d225f] p-4 text-white shadow-2xl"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xl font-black">Ibemhal IAS</div>
+                  <div className="text-xs font-bold text-blue-200">Portal Navigation</div>
+                </div>
+                <button
+                  onClick={() => setMenuOpen(false)}
+                  className="grid h-10 w-10 place-items-center rounded-xl bg-white/10"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <nav className="mt-7 space-y-2">
+                {portalNavItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMenuOpen(false)}
+                    className="flex min-h-14 items-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-4 text-sm font-black transition hover:bg-white/15"
+                  >
+                    <item.icon className="h-5 w-5" />
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+
+              <div className="mt-auto grid grid-cols-2 gap-2 pt-5">
+                <Link
+                  href="/login"
+                  onClick={() => setMenuOpen(false)}
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white text-xs font-black text-[#14256f]"
+                >
+                  Student Login
+                </Link>
+                <Link
+                  href="/admin/login"
+                  onClick={() => setMenuOpen(false)}
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/30 text-xs font-black text-white"
+                >
+                  Admin Login
+                </Link>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
 
       <LocalAdminAuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
-    </motion.header>
+    </>
   );
 }

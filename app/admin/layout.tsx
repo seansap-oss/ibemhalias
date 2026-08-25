@@ -12,35 +12,90 @@ import {
   X,
   Sparkles,
   Activity,
+  Files,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const adminNav = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/courses", label: "Courses", icon: BookOpen },
-  { href: "/admin/ingest", label: "AI Ingestion", icon: Sparkles },
-  { href: "/admin/ai-health", label: "AI Health", icon: Activity },
+  {
+    href: "/admin/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    href: "/admin/content",
+    label: "Website Content",
+    icon: Files,
+  },
+  {
+    href: "/admin/courses",
+    label: "Courses",
+    icon: BookOpen,
+  },
+  {
+    href: "/admin/ingest",
+    label: "AI Ingestion",
+    icon: Sparkles,
+  },
+  {
+    href: "/admin/ai-health",
+    label: "AI Health",
+    icon: Activity,
+  },
 ];
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [adminEmail, setAdminEmail] = React.useState("Admin");
 
   React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      const auth = sessionStorage.getItem("admin_auth");
-      if (!auth) {
-        router.push("/admin/login");
-      }
-    }
+    let cancelled = false;
+
+    fetch("/api/admin/session", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("NO_SESSION");
+        }
+
+        return response.json();
+      })
+      .then((data) => {
+        if (!cancelled && data?.authenticated) {
+          setAdminEmail(data.email || "Admin");
+          sessionStorage.setItem("admin_auth", "true");
+          sessionStorage.setItem(
+            "admin_email",
+            data.email || "Admin"
+          );
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          router.replace("/admin/login");
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
-  const handleLogout = () => {
-    if (typeof window !== "undefined") {
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/admin/logout", {
+        method: "POST",
+      });
+    } finally {
       sessionStorage.removeItem("admin_auth");
       sessionStorage.removeItem("admin_email");
+      router.replace("/admin/login");
+      router.refresh();
     }
-    router.push("/admin/login");
   };
 
   return (
@@ -56,9 +111,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600">
               <GraduationCap className="h-5 w-5 text-white" />
             </div>
+
             <div>
-              <span className="font-bold text-sm">Ibemhal IAS</span>
-              <span className="block text-xs text-muted-foreground -mt-0.5">Admin Panel</span>
+              <span className="font-bold text-sm">
+                Ibemhal IAS
+              </span>
+              <span className="block text-xs text-muted-foreground -mt-0.5">
+                Admin Panel
+              </span>
             </div>
           </div>
 
@@ -101,11 +161,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden p-2 rounded-lg hover:bg-muted"
           >
-            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {sidebarOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
           </button>
+
           <div className="flex-1" />
+
           <span className="text-sm text-muted-foreground">
-            {typeof window !== "undefined" ? sessionStorage.getItem("admin_email") || "Admin" : "Admin"}
+            {adminEmail}
           </span>
         </header>
 

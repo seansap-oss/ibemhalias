@@ -2,41 +2,80 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
-import { Lock, Mail, GraduationCap, AlertCircle } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Lock,
+  Mail,
+  GraduationCap,
+  AlertCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 
-const ADMIN_EMAIL = "admin@ibemhal.ias";
-const ADMIN_PASSWORD = "admin@123";
-
 export default function AdminLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [error, setError] = React.useState("");
   const [loading, setLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    fetch("/api/admin/session", { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) return null;
+        return response.json();
+      })
+      .then((data) => {
+        if (data?.authenticated) {
+          const target =
+            searchParams.get("redirectedFrom") || "/admin/dashboard";
+          router.replace(target);
+        }
+      })
+      .catch(() => {});
+  }, [router, searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    await new Promise((r) => setTimeout(r, 500));
+    try {
+      const response = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("admin_auth", "true");
-        sessionStorage.setItem("admin_email", email);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Invalid credentials.");
       }
-      router.push("/admin/dashboard");
-    } else {
-      setError("Invalid credentials. Please try again.");
+
+      sessionStorage.setItem("admin_auth", "true");
+      sessionStorage.setItem("admin_email", email);
+
+      const target =
+        searchParams.get("redirectedFrom") || "/admin/dashboard";
+
+      router.replace(target);
+      router.refresh();
+    } catch (err: any) {
+      setError(err?.message || "Unable to sign in.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -55,9 +94,14 @@ export default function AdminLoginPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
               <GraduationCap className="h-7 w-7 text-white" />
             </div>
+
             <div className="text-left">
-              <span className="text-xl font-bold text-white">Ibemhal IAS</span>
-              <span className="block text-xs text-blue-300 -mt-0.5">Admin Panel</span>
+              <span className="text-xl font-bold text-white">
+                Ibemhal IAS
+              </span>
+              <span className="block text-xs text-blue-300 -mt-0.5">
+                Admin Panel
+              </span>
             </div>
           </Link>
         </div>
@@ -65,8 +109,11 @@ export default function AdminLoginPage() {
         <Card className="glass-card shadow-2xl">
           <CardHeader className="text-center pb-2">
             <CardTitle className="text-xl">Admin Login</CardTitle>
-            <p className="text-sm text-muted-foreground">Sign in to manage courses and content</p>
+            <p className="text-sm text-muted-foreground">
+              Sign in to manage courses and content
+            </p>
           </CardHeader>
+
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               {error && (
@@ -87,6 +134,7 @@ export default function AdminLoginPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="admin@ibemhal.ias"
                     className="pl-10"
+                    autoComplete="username"
                     required
                   />
                 </div>
@@ -103,25 +151,33 @@ export default function AdminLoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     className="pl-10"
+                    autoComplete="current-password"
                     required
                   />
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loading}
+              >
                 {loading ? "Signing in..." : "Sign In"}
               </Button>
             </form>
 
             <div className="mt-4 text-center">
-              <Link href="/" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+              <Link
+                href="/"
+                className="text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
                 ← Back to website
               </Link>
             </div>
           </CardContent>
         </Card>
 
-        <p className="text-center text-xs text-gray-400 mt-4">
+        <p className="mt-5 text-center text-xs text-blue-200/70">
           Protected area. Unauthorized access prohibited.
         </p>
       </motion.div>

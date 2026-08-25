@@ -1,278 +1,191 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import {
-  Rocket,
-  Bot,
-  Sparkles,
-  Trophy,
-  Users,
-  BookOpen,
-  Star,
-  ArrowRight,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import {
-  heroToppers,
-  allLandscape,
-  hasHeroImages,
-  type HeroTopper,
-} from "@/lib/hero-images";
-import {
-  UpiCheckoutModal,
-  type CheckoutCourse,
-} from "@/components/checkout/upi-checkout-modal";
-import { courses } from "@/lib/mock-data";
+import { AnimatePresence, motion, PanInfo } from "framer-motion";
+import { ArrowLeft, ArrowRight, ExternalLink, Play } from "lucide-react";
+import { PortalSidebar } from "@/components/portal/portal-sidebar";
+import { WhatsNew } from "@/components/portal/whats-new";
+import { PortalFloatingControls } from "@/components/portal/portal-floating-controls";
+import { HeroCmsDeck } from "@/components/cms/hero-cms-deck";
 
-const STATS = [
-  { icon: Trophy, value: "500+", label: "Selections" },
-  { icon: Users, value: "10,000+", label: "Aspirants" },
-  { icon: BookOpen, value: "100+", label: "Courses" },
-  { icon: Star, value: "4.9/5", label: "Rating" },
+const stories = [
+  {
+    label: "Academy",
+    title: "Your Journey Begins Here.",
+    subtitle: "Quality guidance. Affordable fees. Real results.",
+    image:
+      "https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1400&q=90",
+    href: "/about",
+  },
+  {
+    label: "Selected Candidates",
+    title: "Results That Inspire.",
+    subtitle: "Meet selected candidates and learn from their journey.",
+    image:
+      "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=90",
+    href: "/student-space",
+  },
+  {
+    label: "Free Resources",
+    title: "Study Smarter.",
+    subtitle: "NCERT books, PYQs, solutions and exam resources.",
+    image:
+      "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=1400&q=90",
+    href: "/resources",
+  },
+  {
+    label: "Current Affairs",
+    title: "Stay Updated Every Day.",
+    subtitle: "Daily and monthly current affairs for Civil Service and SSC/Banking.",
+    image:
+      "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1400&q=90",
+    href: "/current-affairs/daily",
+  },
+  {
+    label: "Mentorship",
+    title: "Book Personal Guidance.",
+    subtitle: "Choose counselling, mentorship and available time slots.",
+    image:
+      "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1400&q=90",
+    href: "/mentorship",
+  },
 ];
 
-export function HeroSection() {
-  const [checkout, setCheckout] = React.useState<CheckoutCourse | null>(null);
+function FallbackHero() {
+  const [active, setActive] = React.useState(0);
+  const [direction, setDirection] = React.useState(1);
 
-  const openCourses = () => {
-    const flagship = courses[0];
-    if (flagship) {
-      setCheckout({ id: flagship.id, title: flagship.title, price: flagship.price });
-    } else {
-      document.getElementById("courses")?.scrollIntoView({ behavior: "smooth" });
-    }
+  const next = () => {
+    setDirection(1);
+    setActive((value) => (value + 1) % stories.length);
   };
 
+  const previous = () => {
+    setDirection(-1);
+    setActive((value) => (value - 1 + stories.length) % stories.length);
+  };
+
+  const onDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (info.offset.x < -70 || info.velocity.x < -450) next();
+    if (info.offset.x > 70 || info.velocity.x > 450) previous();
+  };
+
+  const current = stories[active];
+
   return (
-    <section className="relative overflow-hidden bg-[#FAF8F6] dark:bg-slate-950">
-      {/* Ultra-light texture + tint */}
-      <div className="absolute inset-0 bg-slate-50/50 dark:bg-transparent" />
-      <div className="absolute inset-0 grid-overlay opacity-[0.35] dark:opacity-20" />
-      <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-blue-200/25 blur-3xl dark:bg-blue-500/10" />
-      <div className="pointer-events-none absolute -bottom-32 -right-24 h-96 w-96 rounded-full bg-indigo-200/25 blur-3xl dark:bg-indigo-500/10" />
+    <div className="relative aspect-[9/16] overflow-hidden rounded-[28px] bg-[#14256f] shadow-2xl shadow-blue-950/15 sm:aspect-[16/10] lg:aspect-[16/9]">
+      <AnimatePresence initial={false} custom={direction} mode="popLayout">
+        <motion.div
+          key={current.title}
+          custom={direction}
+          initial={{ opacity: 0, x: direction > 0 ? 70 : -70, scale: 0.98 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          exit={{ opacity: 0, x: direction > 0 ? -70 : 70, scale: 0.98 }}
+          transition={{ type: "spring", stiffness: 260, damping: 28 }}
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.18}
+          onDragEnd={onDragEnd}
+          className="absolute inset-0 cursor-grab active:cursor-grabbing"
+        >
+          <img src={current.image} alt={current.title} className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0b1d62]/95 via-[#112d79]/75 to-transparent" />
 
-      <div className="relative mx-auto max-w-7xl px-4 pt-28 pb-16 sm:px-6 lg:px-8 lg:pt-32 lg:pb-20">
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-10 lg:gap-8 xl:gap-12">
-          {/* ── LEFT 30% ─────────────────────────────────────────── */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="lg:col-span-3 flex flex-col justify-center"
-          >
-            <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-blue-200/70 bg-white/80 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-blue-700 shadow-sm backdrop-blur dark:border-blue-800/60 dark:bg-blue-950/40 dark:text-blue-300">
-              <Sparkles className="h-3 w-3" />
-              Ibemhal IAS · Low-Fee Institute
-            </span>
-
-            <h1 className="mt-5 text-[2rem] font-bold leading-[1.12] tracking-tight text-slate-900 sm:text-4xl lg:text-[2.6rem] dark:text-white text-balance">
-              From Foundation to{" "}
-              <span className="bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-800 bg-clip-text text-transparent dark:from-blue-400 dark:via-indigo-400 dark:to-blue-300">
-                IAS/MPSC
+          <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8 lg:p-10">
+            <div className="max-w-xl">
+              <span className="inline-flex rounded-full bg-white/12 px-3 py-1 text-xs font-black text-blue-100 backdrop-blur">
+                {current.label}
               </span>
-              .
-              <br />
-              We Guide, You Achieve.
-            </h1>
 
-            <p className="mt-4 max-w-md text-[15px] leading-relaxed text-slate-600 dark:text-slate-400">
-              <strong className="font-semibold text-slate-800 dark:text-slate-200">
-                100+ comprehensive courses
-              </strong>{" "}
-              built by experienced faculty, paired with{" "}
-              <strong className="font-semibold text-slate-800 dark:text-slate-200">
-                24/7 AI-driven answer feedback
-              </strong>{" "}
-              — so every aspirant in Manipur gets top-tier preparation at a fee that never
-              stands in the way.
-            </p>
+              <h1 className="mt-4 text-4xl font-black leading-[1.02] text-white sm:text-5xl lg:text-6xl">
+                {current.title}
+              </h1>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
-              <Button
-                size="lg"
-                onClick={openCourses}
-                className="h-12 bg-slate-900 px-6 text-[15px] font-semibold text-white shadow-lg shadow-slate-900/15 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
-              >
-                <Rocket className="mr-2 h-4 w-4" />
-                Explore Courses
-              </Button>
-              <Link href="/ai-tutor">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="h-12 w-full border-slate-300 bg-white/70 px-6 text-[15px] font-semibold text-slate-800 backdrop-blur hover:bg-white dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100"
+              <p className="mt-4 max-w-lg text-sm font-medium leading-relaxed text-blue-100 sm:text-base">
+                {current.subtitle}
+              </p>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link
+                  href={current.href}
+                  className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-white px-5 text-sm font-black text-[#14256f]"
                 >
-                  <Bot className="mr-2 h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  Try 24/7 AI Tutor
-                </Button>
-              </Link>
-            </div>
+                  Explore <ExternalLink className="h-4 w-4" />
+                </Link>
 
-            <dl className="mt-9 grid grid-cols-2 gap-x-4 gap-y-5 border-t border-slate-200/80 pt-6 dark:border-slate-800 sm:grid-cols-4 lg:grid-cols-2">
-              {STATS.map((s) => (
-                <div key={s.label}>
-                  <dt className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-500">
-                    <s.icon className="h-3 w-3" />
-                    {s.label}
-                  </dt>
-                  <dd className="mt-0.5 text-xl font-bold text-slate-900 dark:text-white">
-                    {s.value}
-                  </dd>
+                <button className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-5 text-sm font-black text-white backdrop-blur">
+                  <Play className="h-4 w-4" />
+                  Watch Video
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+
+      <button
+        onClick={previous}
+        aria-label="Previous story"
+        className="absolute left-4 top-1/2 z-30 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white text-[#14256f] shadow-lg"
+      >
+        <ArrowLeft className="h-5 w-5" />
+      </button>
+
+      <button
+        onClick={next}
+        aria-label="Next story"
+        className="absolute right-4 top-1/2 z-30 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white text-[#14256f] shadow-lg"
+      >
+        <ArrowRight className="h-5 w-5" />
+      </button>
+
+      <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 gap-2 rounded-full bg-black/15 px-3 py-2 backdrop-blur">
+        {stories.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => setActive(index)}
+            aria-label={`Show story ${index + 1}`}
+            className={[
+              "h-2 rounded-full transition-all",
+              active === index ? "w-7 bg-white" : "w-2 bg-white/55",
+            ].join(" ")}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function HeroSection() {
+  return (
+    <section className="bg-[radial-gradient(circle_at_top,_#eef3ff_0,_#ffffff_40%,_#ffffff_100%)] pt-24">
+      <div className="mx-auto max-w-[1500px] px-4 pb-12 sm:px-6 lg:px-8">
+        <div className="flex items-start gap-4">
+          <PortalSidebar />
+          <WhatsNew />
+
+          <div className="min-w-0 flex-1">
+            <HeroCmsDeck fallback={<FallbackHero />} />
+
+            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                ["500+", "Selections"],
+                ["10,000+", "Aspirants"],
+                ["100+", "Courses"],
+                ["4.9/5", "Student Rating"],
+              ].map(([value, label]) => (
+                <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm">
+                  <div className="text-xl font-black text-[#14256f]">{value}</div>
+                  <div className="mt-1 text-xs font-semibold text-slate-500">{label}</div>
                 </div>
               ))}
-            </dl>
-          </motion.div>
-
-          {/* ── RIGHT 70% ────────────────────────────────────────── */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.65, delay: 0.12 }}
-            className="lg:col-span-7"
-          >
-            <div className="mb-4 flex items-baseline justify-between gap-3">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                Our Selected Aspirants
-              </h2>
-              <Link
-                href="#toppers"
-                className="group inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-800 dark:text-blue-400"
-              >
-                View all
-                <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-              </Link>
             </div>
-
-            {!hasHeroImages ? (
-              <EmptyState />
-            ) : allLandscape ? (
-              <BannerShowcase toppers={heroToppers} />
-            ) : (
-              <PortraitGrid toppers={heroToppers} />
-            )}
-          </motion.div>
+          </div>
         </div>
       </div>
 
-      <UpiCheckoutModal
-        open={checkout !== null}
-        onClose={() => setCheckout(null)}
-        course={checkout}
-      />
+      <PortalFloatingControls />
     </section>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Wide banner assets — full width, object-contain, never stretched.   */
-/* ------------------------------------------------------------------ */
-function BannerShowcase({ toppers }: { toppers: HeroTopper[] }) {
-  return (
-    <div className="space-y-4">
-      {toppers.map((t, i) => (
-        <motion.figure
-          key={t.slug}
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.18 + i * 0.1 }}
-          className="group overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-lg dark:border-slate-800 dark:bg-slate-900"
-        >
-          <div
-            className="relative w-full bg-slate-100 dark:bg-slate-800"
-            style={{ aspectRatio: `${t.width} / ${t.height}` }}
-          >
-            <Image
-              src={t.src}
-              alt={`Ibemhal IAS selected aspirants — results panel ${i + 1}`}
-              fill
-              sizes="(max-width: 1024px) 100vw, 70vw"
-              placeholder="blur"
-              blurDataURL={t.blurDataURL}
-              className="object-contain"
-              priority={i === 0}
-            />
-          </div>
-          <figcaption className="flex items-center gap-2 border-t border-slate-100 px-4 py-2.5 dark:border-slate-800">
-            <Trophy className="h-3.5 w-3.5 shrink-0 text-amber-500" />
-            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Ibemhal IAS Hall of Fame
-            </span>
-            <span className="ml-auto rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-700 dark:bg-green-950/50 dark:text-green-400">
-              Verified Selections
-            </span>
-          </figcaption>
-        </motion.figure>
-      ))}
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Portrait/square assets — 1 / 2 / 4 column responsive grid.          */
-/* ------------------------------------------------------------------ */
-function PortraitGrid({ toppers }: { toppers: HeroTopper[] }) {
-  return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {toppers.map((t, i) => (
-        <motion.figure
-          key={t.slug}
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.18 + i * 0.08 }}
-          className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900"
-        >
-          <div className="relative aspect-[3/4] w-full bg-slate-100 dark:bg-slate-800">
-            <Image
-              src={t.src}
-              alt={`${t.name} — ${t.rank}, ${t.exam} ${t.year}`}
-              fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 18vw"
-              placeholder="blur"
-              blurDataURL={t.blurDataURL}
-              className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
-              priority={i < 2}
-            />
-            <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-slate-900/85 via-slate-900/35 to-transparent" />
-            <span className="absolute left-2.5 top-2.5 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow">
-              {t.rank}
-            </span>
-            <figcaption className="absolute inset-x-0 bottom-0 p-3">
-              <p className="truncate text-sm font-bold leading-tight text-white">{t.name}</p>
-              <p className="text-[11px] text-white/80">
-                {t.exam} · {t.year}
-              </p>
-            </figcaption>
-          </div>
-        </motion.figure>
-      ))}
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-function EmptyState() {
-  return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div
-          key={i}
-          className={cn(
-            "flex aspect-[3/4] flex-col items-center justify-center gap-2 rounded-2xl",
-            "border-2 border-dashed border-slate-300 bg-white/60 dark:border-slate-700 dark:bg-slate-900/40"
-          )}
-        >
-          <Users className="h-6 w-6 text-slate-400" />
-          <p className="px-2 text-center text-[10px] leading-tight text-slate-500">
-            Add photo {i + 1} to
-            <br />
-            <code className="text-[9px]">public/Hero</code>
-          </p>
-        </div>
-      ))}
-    </div>
   );
 }
