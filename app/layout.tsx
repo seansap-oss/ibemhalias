@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+﻿import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { NativeAppProvider } from "@/components/providers/native-app-provider";
@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
   title: {
-    default: "Ibemhal IAS — Premier Civil Services Coaching Institute",
+    default: "Ibemhal IAS â€” Premier Civil Services Coaching Institute",
     template: "%s | Ibemhal IAS",
   },
   description:
@@ -72,3 +72,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+

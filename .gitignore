@@ -55,3 +55,4 @@ android/.gradle/
 _*-backup-*/
 *backup*/
 *.backup-*
+.vercel/
