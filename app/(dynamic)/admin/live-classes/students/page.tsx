@@ -1,2 +1,5 @@
-import { LiveAdminConsole } from "@/components/live-class/live-admin-console";
-export default function Page() { return <LiveAdminConsole view="students" />; }
+import { StudentManagementDashboard } from "@/components/admin/student-management-dashboard";
+
+export default function StudentManagementPage() {
+  return <StudentManagementDashboard />;
+}

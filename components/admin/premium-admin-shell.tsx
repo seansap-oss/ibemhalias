@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import Link from "next/link";
@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SITE_CONTACT, SITE_WHATSAPP_HREF } from "@/lib/site-contact";
+import { IbemhalLogo } from "@/components/brand/ibemhal-logo";
 
 type ViewMode = "horizontal" | "vertical" | "floating";
 type NavItem = { href: string; label: string; icon: React.ComponentType<{ className?: string }>; code?: string };
@@ -275,7 +276,7 @@ export function PremiumAdminShell({ children }: { children: React.ReactNode }) {
       <div className="grid min-h-screen place-items-center bg-[#f7f9fc] font-sans antialiased text-[#102968]">
         <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
           <ShieldCheck className="h-5 w-5 animate-pulse" />
-          <span className="text-sm font-extrabold">Checking admin session…</span>
+          <span className="text-sm font-extrabold">Checking admin sessionâ€¦</span>
         </div>
       </div>
     );
@@ -292,15 +293,12 @@ export function PremiumAdminShell({ children }: { children: React.ReactNode }) {
     >
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 shadow-[0_1px_8px_rgba(15,23,42,0.04)] backdrop-blur-xl">
         <div className="mx-auto flex h-[64px] max-w-[1920px] items-center gap-3 px-3 sm:px-5 lg:px-6">
-          <Link href="/admin/dashboard" className="flex shrink-0 items-center gap-2.5" aria-label="Ibemhal IAS admin dashboard">
-            <div className="grid h-10 w-10 place-items-center rounded-lg bg-[#14327e] text-[22px] font-black tracking-[-0.08em] text-white shadow-sm">
-              Ib
-            </div>
-            <div className="hidden leading-none sm:block">
-              <div className="text-[19px] font-black tracking-[-0.025em] text-[#123274]">Ibemhal IAS</div>
-              <div className="mt-1 text-[10px] font-bold text-[#123274]">A low-fee Institute</div>
-            </div>
-          </Link>
+          <IbemhalLogo
+            href="/"
+            priority
+            ariaLabel="Ibemhal IAS website home"
+            imageClassName="h-[48px] w-auto sm:h-[54px]"
+          />
 
           <div className="ml-auto hidden items-center gap-5 xl:flex">
             <a href={`mailto:${SITE_CONTACT.helpdeskEmail}`} className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 hover:text-[#123f9a]">
@@ -405,7 +403,7 @@ export function PremiumAdminShell({ children }: { children: React.ReactNode }) {
           <main className="min-h-[calc(100vh-154px)] p-4 sm:p-5 lg:p-7">{children}</main>
 
           <footer className="flex flex-col gap-1 border-t border-slate-200 bg-white px-5 py-4 text-center text-[10px] font-medium text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:text-left lg:px-7">
-            <span>© 2026 Ibemhal IAS. All rights reserved.</span>
+            <span>Â© 2026 Ibemhal IAS. All rights reserved.</span>
             <span>Created and designed by AviT-Solutions.</span>
           </footer>
         </div>
@@ -457,3 +455,5 @@ export function PremiumAdminShell({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
+

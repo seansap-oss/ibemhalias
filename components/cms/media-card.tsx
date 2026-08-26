@@ -6,12 +6,15 @@ import {
   FileSpreadsheet,
   FileText,
   FileType2,
-  Play,
   Download,
+  LockKeyhole,
+  ShieldCheck,
 } from "lucide-react";
 import type { CmsContentItem } from "@/lib/cms/types";
 import { formatFileSize, getYouTubeEmbedUrl } from "@/lib/cms/media";
+import { SITE_CONTACT } from "@/lib/site-contact";
 import { PdfReader } from "./pdf-reader";
+import { DocumentReader } from "./document-reader";
 
 export function MediaCard({
   item,
@@ -21,6 +24,7 @@ export function MediaCard({
   hero?: boolean;
 }) {
   const [readingPdf, setReadingPdf] = React.useState(false);
+  const [readingDocument, setReadingDocument] = React.useState(false);
 
   const url = item.media_url || item.external_url || "";
   const embedUrl =
@@ -30,11 +34,59 @@ export function MediaCard({
 
   const cardClass = hero
     ? "h-full w-full overflow-hidden rounded-[28px] bg-slate-950"
-    : "overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm";
+    : "relative overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm";
+
+  if (item.locked) {
+    return (
+      <article className={cardClass}>
+        <div className="relative flex min-h-[250px] flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-amber-50 via-white to-blue-50 p-6 text-center">
+          <div className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-amber-800">
+            <LockKeyhole className="h-3.5 w-3.5" />
+            Premium
+          </div>
+
+          <div className="grid h-16 w-16 place-items-center rounded-2xl bg-[#14256f] text-white shadow-lg">
+            <LockKeyhole className="h-8 w-8" />
+          </div>
+
+          <div className="mt-4 max-w-md text-lg font-black text-slate-950">
+            {item.title}
+          </div>
+
+          {item.description ? (
+            <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-600">
+              {item.description}
+            </p>
+          ) : null}
+
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold leading-relaxed text-amber-900">
+            Premium study material. Your account does not currently have access.
+          </div>
+
+          <div className="mt-3 text-xs font-semibold text-slate-600">
+            Contact Help Desk for access:
+            <a
+              href={`mailto:${SITE_CONTACT.helpdeskEmail}`}
+              className="ml-1 font-black text-[#14256f] underline"
+            >
+              {SITE_CONTACT.helpdeskEmail}
+            </a>
+          </div>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <>
       <article className={cardClass}>
+        {!hero ? (
+          <div className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-green-100/95 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-green-800 shadow-sm">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            {item.access_level === "premium" ? "Premium Access" : "Free"}
+          </div>
+        ) : null}
+
         {item.media_type === "image" && url && (
           <div className={hero ? "h-full w-full bg-slate-950" : "aspect-[16/10] bg-slate-50"}>
             <img
@@ -90,7 +142,7 @@ export function MediaCard({
         )}
 
         {item.media_type === "audio" && (
-          <div className="p-5">
+          <div className="p-5 pt-12">
             <div className="flex items-center gap-3">
               <div className="grid h-12 w-12 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
                 <FileAudio className="h-6 w-6" />
@@ -100,20 +152,37 @@ export function MediaCard({
                 <div className="text-xs text-slate-500">{formatFileSize(item.file_size)}</div>
               </div>
             </div>
-            {url && <audio src={url} controls className="mt-4 w-full" />}
+            {url && <audio src={url} controls className="mt-4 w-full" preload="metadata" />}
           </div>
         )}
 
-        {["word", "excel", "file"].includes(item.media_type) && (
-          <div className="flex min-h-40 flex-col items-center justify-center p-6 text-center">
+        {(item.media_type === "word" || item.media_type === "excel") && (
+          <div className="flex min-h-56 flex-col items-center justify-center p-6 pt-12 text-center">
             <div className="grid h-16 w-16 place-items-center rounded-2xl bg-indigo-50 text-indigo-600">
               {item.media_type === "excel" ? (
                 <FileSpreadsheet className="h-8 w-8" />
-              ) : item.media_type === "word" ? (
-                <FileType2 className="h-8 w-8" />
               ) : (
-                <FileText className="h-8 w-8" />
+                <FileType2 className="h-8 w-8" />
               )}
+            </div>
+            <div className="mt-4 font-black text-slate-950">{item.title}</div>
+            <div className="mt-1 text-xs text-slate-500">{formatFileSize(item.file_size)}</div>
+            {url && (
+              <button
+                onClick={() => setReadingDocument(true)}
+                className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-xs font-black text-white"
+              >
+                <FileText className="h-4 w-4" />
+                Read on Website
+              </button>
+            )}
+          </div>
+        )}
+
+        {item.media_type === "file" && (
+          <div className="flex min-h-48 flex-col items-center justify-center p-6 pt-12 text-center">
+            <div className="grid h-16 w-16 place-items-center rounded-2xl bg-indigo-50 text-indigo-600">
+              <FileText className="h-8 w-8" />
             </div>
             <div className="mt-4 font-black text-slate-950">{item.title}</div>
             <div className="mt-1 text-xs text-slate-500">{formatFileSize(item.file_size)}</div>
@@ -143,6 +212,15 @@ export function MediaCard({
 
       {readingPdf && url && (
         <PdfReader url={url} title={item.title} onClose={() => setReadingPdf(false)} />
+      )}
+
+      {readingDocument && url && (item.media_type === "word" || item.media_type === "excel") && (
+        <DocumentReader
+          url={url}
+          title={item.title}
+          kind={item.media_type}
+          onClose={() => setReadingDocument(false)}
+        />
       )}
     </>
   );

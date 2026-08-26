@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import Link from "next/link";
@@ -18,11 +18,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 import { claimDevice } from "@/lib/supabase/auth-device";
+import { IbemhalLogo } from "@/components/brand/ibemhal-logo";
+import { StudentTestLoginHint } from "@/components/admin/student-test-login-hint";
 
 const REASONS: Record<string, { title: string; body: string }> = {
   concurrent_login: {
     title: "Signed in on another device",
-    body: "Your account was opened elsewhere. For content security only one device can be active at a time — sign in again to use this device.",
+    body: "Your account was opened elsewhere. For content security only one device can be active at a time â€” sign in again to use this device.",
   },
   session_expired: {
     title: "Session expired",
@@ -68,7 +70,7 @@ function LoginForm() {
       return;
     }
 
-    // Bind this device — evicts any previous session.
+    // Bind this device â€” evicts any previous session.
     await claimDevice();
     router.replace("/dashboard");
   };
@@ -76,19 +78,7 @@ function LoginForm() {
   return (
     <div className="w-full max-w-sm">
       <div className="mb-7 text-center">
-        <Link href="/" className="inline-flex items-center gap-2">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg">
-            <GraduationCap className="h-6 w-6 text-white" />
-          </div>
-          <div className="text-left">
-            <span className="block text-lg font-bold leading-tight text-slate-900 dark:text-white">
-              Ibemhal
-            </span>
-            <span className="block text-[10px] font-medium tracking-wider text-blue-600 dark:text-blue-400">
-              IAS ACADEMY
-            </span>
-          </div>
-        </Link>
+        <IbemhalLogo href="/" priority imageClassName="h-[72px] w-auto" />
       </div>
 
       {reason && (
@@ -113,8 +103,10 @@ function LoginForm() {
         <CardContent className="p-6">
           <h1 className="text-lg font-bold">Student sign in</h1>
           <p className="mt-1 text-xs text-muted-foreground">
-            Access your courses, AI tutor and study planner.
+            Access your assigned courses, live classes and study materials.
           </p>
+
+          <StudentTestLoginHint />
 
           <form onSubmit={submit} className="mt-5 space-y-3">
             {error && (
@@ -150,7 +142,7 @@ function LoginForm() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                   className="pl-10"
                 />
               </div>
@@ -160,7 +152,7 @@ function LoginForm() {
               {busy ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in…
+                  Signing inâ€¦
                 </>
               ) : (
                 "Sign In"
@@ -202,3 +194,6 @@ export default function LoginPage() {
     </div>
   );
 }
+
+
+

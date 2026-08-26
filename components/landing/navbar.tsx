@@ -23,6 +23,7 @@ import { LocalAdminAuthModal } from "@/components/admin/local-admin-auth-modal";
 import { LONG_PRESS_MS, hasLocalAdminSession } from "@/lib/local-admin";
 import { portalNavItems } from "@/components/portal/nav-items";
 import { SITE_CONTACT } from "@/lib/site-contact";
+import { IbemhalLogo } from "@/components/brand/ibemhal-logo";
 
 export function Navbar() {
   const router = useRouter();
@@ -63,21 +64,12 @@ export function Navbar() {
             tabIndex={0}
             className="relative flex cursor-pointer select-none items-center gap-2"
           >
-            <div className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-lg bg-[#14256f] shadow-md">
-              <span className="relative z-10 text-[22px] font-black tracking-tight text-white">Ib</span>
-              {isPressing && (
-                <span
-                  className="absolute inset-x-0 bottom-0 bg-amber-400/85"
-                  style={{ height: `${progress}%` }}
-                />
-              )}
-            </div>
-            <div className="leading-none">
-              <div className="text-lg font-black text-[#16236b] sm:text-xl">Ibemhal IAS</div>
-              <div className="mt-1 text-[10px] font-bold text-[#16236b] sm:text-[11px]">
-                A low-fee Institute
-              </div>
-            </div>
+            <IbemhalLogo
+              href="/"
+              priority
+              imageClassName="h-[52px] w-auto sm:h-[58px]"
+              className="pointer-events-none"
+            />
           </div>
 
           <div className="ml-auto hidden items-center gap-2 xl:flex">
@@ -181,4 +173,5 @@ export function Navbar() {
     </>
   );
 }
+
 

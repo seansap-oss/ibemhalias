@@ -1,142 +1,192 @@
-﻿"use client";
+"use client";
 
 import * as React from "react";
 import { usePathname } from "next/navigation";
-import { motion, PanInfo } from "framer-motion";
-import {
-  MessageCircle,
-  Phone,
-} from "lucide-react";
+import { MessageCircle, Phone } from "lucide-react";
 import {
   SITE_CONTACT,
   SITE_WHATSAPP_HREF,
 } from "@/lib/site-contact";
 
-const STORAGE_KEY = "ibemhal-contact-side";
+type Point = { x: number; y: number };
+type ButtonId = "call" | "whatsapp";
 
-type Props = {
-  phoneNumber?: string;
-  whatsappNumber?: string;
-};
+const BUTTON_SIZE = 48;
+const EDGE_GAP = 10;
+const TOP_SAFE = 82;
+const STORAGE_PREFIX = "ibemhal-contact-position-v4";
 
-export function FloatingContactActions({
-  phoneNumber = SITE_CONTACT.phoneE164,
-  whatsappNumber = SITE_CONTACT.whatsappNumber,
-}: Props) {
-  const pathname = usePathname();
+function bottomSafe() {
+  return typeof window !== "undefined" && window.innerWidth < 768 ? 96 : 20;
+}
 
-  const [side, setSide] =
-    React.useState<"left" | "right">("left");
+function clamp(point: Point) {
+  if (typeof window === "undefined") return point;
+  return {
+    x: Math.min(
+      Math.max(point.x, EDGE_GAP),
+      Math.max(EDGE_GAP, window.innerWidth - BUTTON_SIZE - EDGE_GAP)
+    ),
+    y: Math.min(
+      Math.max(point.y, TOP_SAFE),
+      Math.max(
+        TOP_SAFE,
+        window.innerHeight - BUTTON_SIZE - bottomSafe()
+      )
+    ),
+  };
+}
+
+function defaultPoint(id: ButtonId): Point {
+  if (typeof window === "undefined") return { x: EDGE_GAP, y: TOP_SAFE };
+  const x = window.innerWidth - BUTTON_SIZE - 14;
+  const callY = window.innerHeight - BUTTON_SIZE - bottomSafe() - 8;
+  return clamp({
+    x,
+    y: id === "call" ? callY : callY - BUTTON_SIZE - 10,
+  });
+}
+
+function Movable({
+  id,
+  href,
+  title,
+  external,
+  className,
+  children,
+}: {
+  id: ButtonId;
+  href: string;
+  title: string;
+  external?: boolean;
+  className: string;
+  children: React.ReactNode;
+}) {
+  const [mounted, setMounted] = React.useState(false);
+  const [position, setPosition] = React.useState<Point>({ x: EDGE_GAP, y: TOP_SAFE });
+  const drag = React.useRef<any>(null);
+
+  const save = React.useCallback((point: Point) => {
+    try {
+      localStorage.setItem(`${STORAGE_PREFIX}:${id}`, JSON.stringify(point));
+    } catch {}
+  }, [id]);
 
   React.useEffect(() => {
+    setMounted(true);
     try {
-      const saved =
-        window.localStorage.getItem(STORAGE_KEY);
-
-      if (saved === "right" || saved === "left") {
-        setSide(saved);
-      }
-    } catch {}
-  }, []);
-
-  const isReadingOrContentPage =
-    pathname !== "/";
-
-  const opacityClass =
-    isReadingOrContentPage
-      ? "opacity-70"
-      : "opacity-100";
-
-  const saveSide = (
-    next: "left" | "right"
-  ) => {
-    setSide(next);
-
-    try {
-      window.localStorage.setItem(
-        STORAGE_KEY,
-        next
-      );
-    } catch {}
-  };
-
-  const onDragEnd = (
-    _: MouseEvent |
-      TouchEvent |
-      PointerEvent,
-    info: PanInfo
-  ) => {
-    if (Math.abs(info.offset.x) < 25) {
-      return;
+      const raw = localStorage.getItem(`${STORAGE_PREFIX}:${id}`);
+      setPosition(raw ? clamp(JSON.parse(raw)) : defaultPoint(id));
+    } catch {
+      setPosition(defaultPoint(id));
     }
 
-    saveSide(
-      info.offset.x > 0
-        ? "right"
-        : "left"
-    );
+    const resize = () => {
+      setPosition((current) => {
+        const next = clamp(current);
+        save(next);
+        return next;
+      });
+    };
+    window.addEventListener("resize", resize);
+    window.addEventListener("orientationchange", resize);
+    return () => {
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("orientationchange", resize);
+    };
+  }, [id, save]);
+
+  const onPointerDown = (event: React.PointerEvent<HTMLAnchorElement>) => {
+    drag.current = {
+      pointerId: event.pointerId,
+      startX: position.x,
+      startY: position.y,
+      pointerX: event.clientX,
+      pointerY: event.clientY,
+      moved: false,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
   };
 
-  const cleanWhatsApp =
-    whatsappNumber.replace(/\D/g, "");
+  const onPointerMove = (event: React.PointerEvent<HTMLAnchorElement>) => {
+    const state = drag.current;
+    if (!state || state.pointerId !== event.pointerId) return;
+    const dx = event.clientX - state.pointerX;
+    const dy = event.clientY - state.pointerY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) state.moved = true;
+    setPosition(clamp({ x: state.startX + dx, y: state.startY + dy }));
+  };
 
-  const whatsappHref =
-    cleanWhatsApp ===
-    SITE_CONTACT.whatsappNumber
-      ? SITE_WHATSAPP_HREF
-      : `https://wa.me/${cleanWhatsApp}?text=${encodeURIComponent(
-          SITE_CONTACT.whatsappMessage
-        )}`;
+  const finish = (event: React.PointerEvent<HTMLAnchorElement>) => {
+    const state = drag.current;
+    if (!state) return;
+    const next = clamp(position);
+    setPosition(next);
+    save(next);
+    try {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    } catch {}
+    window.setTimeout(() => {
+      drag.current = null;
+    }, 0);
+  };
 
-  const cleanPhone =
-    phoneNumber.replace(/[^\d+]/g, "");
-
-  const callHref =
-    `tel:${cleanPhone}`;
+  const style: React.CSSProperties = mounted
+    ? { left: position.x, top: position.y }
+    : id === "whatsapp"
+      ? { right: 14, bottom: 154 }
+      : { right: 14, bottom: 96 };
 
   return (
-    <motion.div
-      drag="x"
-      dragConstraints={{
-        left: 0,
-        right: 0,
+    <a
+      href={href}
+      target={external ? "_blank" : undefined}
+      rel={external ? "noopener noreferrer" : undefined}
+      title={`${title} · drag to move · double-click to reset`}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={finish}
+      onPointerCancel={finish}
+      onClick={(event) => {
+        if (drag.current?.moved) event.preventDefault();
       }}
-      dragElastic={0.18}
-      dragMomentum={false}
-      onDragEnd={onDragEnd}
-      className={[
-        "fixed bottom-[86px] z-[56] flex items-center gap-2 transition-all duration-300 md:bottom-5",
-        side === "left"
-          ? "left-4"
-          : "right-4",
-        opacityClass,
-      ].join(" ")}
+      onDoubleClick={(event) => {
+        event.preventDefault();
+        const next = defaultPoint(id);
+        setPosition(next);
+        save(next);
+      }}
+      style={style}
+      className={`fixed z-[56] grid h-12 w-12 touch-none select-none place-items-center rounded-full shadow-xl cursor-grab active:cursor-grabbing ${className}`}
     >
-      <a
-        href={callHref}
-        aria-label={`Call Ibemhal IAS on ${SITE_CONTACT.phoneDisplay}`}
-        title={`Call ${SITE_CONTACT.phoneDisplay}`}
-        onPointerDown={(event) =>
-          event.stopPropagation()
-        }
-        className="grid h-12 w-12 place-items-center rounded-full bg-white text-[#14256f] shadow-xl ring-1 ring-slate-200"
-      >
-        <Phone className="h-5 w-5" />
-      </a>
+      {children}
+    </a>
+  );
+}
 
-      <a
-        href={whatsappHref}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={`WhatsApp Ibemhal IAS on ${SITE_CONTACT.phoneDisplay}`}
+export function FloatingContactActions() {
+  const pathname = usePathname();
+  const dim = pathname !== "/" ? "opacity-70 hover:opacity-100" : "opacity-100";
+
+  return (
+    <>
+      <Movable
+        id="whatsapp"
+        href={SITE_WHATSAPP_HREF}
         title={`WhatsApp ${SITE_CONTACT.phoneDisplay}`}
-        onPointerDown={(event) =>
-          event.stopPropagation()
-        }
-        className="grid h-12 w-12 place-items-center rounded-full bg-green-500 text-white shadow-xl"
+        external
+        className={`bg-green-500 text-white ring-1 ring-green-600/20 ${dim}`}
       >
         <MessageCircle className="h-5 w-5" />
-      </a>
-    </motion.div>
+      </Movable>
+      <Movable
+        id="call"
+        href={`tel:${SITE_CONTACT.phoneE164}`}
+        title={`Call ${SITE_CONTACT.phoneDisplay}`}
+        className={`bg-white text-[#14256f] ring-1 ring-slate-200 ${dim}`}
+      >
+        <Phone className="h-5 w-5" />
+      </Movable>
+    </>
   );
 }

@@ -14,30 +14,21 @@ import {
   Video,
 } from "lucide-react";
 import { CMS_SECTIONS, CMS_SECTION_GROUPS } from "@/lib/cms/sections";
-import type { CmsContentItem, CmsMediaType } from "@/lib/cms/types";
-import {
-  inferMediaType,
-  formatFileSize,
-  getYouTubeEmbedUrl,
-} from "@/lib/cms/media";
+import type { CmsAccessKey, CmsAccessLevel, CmsContentItem, CmsMediaType } from "@/lib/cms/types";
+import { inferMediaType, formatFileSize, getYouTubeEmbedUrl } from "@/lib/cms/media";
 
 type UploadMode = "file" | "youtube";
+type Course = { id: string; title: string };
 
 async function readJson(response: Response) {
   const text = await response.text();
-
-  try {
-    return JSON.parse(text);
-  } catch {
-    return {
-      error: text || `${response.status} ${response.statusText}`,
-    };
-  }
+  try { return JSON.parse(text); } catch { return { error: text || `${response.status} ${response.statusText}` }; }
 }
 
 export function CmsContentManager() {
   const [section, setSection] = React.useState("hero");
   const [items, setItems] = React.useState<CmsContentItem[]>([]);
+  const [courses, setCourses] = React.useState<Course[]>([]);
   const [mode, setMode] = React.useState<UploadMode>("file");
   const [title, setTitle] = React.useState("");
   const [description, setDescription] = React.useState("");
@@ -45,107 +36,63 @@ export function CmsContentManager() {
   const [monthLabel, setMonthLabel] = React.useState("");
   const [youtubeUrl, setYoutubeUrl] = React.useState("");
   const [file, setFile] = React.useState<File | null>(null);
+  const [accessLevel, setAccessLevel] = React.useState<CmsAccessLevel>("free");
+  const [accessKey, setAccessKey] = React.useState<CmsAccessKey>("general_premium");
+  const [courseId, setCourseId] = React.useState("");
   const [publishing, setPublishing] = React.useState(false);
   const [loadingItems, setLoadingItems] = React.useState(false);
   const [message, setMessage] = React.useState("");
 
   const loadItems = React.useCallback(async () => {
     setLoadingItems(true);
-
     try {
-      const response = await fetch(
-        `/api/cms/content?section=${encodeURIComponent(section)}`,
-        { cache: "no-store" }
-      );
-
+      const response = await fetch(`/api/cms/content?section=${encodeURIComponent(section)}`, { cache: "no-store" });
       const payload = await readJson(response);
-
-      if (!response.ok) {
-        throw new Error(
-          [
-            payload.error,
-            payload.code ? `Code: ${payload.code}` : "",
-            payload.details || "",
-            payload.hint || "",
-          ]
-            .filter(Boolean)
-            .join(" · ")
-        );
-      }
-
+      if (!response.ok) throw new Error(payload.error || "Unable to load content");
       setItems(payload.items || []);
       setMessage("");
     } catch (error: any) {
       setItems([]);
-      setMessage(
-        `CMS connection error: ${error?.message || "Unable to load content"}`
-      );
-    } finally {
-      setLoadingItems(false);
-    }
+      setMessage(`CMS connection error: ${error?.message || "Unable to load content"}`);
+    } finally { setLoadingItems(false); }
   }, [section]);
 
+  React.useEffect(() => { void loadItems(); }, [loadItems]);
   React.useEffect(() => {
-    loadItems();
-  }, [loadItems]);
+    fetch("/api/live-class/admin?view=packages", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((p) => setCourses((p.courses || []).map((c: any) => ({ id: c.id, title: c.title }))))
+      .catch(() => setCourses([]));
+  }, []);
 
   const reset = () => {
-    setTitle("");
-    setDescription("");
-    setDateLabel("");
-    setMonthLabel("");
-    setYoutubeUrl("");
-    setFile(null);
+    setTitle(""); setDescription(""); setDateLabel(""); setMonthLabel(""); setYoutubeUrl(""); setFile(null);
+    setAccessLevel("free"); setAccessKey("general_premium"); setCourseId("");
   };
 
   const publish = async () => {
     setMessage("");
-
-    if (!title.trim()) {
-      setMessage("Please enter a student-facing title.");
-      return;
-    }
-
+    if (!title.trim()) return setMessage("Please enter a student-facing title.");
     if (mode === "youtube") {
-      if (!getYouTubeEmbedUrl(youtubeUrl)) {
-        setMessage("Enter a valid YouTube URL.");
-        return;
-      }
-    } else if (!file) {
-      setMessage("Choose a file to upload.");
-      return;
-    }
+      if (!getYouTubeEmbedUrl(youtubeUrl)) return setMessage("Enter a valid YouTube URL.");
+    } else if (!file) return setMessage("Choose a file to upload.");
 
     setPublishing(true);
-
     try {
       let mediaType: CmsMediaType = "youtube";
       let storageResult: any = {};
-
       if (mode === "file" && file) {
         mediaType = inferMediaType(file);
-
         const form = new FormData();
         form.set("file", file);
         form.set("section_path", section);
-
-        const uploadResponse = await fetch("/api/cms/upload", {
-          method: "POST",
-          body: form,
-        });
-
+        const uploadResponse = await fetch("/api/cms/upload", { method: "POST", body: form });
         const uploadPayload = await readJson(uploadResponse);
-
-        if (!uploadResponse.ok) {
-          throw new Error(
-            uploadPayload.error || "Upload failed"
-          );
-        }
-
+        if (!uploadResponse.ok) throw new Error(uploadPayload.error || "Upload failed");
         storageResult = uploadPayload;
       }
 
-      const createResponse = await fetch("/api/cms/content", {
+      const response = await fetch("/api/cms/content", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -157,359 +104,45 @@ export function CmsContentManager() {
           file_name: storageResult.file_name || null,
           file_size: storageResult.file_size || null,
           storage_path: storageResult.storage_path || null,
-          external_url:
-            mode === "youtube" ? youtubeUrl.trim() : null,
+          external_url: mode === "youtube" ? youtubeUrl.trim() : null,
           date_label: dateLabel.trim() || null,
           month_label: monthLabel.trim() || null,
           is_published: true,
+          access_level: accessLevel,
+          access_key: accessLevel === "premium" ? accessKey : null,
+          course_id: courseId || null,
         }),
       });
-
-      const createPayload = await readJson(createResponse);
-
-      if (!createResponse.ok) {
-        throw new Error(
-          [
-            createPayload.error,
-            createPayload.code
-              ? `Code: ${createPayload.code}`
-              : "",
-            createPayload.details || "",
-            createPayload.hint || "",
-          ]
-            .filter(Boolean)
-            .join(" · ")
-        );
-      }
-
-      reset();
-      setMessage("Published successfully.");
-      await loadItems();
-    } catch (error: any) {
-      setMessage(
-        `Publish failed: ${error?.message || "Unable to publish."}`
-      );
-    } finally {
-      setPublishing(false);
-    }
+      const payload = await readJson(response);
+      if (!response.ok) throw new Error(payload.error || "Unable to publish.");
+      reset(); setMessage("Published successfully."); await loadItems();
+    } catch (error: any) { setMessage(`Publish failed: ${error?.message || "Unable to publish."}`); }
+    finally { setPublishing(false); }
   };
 
   const remove = async (id: string) => {
     if (!window.confirm("Delete this content item?")) return;
-
-    const response = await fetch(`/api/cms/content/${id}`, {
-      method: "DELETE",
-    });
-
-    if (response.ok) {
-      await loadItems();
-    } else {
-      const payload = await readJson(response);
-      setMessage(
-        `Delete failed: ${payload.error || response.statusText}`
-      );
-    }
+    const response = await fetch(`/api/cms/content/${id}`, { method: "DELETE" });
+    if (response.ok) await loadItems(); else setMessage("Delete failed.");
   };
 
-  const iconFor = (type: CmsMediaType) => {
-    if (type === "image") return Image;
-    if (type === "pdf") return FileText;
-    if (type === "video" || type === "youtube") return Video;
-    if (type === "audio") return FileAudio;
-    if (type === "excel") return FileSpreadsheet;
-    if (type === "word") return FileType2;
-    return FileText;
-  };
+  const iconFor = (type: CmsMediaType) => type === "image" ? Image : type === "pdf" ? FileText : type === "video" || type === "youtube" ? Video : type === "audio" ? FileAudio : type === "excel" ? FileSpreadsheet : type === "word" ? FileType2 : FileText;
 
-  return (
-    <div className="grid min-h-[720px] gap-5 xl:grid-cols-[260px_1fr_390px]">
-      <aside className="rounded-[26px] bg-gradient-to-b from-[#14256f] to-[#0d225f] p-3 text-white">
-        <div className="px-3 py-3 text-xs font-black uppercase tracking-[0.18em] text-blue-200">
-          Website Structure
-        </div>
+  return <div className="grid min-h-[720px] gap-5 xl:grid-cols-[260px_1fr_410px]">
+    <aside className="rounded-[26px] bg-gradient-to-b from-[#14256f] to-[#0d225f] p-3 text-white"><div className="px-3 py-3 text-xs font-black uppercase tracking-[0.18em] text-blue-200">Website Structure</div><div className="max-h-[660px] space-y-4 overflow-y-auto pr-1">{CMS_SECTION_GROUPS.map((group) => <div key={group}><div className="px-3 pb-1 text-[10px] font-black uppercase tracking-[0.16em] text-blue-300">{group}</div><div className="space-y-1">{CMS_SECTIONS.filter((item) => item.group === group).map((item) => <button key={item.path} onClick={() => setSection(item.path)} className={`w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold leading-snug transition ${section === item.path ? "bg-white text-[#14256f]" : "bg-white/8 text-white hover:bg-white/12"}`}>{item.label}</button>)}</div></div>)}</div></aside>
 
-        <div className="max-h-[660px] space-y-4 overflow-y-auto pr-1">
-          {CMS_SECTION_GROUPS.map((group) => (
-            <div key={group}>
-              <div className="px-3 pb-1 text-[10px] font-black uppercase tracking-[0.16em] text-blue-300">
-                {group}
-              </div>
+    <section className="min-w-0"><div className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm"><div className="text-[11px] font-black uppercase tracking-[0.18em] text-indigo-600">Selected Section</div><h2 className="mt-2 text-2xl font-black text-slate-950">{CMS_SECTIONS.find((item) => item.path === section)?.label || section}</h2><p className="mt-1 break-all text-xs text-slate-500">{section}</p></div>{message ? <div className={`mt-4 rounded-2xl border p-4 text-sm font-bold ${message.includes("success") ? "border-green-200 bg-green-50 text-green-700" : "border-red-200 bg-red-50 text-red-700"}`}>{message}</div> : null}<div className="mt-4 overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-sm"><div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><h3 className="font-black text-slate-950">Published Content</h3><span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-black text-indigo-700">{loadingItems ? "Loading..." : `${items.length} items`}</span></div><div className="divide-y divide-slate-100">{!loadingItems && items.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">No published content in this section yet.</div> : null}{items.map((item) => { const Icon = iconFor(item.media_type); return <div key={item.id} className="flex items-center gap-3 p-4"><div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600"><Icon className="h-5 w-5" /></div><div className="min-w-0 flex-1"><div className="truncate text-sm font-black text-slate-900">{item.title}</div><div className="mt-1 flex flex-wrap gap-2 text-[10px] font-bold text-slate-500"><span className="uppercase">{item.media_type}</span><span className={`rounded px-1.5 py-0.5 uppercase ${item.access_level === "premium" ? "bg-amber-100 text-amber-800" : "bg-green-100 text-green-800"}`}>{item.access_level === "premium" ? "Premium" : "Free"}</span>{item.file_size ? <span>{formatFileSize(item.file_size)}</span> : null}</div></div><button onClick={() => void remove(item.id)} className="grid h-10 w-10 place-items-center rounded-xl text-red-500 hover:bg-red-50" aria-label="Delete item"><Trash2 className="h-4 w-4" /></button></div>; })}</div></div></section>
 
-              <div className="space-y-1">
-                {CMS_SECTIONS.filter(
-                  (item) => item.group === group
-                ).map((item) => (
-                  <button
-                    key={item.path}
-                    onClick={() => setSection(item.path)}
-                    className={[
-                      "w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold leading-snug transition",
-                      section === item.path
-                        ? "bg-white text-[#14256f]"
-                        : "bg-white/8 text-white hover:bg-white/12",
-                    ].join(" ")}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </aside>
+    <aside className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm"><h3 className="text-xl font-black text-slate-950">Upload / Publish</h3><p className="mt-1 text-xs leading-relaxed text-slate-500">Upload PDF, video, audio, Word, Excel, images or a YouTube link and decide who can open it.</p><div className="mt-5 grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1"><button onClick={() => setMode("file")} className={`rounded-xl px-3 py-2 text-xs font-black ${mode === "file" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500"}`}>Upload File</button><button onClick={() => setMode("youtube")} className={`rounded-xl px-3 py-2 text-xs font-black ${mode === "youtube" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500"}`}>YouTube URL</button></div>
 
-      <section className="min-w-0">
-        <div className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="text-[11px] font-black uppercase tracking-[0.18em] text-indigo-600">
-            Selected Section
-          </div>
+      <div className="mt-5"><div className="text-xs font-black text-slate-700">Material Access</div><div className="mt-2 grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1"><button type="button" onClick={() => setAccessLevel("free")} className={`min-h-11 rounded-xl px-3 text-xs font-black transition ${accessLevel === "free" ? "bg-green-600 text-white shadow-sm" : "bg-white text-slate-600"}`}>FREE MATERIAL</button><button type="button" onClick={() => setAccessLevel("premium")} className={`min-h-11 rounded-xl px-3 text-xs font-black transition ${accessLevel === "premium" ? "bg-amber-500 text-white shadow-sm" : "bg-white text-slate-600"}`}>PREMIUM MATERIAL</button></div>{accessLevel === "premium" ? <div className="mt-3"><label className="block text-xs font-black text-slate-700">Premium permission</label><select value={accessKey} onChange={(e) => setAccessKey(e.target.value as CmsAccessKey)} className="mt-2 min-h-11 w-full rounded-xl border border-amber-300 bg-amber-50 px-3 text-sm font-bold text-amber-900"><option value="general_premium">General Premium Access</option><option value="detailed_study_notes">Detailed Study Notes</option><option value="premium_lectures">Premium Lectures</option><option value="premium_test_series">Premium Test Series</option><option value="mentor_notes">Mentor Notes</option></select></div> : <div className="mt-2 rounded-xl border border-green-200 bg-green-50 p-3 text-[11px] font-semibold text-green-800">Free material can be opened by everyone.</div>}</div>
 
-          <h2 className="mt-2 text-2xl font-black text-slate-950">
-            {CMS_SECTIONS.find(
-              (item) => item.path === section
-            )?.label || section}
-          </h2>
+      <label className="mt-4 block text-xs font-black text-slate-700">Course / Package (optional)</label><select value={courseId} onChange={(e) => setCourseId(e.target.value)} className="mt-2 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"><option value="">General / not tied to one course</option>{courses.map((course) => <option key={course.id} value={course.id}>{course.title}</option>)}</select><div className="mt-1 text-[10px] leading-relaxed text-slate-500">For premium material, selecting a course ensures only enrolled students (or all-access students) can open it.</div>
 
-          <p className="mt-1 break-all text-xs text-slate-500">
-            {section}
-          </p>
-        </div>
-
-        {message && (
-          <div
-            className={[
-              "mt-4 rounded-2xl border p-4 text-sm font-bold",
-              message.includes("success")
-                ? "border-green-200 bg-green-50 text-green-700"
-                : "border-red-200 bg-red-50 text-red-700",
-            ].join(" ")}
-          >
-            {message}
-          </div>
-        )}
-
-        <div className="mt-4 overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-            <h3 className="font-black text-slate-950">
-              Published Content
-            </h3>
-
-            <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-black text-indigo-700">
-              {loadingItems ? "Loading..." : `${items.length} items`}
-            </span>
-          </div>
-
-          <div className="divide-y divide-slate-100">
-            {!loadingItems && items.length === 0 && (
-              <div className="p-8 text-center text-sm text-slate-500">
-                No published content in this section yet.
-              </div>
-            )}
-
-            {items.map((item) => {
-              const Icon = iconFor(item.media_type);
-
-              return (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-3 p-4"
-                >
-                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
-                    <Icon className="h-5 w-5" />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-black text-slate-900">
-                      {item.title}
-                    </div>
-
-                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-500">
-                      <span className="uppercase">
-                        {item.media_type}
-                      </span>
-
-                      {!!item.file_size && (
-                        <span>{formatFileSize(item.file_size)}</span>
-                      )}
-
-                      {!!item.date_label && (
-                        <span>{item.date_label}</span>
-                      )}
-
-                      {!!item.month_label && (
-                        <span>{item.month_label}</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => remove(item.id)}
-                    aria-label="Delete item"
-                    className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-red-500 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <aside className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
-        <h3 className="text-xl font-black text-slate-950">
-          Upload / Publish
-        </h3>
-
-        <p className="mt-1 text-xs leading-relaxed text-slate-500">
-          Files and YouTube links publish to the selected website section.
-        </p>
-
-        <div className="mt-5 grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1">
-          <button
-            onClick={() => setMode("file")}
-            className={[
-              "rounded-xl px-3 py-2 text-xs font-black",
-              mode === "file"
-                ? "bg-white text-indigo-700 shadow-sm"
-                : "text-slate-500",
-            ].join(" ")}
-          >
-            Upload File
-          </button>
-
-          <button
-            onClick={() => setMode("youtube")}
-            className={[
-              "rounded-xl px-3 py-2 text-xs font-black",
-              mode === "youtube"
-                ? "bg-white text-indigo-700 shadow-sm"
-                : "text-slate-500",
-            ].join(" ")}
-          >
-            YouTube URL
-          </button>
-        </div>
-
-        <label className="mt-5 block text-xs font-black text-slate-700">
-          Student-facing Title / Label
-        </label>
-
-        <input
-          value={title}
-          onChange={(event) =>
-            setTitle(event.target.value)
-          }
-          placeholder="e.g. NCERT Geography Class 11"
-          className="mt-2 min-h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-indigo-400"
-        />
-
-        <label className="mt-4 block text-xs font-black text-slate-700">
-          Description
-        </label>
-
-        <textarea
-          value={description}
-          onChange={(event) =>
-            setDescription(event.target.value)
-          }
-          placeholder="Optional description"
-          rows={3}
-          className="mt-2 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-indigo-400"
-        />
-
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-black text-slate-700">
-              Date Label
-            </label>
-
-            <input
-              value={dateLabel}
-              onChange={(event) =>
-                setDateLabel(event.target.value)
-              }
-              placeholder="26 August"
-              className="mt-2 min-h-11 w-full rounded-xl border border-slate-200 px-3 text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-black text-slate-700">
-              Month Label
-            </label>
-
-            <input
-              value={monthLabel}
-              onChange={(event) =>
-                setMonthLabel(event.target.value)
-              }
-              placeholder="August"
-              className="mt-2 min-h-11 w-full rounded-xl border border-slate-200 px-3 text-sm"
-            />
-          </div>
-        </div>
-
-        {mode === "file" ? (
-          <label className="mt-5 flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 p-4 text-center">
-            <UploadCloud className="h-8 w-8 text-indigo-600" />
-
-            <div className="mt-3 text-sm font-black text-slate-900">
-              {file
-                ? file.name
-                : "Tap or click to choose file"}
-            </div>
-
-            <div className="mt-1 text-[11px] leading-relaxed text-slate-500">
-              PDF, Word, Excel, MP3/audio, MP4/video, JPG, PNG, WebP
-            </div>
-
-            <input
-              type="file"
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.mp3,.wav,.m4a,.mp4,.mov,.webm,.jpg,.jpeg,.png,.webp,.gif"
-              className="hidden"
-              onChange={(event) =>
-                setFile(event.target.files?.[0] || null)
-              }
-            />
-          </label>
-        ) : (
-          <div className="mt-5">
-            <label className="block text-xs font-black text-slate-700">
-              YouTube URL
-            </label>
-
-            <div className="mt-2 flex items-center gap-2 rounded-xl border border-slate-200 px-3">
-              <Link2 className="h-4 w-4 shrink-0 text-indigo-600" />
-
-              <input
-                value={youtubeUrl}
-                onChange={(event) =>
-                  setYoutubeUrl(event.target.value)
-                }
-                placeholder="https://youtube.com/watch?v=..."
-                className="min-h-11 min-w-0 flex-1 text-sm outline-none"
-              />
-            </div>
-          </div>
-        )}
-
-        <button
-          disabled={publishing}
-          onClick={publish}
-          className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#14256f] px-4 text-sm font-black text-white shadow-lg disabled:opacity-50"
-        >
-          {publishing ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <UploadCloud className="h-4 w-4" />
-          )}
-
-          {publishing
-            ? "Publishing..."
-            : "Publish Content"}
-        </button>
-      </aside>
-    </div>
-  );
+      <label className="mt-5 block text-xs font-black text-slate-700">Student-facing Title / Label</label><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Indian Polity - Fundamental Rights Notes" className="mt-2 min-h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-indigo-400" /><label className="mt-4 block text-xs font-black text-slate-700">Description</label><textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Optional description" className="mt-2 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-indigo-400" />
+      <div className="mt-4 grid grid-cols-2 gap-3"><div><label className="block text-xs font-black text-slate-700">Date Label</label><input value={dateLabel} onChange={(e) => setDateLabel(e.target.value)} placeholder="26 August" className="mt-2 min-h-11 w-full rounded-xl border border-slate-200 px-3 text-sm" /></div><div><label className="block text-xs font-black text-slate-700">Month Label</label><input value={monthLabel} onChange={(e) => setMonthLabel(e.target.value)} placeholder="August" className="mt-2 min-h-11 w-full rounded-xl border border-slate-200 px-3 text-sm" /></div></div>
+      {mode === "file" ? <label className="mt-5 flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 p-4 text-center"><UploadCloud className="h-8 w-8 text-indigo-600" /><div className="mt-3 text-sm font-black text-slate-900">{file ? file.name : "Tap or click to choose file"}</div><div className="mt-1 text-[11px] leading-relaxed text-slate-500">PDF, Word, Excel, MP3/audio, MP4/video, JPG, PNG, WebP</div><input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.mp3,.wav,.m4a,.mp4,.mov,.webm,.jpg,.jpeg,.png,.webp,.gif" className="hidden" onChange={(e) => setFile(e.target.files?.[0] || null)} /></label> : <div className="mt-5"><label className="block text-xs font-black text-slate-700">YouTube URL</label><div className="mt-2 flex items-center gap-2 rounded-xl border border-slate-200 px-3"><Link2 className="h-4 w-4 text-slate-400" /><input value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} className="min-h-11 min-w-0 flex-1 text-sm outline-none" placeholder="https://youtube.com/watch?v=..." /></div></div>}
+      <button onClick={() => void publish()} disabled={publishing} className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#14256f] px-4 text-sm font-black text-white disabled:opacity-60">{publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}{publishing ? "Publishing…" : "Publish to Website"}</button>
+    </aside>
+  </div>;
 }
