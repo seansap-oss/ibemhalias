@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import Link from "next/link";
@@ -22,6 +22,7 @@ import { useLongPress } from "@/hooks/use-long-press";
 import { LocalAdminAuthModal } from "@/components/admin/local-admin-auth-modal";
 import { LONG_PRESS_MS, hasLocalAdminSession } from "@/lib/local-admin";
 import { portalNavItems } from "@/components/portal/nav-items";
+import { SITE_CONTACT } from "@/lib/site-contact";
 
 export function Navbar() {
   const router = useRouter();
@@ -81,7 +82,7 @@ export function Navbar() {
 
           <div className="ml-auto hidden items-center gap-2 xl:flex">
             <Mail className="h-4 w-4 text-amber-500" />
-            <span className="text-sm font-semibold text-slate-700">Studenthelpdesk@.....com</span>
+            <a href={`mailto:${SITE_CONTACT.helpdeskEmail}`} className="text-sm font-semibold text-slate-700 transition hover:text-[#14256f]">{SITE_CONTACT.helpdeskEmail}</a>
           </div>
 
           <div className="ml-auto flex items-center gap-2 xl:ml-5">
@@ -180,3 +181,4 @@ export function Navbar() {
     </>
   );
 }
+
