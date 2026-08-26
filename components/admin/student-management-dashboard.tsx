@@ -506,7 +506,7 @@ export function StudentManagementDashboard() {
       <div className="grid min-h-[500px] place-items-center rounded-2xl bg-white">
         <div className="flex items-center gap-2 text-sm font-bold text-slate-500">
           <Loader2 className="h-5 w-5 animate-spin" />
-          Loading student managementâ€¦
+          Loading student management…
         </div>
       </div>
     );
@@ -627,7 +627,7 @@ export function StudentManagementDashboard() {
                   disabled={saving}
                   className="rounded-lg bg-[#174699] px-4 text-xs font-black text-white"
                 >
-                  {saving ? "Creatingâ€¦" : "Create Student"}
+                  {saving ? "Creating…" : "Create Student"}
                 </button>
               </form>
             ) : null}
@@ -743,7 +743,7 @@ export function StudentManagementDashboard() {
                         <td className="px-3 py-3 font-black">{student.student_code || student.id.slice(0, 8)}</td>
                         <td className="px-3 py-3 font-black">{student.full_name}</td>
                         <td className="px-3 py-3">{student.email}</td>
-                        <td className="px-3 py-3">{student.phone || "â€”"}</td>
+                        <td className="px-3 py-3">{student.phone || "—"}</td>
                         <td className="px-3 py-3">{student.package_ids.length || 0}</td>
                         <td className="px-3 py-3 font-black">
                           {student.assigned_count}/{classes.length}
@@ -878,7 +878,7 @@ export function StudentManagementDashboard() {
                           <span className="rounded bg-green-600 px-1.5 py-0.5 text-[9px] font-black text-white">Active</span>
                         </div>
                         <div className="mt-1 text-[10px] font-semibold text-slate-600">
-                          Student ID: {selected.student_code || selected.id.slice(0, 8)} Â· {selected.phone || "No phone"}
+                          Student ID: {selected.student_code || selected.id.slice(0, 8)} · {selected.phone || "No phone"}
                         </div>
                         <div className="mt-1 truncate text-[10px] text-slate-500">
                           Email: {selected.email}
@@ -939,7 +939,7 @@ export function StudentManagementDashboard() {
                           />
                           <span>
                             {liveClass.title}
-                            {liveClass.topic ? ` â€” ${liveClass.topic}` : ""}
+                            {liveClass.topic ? ` — ${liveClass.topic}` : ""}
                           </span>
                         </label>
                       ))}
@@ -988,7 +988,7 @@ export function StudentManagementDashboard() {
                     <div className="mt-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-[9px] font-semibold leading-relaxed text-orange-800">
                       Premium material can remain visible but locked. Students without access see:
                       {" "}
-                      <b>Contact Help Desk for access â€” {SITE_CONTACT.helpdeskEmail}</b>
+                      <b>Contact Help Desk for access — {SITE_CONTACT.helpdeskEmail}</b>
                     </div>
 
                     <div className="mt-2 flex items-center gap-2 text-[10px] font-bold text-slate-600">

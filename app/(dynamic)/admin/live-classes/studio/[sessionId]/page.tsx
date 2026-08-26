@@ -8,7 +8,7 @@ export default function Page() {
   return (
     <LiveTeleclassRoom
       classId={String(params.sessionId || "")}
-      mode="student"
+      mode="teacher"
     />
   );
 }

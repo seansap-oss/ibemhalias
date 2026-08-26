@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
   title: {
-    default: "Ibemhal IAS â€” Premier Civil Services Coaching Institute",
+    default: "Ibemhal IAS — Premier Civil Services Coaching Institute",
     template: "%s | Ibemhal IAS",
   },
   description:

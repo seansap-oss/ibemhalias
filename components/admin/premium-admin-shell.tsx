@@ -33,6 +33,7 @@ import {
 import { cn } from "@/lib/utils";
 import { SITE_CONTACT, SITE_WHATSAPP_HREF } from "@/lib/site-contact";
 import { IbemhalLogo } from "@/components/brand/ibemhal-logo";
+import { SITE_VERSION_LABEL } from "@/lib/site-version";
 
 type ViewMode = "horizontal" | "vertical" | "floating";
 type NavItem = { href: string; label: string; icon: React.ComponentType<{ className?: string }>; code?: string };
@@ -43,6 +44,8 @@ const horizontalNav: NavItem[] = [
   { href: "/admin/content", label: "Content", icon: Files },
   { href: "/admin/courses", label: "Courses", icon: BookOpen },
   { href: "/admin/live-classes", label: "Live Classes", icon: Radio },
+  { href: "/admin/live-classes/studio", label: "Teacher Studio", icon: Radio },
+  { href: "/admin/community-chat", label: "Group Chat", icon: MessageCircle },
   { href: "/admin/live-classes/students", label: "Students", icon: Users },
   { href: "/admin/mentorship", label: "Bookings", icon: CalendarDays },
   { href: "/admin/ingest", label: "AI Ingestion", icon: Sparkles },
@@ -74,7 +77,11 @@ const clientNavGroups: NavGroup[] = [
   },
   {
     label: "LIVE CLASSES",
-    items: [{ href: "/admin/live-classes", label: "Manage Live Class", icon: Radio, code: "D7" }],
+    items: [
+      { href: "/admin/live-classes", label: "Manage Live Class", icon: Radio, code: "D7" },
+      { href: "/admin/live-classes/studio", label: "Teacher Studio", icon: Radio },
+      { href: "/admin/community-chat", label: "Student Group Chat", icon: MessageCircle },
+    ],
   },
   {
     label: "COURSE MANAGEMENT",
@@ -276,7 +283,7 @@ export function PremiumAdminShell({ children }: { children: React.ReactNode }) {
       <div className="grid min-h-screen place-items-center bg-[#f7f9fc] font-sans antialiased text-[#102968]">
         <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
           <ShieldCheck className="h-5 w-5 animate-pulse" />
-          <span className="text-sm font-extrabold">Checking admin sessionâ€¦</span>
+          <span className="text-sm font-extrabold">Checking admin session…</span>
         </div>
       </div>
     );
@@ -301,6 +308,7 @@ export function PremiumAdminShell({ children }: { children: React.ReactNode }) {
           />
 
           <div className="ml-auto hidden items-center gap-5 xl:flex">
+            <span className="text-[10px] font-black text-slate-400">{SITE_VERSION_LABEL}</span>
             <a href={`mailto:${SITE_CONTACT.helpdeskEmail}`} className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 hover:text-[#123f9a]">
               <Mail className="h-4 w-4" />
               {SITE_CONTACT.helpdeskEmail}
@@ -403,7 +411,7 @@ export function PremiumAdminShell({ children }: { children: React.ReactNode }) {
           <main className="min-h-[calc(100vh-154px)] p-4 sm:p-5 lg:p-7">{children}</main>
 
           <footer className="flex flex-col gap-1 border-t border-slate-200 bg-white px-5 py-4 text-center text-[10px] font-medium text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:text-left lg:px-7">
-            <span>Â© 2026 Ibemhal IAS. All rights reserved.</span>
+            <span>© 2026 Ibemhal IAS. All rights reserved.</span>
             <span>Created and designed by AviT-Solutions.</span>
           </footer>
         </div>
@@ -455,5 +463,7 @@ export function PremiumAdminShell({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
+
 
 

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import * as React from "react";
 import Link from "next/link";
@@ -41,6 +41,8 @@ import { IbemhalLogo } from "@/components/brand/ibemhal-logo";
 import { cleanDisplayText } from "@/lib/text/clean-display-text";
 import { formatFileSize } from "@/lib/cms/media";
 import { StudentMaterialViewer } from "./student-material-viewer";
+import { CommunityChat } from "@/components/chat/community-chat";
+import { SITE_VERSION_LABEL } from "@/lib/site-version";
 
 type AnyRow = Record<string, any>;
 
@@ -65,6 +67,7 @@ const NAV = [
   ["materials", "Study Materials", LibraryBig],
   ["mock", "Mock Tests", ClipboardCheck],
   ["assignments", "Assignments", CheckCircle2],
+  ["group-chat", "Group Chat", MessageCircle],
   ["progress", "My Progress", TrendingUp],
   ["downloads", "Downloads", Download],
   ["bookmarks", "Bookmarks", Bookmark],
@@ -197,7 +200,7 @@ function CourseRow({ course }: { course: AnyRow }) {
         </div>
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-semibold text-slate-500">
           <span>{course.lessonCount || 0} lessons</span>
-          <span>Enrolled {course.enrolledAt ? new Date(course.enrolledAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "â€”"}</span>
+          <span>Enrolled {course.enrolledAt ? new Date(course.enrolledAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"}</span>
         </div>
         <div className="mt-3 flex items-center gap-3">
           <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-gradient-to-r from-[#174699] to-[#2d6cdf]" style={{ width: `${percent(course.progressPercent)}%` }} /></div>
@@ -215,11 +218,11 @@ function LiveClassRow({ item }: { item: AnyRow }) {
   return (
     <div className="flex items-center gap-3 border-b border-slate-100 py-3 last:border-b-0">
       <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-blue-50 text-center text-[#174699]">
-        <div><div className="text-base font-black leading-none">{date ? date.getDate() : "â€”"}</div><div className="mt-1 text-[9px] font-black uppercase">{date ? date.toLocaleDateString("en-IN", { month: "short" }) : "TBA"}</div></div>
+        <div><div className="text-base font-black leading-none">{date ? date.getDate() : "—"}</div><div className="mt-1 text-[9px] font-black uppercase">{date ? date.toLocaleDateString("en-IN", { month: "short" }) : "TBA"}</div></div>
       </div>
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-black text-slate-950">{cleanDisplayText(item.title)}{item.topic ? ` â€” ${cleanDisplayText(item.topic)}` : ""}</div>
-        <div className="mt-1 text-[10px] font-semibold text-slate-500">{date ? date.toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "Schedule TBA"}{item.faculty_name ? ` Â· ${cleanDisplayText(item.faculty_name)}` : ""}</div>
+        <div className="truncate text-sm font-black text-slate-950">{cleanDisplayText(item.title)}{item.topic ? ` — ${cleanDisplayText(item.topic)}` : ""}</div>
+        <div className="mt-1 text-[10px] font-semibold text-slate-500">{date ? date.toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "Schedule TBA"}{item.faculty_name ? ` · ${cleanDisplayText(item.faculty_name)}` : ""}</div>
       </div>
       <Link href={`/live-classes/${item.id}`} className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg bg-[#1f5fd0] px-3 text-[11px] font-black text-white">{replay ? "Replay" : item.status === "live" ? "Join Now" : "View"}</Link>
     </div>
@@ -330,7 +333,7 @@ export function StudentPortal() {
   };
 
   if (loading) {
-    return <div className="grid min-h-screen place-items-center bg-slate-50"><div className="text-center"><div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-blue-100 border-t-[#174699]" /><div className="mt-4 text-sm font-black text-slate-600">Loading your Ibemhal IAS portalâ€¦</div></div></div>;
+    return <div className="grid min-h-screen place-items-center bg-slate-50"><div className="text-center"><div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-blue-100 border-t-[#174699]" /><div className="mt-4 text-sm font-black text-slate-600">Loading your Ibemhal IAS portal…</div></div></div>;
   }
 
   if (error || !data) {
@@ -357,8 +360,8 @@ export function StudentPortal() {
             <div><div className="text-xl font-black text-slate-950">{name}</div><div className="mt-1 text-xs font-bold text-[#174699]">{cleanDisplayText(data.profile?.student_code || "Student ID pending")}</div></div>
           </div>
           <dl className="mt-5 grid gap-4 sm:grid-cols-2">
-            <ProfileField label="Email" value={data.profile?.email || "â€”"} />
-            <ProfileField label="Phone" value={data.profile?.phone || "â€”"} />
+            <ProfileField label="Email" value={data.profile?.email || "—"} />
+            <ProfileField label="Phone" value={data.profile?.phone || "—"} />
             <ProfileField label="Access Tier" value={data.profile?.tier || "free"} />
             <ProfileField label="Assigned Courses" value={String(data.stats.enrolledCourses)} />
             <ProfileField label="Assigned Live Classes" value={String(data.stats.liveClasses)} />
@@ -390,18 +393,25 @@ export function StudentPortal() {
   ) : view === "materials" ? (
     <Section title="Study Materials" subtitle="PDFs are the primary study format, with video, audio, Word, Excel and other supported resources when available.">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={materialSearch} onChange={(e) => setMaterialSearch(e.target.value)} placeholder="Search study materialsâ€¦" className="min-h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none focus:border-[#174699]" /></div>
+        <div className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={materialSearch} onChange={(e) => setMaterialSearch(e.target.value)} placeholder="Search study materials…" className="min-h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none focus:border-[#174699]" /></div>
         <div className="flex gap-2">{(["all","free","premium"] as const).map((key) => <button key={key} onClick={() => setMaterialFilter(key)} className={`min-h-11 rounded-xl border px-4 text-xs font-black capitalize ${materialFilter === key ? "border-[#174699] bg-[#174699] text-white" : "border-slate-200 bg-white text-slate-600"}`}>{key}</button>)}</div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">{visibleMaterials.map((m) => <MaterialCard key={m.id} material={m} onOpen={() => void openMaterial(m)} onBookmark={() => void bookmark(m)} />)}</div>
       {!visibleMaterials.length ? <Empty text="No study materials match this filter." /> : null}
     </Section>
+  ) : view === "group-chat" ? (
+    <Section
+      title="Group Chat"
+      subtitle="Registered Ibemhal IAS students can discuss topics, share images, PDFs, links and embedded videos in real time."
+    >
+      <CommunityChat />
+    </Section>
   ) : view === "assignments" ? (
     <Section title="Assignments" subtitle="Your assigned learning plan follows the courses, live classes and materials approved by the admin."><div className="grid gap-4 md:grid-cols-3"><MiniSummary label="Assigned Courses" value={data.courses.length} /><MiniSummary label="Assigned Live Classes" value={data.liveClasses.length} /><MiniSummary label="Available Study Materials" value={data.stats.studyMaterials} /></div><div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5"><div className="text-sm font-black text-slate-950">Current learning plan</div><div className="mt-4 space-y-2">{data.courses.map((c) => <div key={c.id} className="flex items-center gap-3 rounded-xl bg-slate-50 p-3"><CheckCircle2 className="h-4 w-4 text-green-600" /><span className="text-sm font-bold text-slate-700">{c.title}</span></div>)}</div>{!data.courses.length ? <Empty text="No course assignment yet." /> : null}</div></Section>
   ) : view === "progress" ? (
-    <Section title="My Progress" subtitle="Progress is calculated from your real enrolled courses and material activity."><div className="grid gap-4 lg:grid-cols-2">{data.courses.map((c) => <div key={c.id} className="rounded-2xl border border-slate-200 bg-white p-5"><div className="font-black text-slate-950">{c.title}</div><div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-[#2d6cdf]" style={{ width: `${percent(c.progressPercent)}%` }} /></div><div className="mt-2 text-xs font-bold text-slate-500">{percent(c.progressPercent)}% Â· {c.completedLessons || 0}/{c.lessonCount || 0} lessons completed</div></div>)}</div><div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5"><div className="font-black text-slate-950">Material Progress</div><div className="mt-4 space-y-3">{data.materials.filter((m) => !m.locked).slice(0,10).map((m) => <div key={m.id}><div className="flex justify-between gap-3 text-xs"><span className="truncate font-bold text-slate-700">{m.title}</span><span className="font-black text-slate-500">{m.progress?.completed ? "100%" : `${percent(m.progress?.progress_percent)}%`}</span></div><div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-green-500" style={{width:`${m.progress?.completed ? 100 : percent(m.progress?.progress_percent)}%`}} /></div></div>)}</div></div></Section>
+    <Section title="My Progress" subtitle="Progress is calculated from your real enrolled courses and material activity."><div className="grid gap-4 lg:grid-cols-2">{data.courses.map((c) => <div key={c.id} className="rounded-2xl border border-slate-200 bg-white p-5"><div className="font-black text-slate-950">{c.title}</div><div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-[#2d6cdf]" style={{ width: `${percent(c.progressPercent)}%` }} /></div><div className="mt-2 text-xs font-bold text-slate-500">{percent(c.progressPercent)}% · {c.completedLessons || 0}/{c.lessonCount || 0} lessons completed</div></div>)}</div><div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5"><div className="font-black text-slate-950">Material Progress</div><div className="mt-4 space-y-3">{data.materials.filter((m) => !m.locked).slice(0,10).map((m) => <div key={m.id}><div className="flex justify-between gap-3 text-xs"><span className="truncate font-bold text-slate-700">{m.title}</span><span className="font-black text-slate-500">{m.progress?.completed ? "100%" : `${percent(m.progress?.progress_percent)}%`}</span></div><div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-green-500" style={{width:`${m.progress?.completed ? 100 : percent(m.progress?.progress_percent)}%`}} /></div></div>)}</div></div></Section>
   ) : view === "downloads" ? (
-    <Section title="Downloads" subtitle="Download only the materials your account is allowed to access."><div className="rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100">{data.materials.filter((m) => !m.locked && m.media_url).map((m) => <div key={m.id} className="flex items-center gap-3 p-4"><FileText className="h-5 w-5 text-[#174699]" /><div className="min-w-0 flex-1"><div className="truncate text-sm font-black text-slate-900">{m.title}</div><div className="text-[10px] uppercase text-slate-400">{m.media_type} Â· {formatFileSize(m.file_size)}</div></div><a href={m.media_url} download className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-[#174699] px-3 text-[11px] font-black text-white"><Download className="h-4 w-4" /> Download</a></div>)}</div></Section>
+    <Section title="Downloads" subtitle="Download only the materials your account is allowed to access."><div className="rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100">{data.materials.filter((m) => !m.locked && m.media_url).map((m) => <div key={m.id} className="flex items-center gap-3 p-4"><FileText className="h-5 w-5 text-[#174699]" /><div className="min-w-0 flex-1"><div className="truncate text-sm font-black text-slate-900">{m.title}</div><div className="text-[10px] uppercase text-slate-400">{m.media_type} · {formatFileSize(m.file_size)}</div></div><a href={m.media_url} download className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-[#174699] px-3 text-[11px] font-black text-white"><Download className="h-4 w-4" /> Download</a></div>)}</div></Section>
   ) : view === "bookmarks" ? (
     <Section title="Bookmarks" subtitle="Your saved study materials."><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">{bookmarked.map((m) => <MaterialCard key={m.id} material={m} onOpen={() => void openMaterial(m)} onBookmark={() => void bookmark(m)} />)}</div>{!bookmarked.length ? <Empty text="You have not bookmarked any materials yet." /> : null}</Section>
   ) : view === "announcements" ? (
@@ -425,6 +435,7 @@ export function StudentPortal() {
             />
           </div>
           <div className="flex items-center gap-3">
+            <div className="hidden text-[10px] font-bold text-slate-400 xl:block">{SITE_VERSION_LABEL}</div>
             <Link href="/dashboard?view=announcements" className="relative grid h-10 w-10 place-items-center rounded-full border border-slate-200 bg-white text-[#14256f]"><Bell className="h-5 w-5" />{data.announcements.length ? <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[#1f5fd0] px-1 text-[9px] font-black text-white">{Math.min(9, data.announcements.length)}</span> : null}</Link>
             <div className="relative">
               <button
@@ -468,8 +479,8 @@ function DashboardHome({ data, name, onOpen, onBookmark }: { data: PortalData; n
   return <div className="mx-auto max-w-[1500px]">
     <div className="mb-5"><h1 className="text-2xl font-black tracking-[-0.03em] text-slate-950 sm:text-3xl">Welcome back, {name}!</h1><p className="mt-1 text-sm font-medium text-slate-500">Keep learning, stay consistent and follow the courses assigned to your Student ID.</p></div>
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><StatCard icon={BookOpen} label="Enrolled Courses" value={data.stats.enrolledCourses} href="/dashboard?view=courses" tone="blue" /><StatCard icon={Radio} label="Live Classes" value={data.stats.liveClasses} href="/dashboard?view=live" tone="green" /><StatCard icon={FileText} label="Study Materials" value={data.stats.studyMaterials} href="/dashboard?view=materials" tone="violet" /><StatCard icon={TrendingUp} label="Study Streak" value={`${data.stats.studyStreak} Day${data.stats.studyStreak === 1 ? "" : "s"}`} href="/dashboard?view=progress" tone="orange" /></div>
-    <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(330px,.8fr)]"><div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5"><div className="mb-1 flex items-center justify-between"><h2 className="font-black text-slate-950">My Courses</h2><Link href="/dashboard?view=courses" className="text-[11px] font-black text-[#174699]">View all â†’</Link></div>{data.courses.slice(0,3).map((c) => <CourseRow key={c.id} course={c} />)}{!data.courses.length ? <CourseEmptyState /> : null}</div><div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5"><div className="mb-1 flex items-center justify-between"><h2 className="font-black text-slate-950">Upcoming Live Classes</h2><Link href="/dashboard?view=live" className="text-[11px] font-black text-[#174699]">View all â†’</Link></div>{data.liveClasses.slice(0,4).map((c) => <LiveClassRow key={c.id} item={c} />)}{!data.liveClasses.length ? <Empty text="No assigned live classes yet." /> : null}</div></div>
-    <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(330px,.8fr)]"><div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5"><div className="mb-4 flex items-center justify-between"><div><h2 className="font-black text-slate-950">Continue Learning</h2><p className="mt-1 text-[11px] font-medium text-slate-500">PDFs, videos, audio and documents made available by the admin.</p></div><Link href="/dashboard?view=materials" className="text-[11px] font-black text-[#174699]">View all materials â†’</Link></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{data.materials.filter((m) => !m.locked).slice(0,4).map((m) => <MaterialCard key={m.id} material={m} onOpen={() => onOpen(m)} onBookmark={() => onBookmark(m)} />)}</div>{!data.materials.filter((m) => !m.locked).length ? <Empty text="No accessible study material yet." /> : null}</div><div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5"><div className="mb-2 flex items-center justify-between"><h2 className="font-black text-slate-950">Announcements</h2><Link href="/dashboard?view=announcements" className="text-[11px] font-black text-[#174699]">View all â†’</Link></div><AnnouncementList items={data.announcements.slice(0,4)} /></div></div>
+    <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(330px,.8fr)]"><div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5"><div className="mb-1 flex items-center justify-between"><h2 className="font-black text-slate-950">My Courses</h2><Link href="/dashboard?view=courses" className="text-[11px] font-black text-[#174699]">View all →</Link></div>{data.courses.slice(0,3).map((c) => <CourseRow key={c.id} course={c} />)}{!data.courses.length ? <CourseEmptyState /> : null}</div><div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5"><div className="mb-1 flex items-center justify-between"><h2 className="font-black text-slate-950">Upcoming Live Classes</h2><Link href="/dashboard?view=live" className="text-[11px] font-black text-[#174699]">View all →</Link></div>{data.liveClasses.slice(0,4).map((c) => <LiveClassRow key={c.id} item={c} />)}{!data.liveClasses.length ? <Empty text="No assigned live classes yet." /> : null}</div></div>
+    <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(330px,.8fr)]"><div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5"><div className="mb-4 flex items-center justify-between"><div><h2 className="font-black text-slate-950">Continue Learning</h2><p className="mt-1 text-[11px] font-medium text-slate-500">PDFs, videos, audio and documents made available by the admin.</p></div><Link href="/dashboard?view=materials" className="text-[11px] font-black text-[#174699]">View all materials →</Link></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{data.materials.filter((m) => !m.locked).slice(0,4).map((m) => <MaterialCard key={m.id} material={m} onOpen={() => onOpen(m)} onBookmark={() => onBookmark(m)} />)}</div>{!data.materials.filter((m) => !m.locked).length ? <Empty text="No accessible study material yet." /> : null}</div><div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5"><div className="mb-2 flex items-center justify-between"><h2 className="font-black text-slate-950">Announcements</h2><Link href="/dashboard?view=announcements" className="text-[11px] font-black text-[#174699]">View all →</Link></div><AnnouncementList items={data.announcements.slice(0,4)} /></div></div>
     <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-3"><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">{[["Study Materials","materials",LibraryBig],["Mock Tests","mock",ClipboardCheck],["Downloads","downloads",Download],["Bookmarks","bookmarks",Bookmark],["My Progress","progress",TrendingUp]].map(([label,key,Icon]: any) => <Link key={key} href={`/dashboard?view=${key}`} className="flex min-h-12 items-center justify-center gap-2 rounded-xl text-xs font-black text-[#14256f] transition hover:bg-blue-50"><Icon className="h-4 w-4" />{label}</Link>)}</div></div>
   </div>;
 }
@@ -489,4 +500,3 @@ function CourseEmptyState() {
 }
 
 function ContactCard({ icon: Icon, label, value, href, external = false }: any) { return <a href={href} target={external ? "_blank" : undefined} rel={external ? "noreferrer" : undefined} className="rounded-2xl border border-slate-200 bg-white p-5 transition hover:shadow-lg"><Icon className="h-6 w-6 text-[#174699]" /><div className="mt-4 text-sm font-black text-slate-950">{label}</div><div className="mt-1 break-all text-xs font-semibold text-slate-500">{value}</div></a>; }
-
