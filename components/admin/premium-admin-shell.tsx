@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import * as React from "react";
 import Link from "next/link";
@@ -28,6 +28,7 @@ import {
   Upload,
   UserRound,
   Users,
+  Wifi,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -50,6 +51,7 @@ const horizontalNav: NavItem[] = [
   { href: "/admin/mentorship", label: "Bookings", icon: CalendarDays },
   { href: "/admin/ingest", label: "AI Ingestion", icon: Sparkles },
   { href: "/admin/ai-health", label: "AI Health", icon: Activity },
+  { href: "/admin/network-check", label: "Network Check", icon: Wifi },
   { href: "/admin/notifications", label: "Notifications", icon: Bell },
 ];
 
@@ -96,6 +98,7 @@ const clientNavGroups: NavGroup[] = [
       { href: "/admin/content", label: "Upload Material", icon: Upload, code: "E4" },
       { href: "/admin/banner", label: "Manage Banner shown in Hero page", icon: Monitor, code: "E5" },
       { href: "/admin/helpdesk", label: "Help Desk Mail", icon: Mail, code: "E6" },
+      { href: "/admin/network-check", label: "Network Connection Check", icon: Wifi, code: "E7" },
     ],
   },
   {
@@ -104,6 +107,7 @@ const clientNavGroups: NavGroup[] = [
       { href: "/admin/content", label: "Website Content", icon: Files },
       { href: "/admin/ingest", label: "AI Ingestion", icon: Sparkles },
       { href: "/admin/ai-health", label: "AI Health", icon: Activity },
+      { href: "/admin/network-check", label: "Network Check", icon: Wifi },
     ],
   },
 ];
@@ -351,7 +355,7 @@ export function PremiumAdminShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <div className={cn("border-t border-slate-100 bg-white", viewMode === "horizontal" ? "hidden lg:block" : "hidden")}>
+        <div className={cn("border-t border-slate-100 bg-white", viewMode === "horizontal" ? "hidden xl:block" : "hidden")}>
           <div className="mx-auto flex max-w-[1920px] items-center gap-1 overflow-x-auto px-4 lg:px-6">
             {horizontalNav.map(({ href, label, icon: Icon }) => {
               const active = activeHorizontal === href;
@@ -377,7 +381,7 @@ export function PremiumAdminShell({ children }: { children: React.ReactNode }) {
 
       <div className="mx-auto flex max-w-[1920px]">
         {verticalDesktop ? (
-          <aside className="sticky top-[64px] hidden h-[calc(100vh-64px)] w-[274px] shrink-0 overflow-y-auto border-r border-slate-200 bg-white lg:block">
+          <aside className="sticky top-[64px] hidden h-[calc(100vh-64px)] w-[274px] shrink-0 overflow-y-auto border-r border-slate-200 bg-white xl:block">
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
               <span className="text-xs font-black text-[#174699]">ADMIN MENU</span>
               <button onClick={() => setMode("horizontal")} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Switch to horizontal navigation">
@@ -390,17 +394,17 @@ export function PremiumAdminShell({ children }: { children: React.ReactNode }) {
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-3 border-b border-slate-200/80 bg-[#fbfcfe] px-4 py-2.5 lg:px-7">
-            <div className="flex items-center gap-2 lg:hidden">
+            <div className="flex items-center gap-2 xl:hidden">
               <button onClick={() => setDrawerOpen(true)} className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-[#123f9a] shadow-sm">
                 <Menu className="h-4 w-4" /> Menu
               </button>
             </div>
 
-            <div className="hidden text-[11px] font-bold text-slate-400 lg:block">
+            <div className="hidden text-[11px] font-bold text-slate-400 xl:block">
               Admin Workspace
             </div>
 
-            <div className="ml-auto hidden items-center gap-2 lg:flex">
+            <div className="ml-auto hidden items-center gap-2 xl:flex">
               <span className="mr-1 text-[11px] font-bold text-slate-400">View Mode:</span>
               <LayoutModeButton active={viewMode === "horizontal"} label="Horizontal" icon={PanelTop} onClick={() => setMode("horizontal")} />
               <LayoutModeButton active={viewMode === "vertical"} label="Vertical" icon={PanelLeft} onClick={() => setMode("vertical")} />
@@ -420,7 +424,7 @@ export function PremiumAdminShell({ children }: { children: React.ReactNode }) {
       {floatingDesktop ? (
         <button
           onClick={() => setDrawerOpen(true)}
-          className="fixed bottom-6 left-6 z-40 hidden h-12 items-center gap-2 rounded-full bg-[#123f9a] px-4 text-xs font-black text-white shadow-2xl shadow-blue-950/20 lg:inline-flex"
+          className="fixed bottom-6 left-6 z-40 hidden h-12 items-center gap-2 rounded-full bg-[#123f9a] px-4 text-xs font-black text-white shadow-2xl shadow-blue-950/20 xl:inline-flex"
         >
           <Menu className="h-4 w-4" /> Admin Menu
         </button>
@@ -428,7 +432,7 @@ export function PremiumAdminShell({ children }: { children: React.ReactNode }) {
 
       <button
         onClick={() => setDrawerOpen(true)}
-        className="fixed bottom-5 left-4 z-40 grid h-12 w-12 place-items-center rounded-full bg-[#123f9a] text-white shadow-2xl lg:hidden"
+        className="fixed bottom-5 left-4 z-40 grid h-12 w-12 place-items-center rounded-full bg-[#123f9a] text-white shadow-2xl xl:hidden"
         aria-label="Open admin navigation"
       >
         <Menu className="h-5 w-5" />

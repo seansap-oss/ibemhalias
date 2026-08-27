@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     if (!url && resource.storage_path) {
       const { data: signed } = await client.storage
         .from("cms-content")
-        .createSignedUrl(resource.storage_path, 3600);
+        .createSignedUrl(resource.storage_path, 21600);
       url = signed?.signedUrl || null;
     }
     signedResources.push({ ...resource, url });
@@ -92,6 +92,14 @@ export async function GET(request: NextRequest) {
 
   const enriched = visible.map((liveClass: AnyRow) => ({
     ...liveClass,
+    // V5.3.1: Live Now uses LiveKit only in the current UI.
+    // Existing 100ms code remains in the codebase as a hidden future fallback.
+    provider: "livekit",
+    provider_room_id:
+      String(liveClass.provider || "").toLowerCase() === "livekit" &&
+      String(liveClass.provider_room_id || "").trim()
+        ? String(liveClass.provider_room_id).trim()
+        : `ibemhal-${liveClass.id}`,
     access: assignmentMap.get(liveClass.id),
     resources: signedResources.filter(
       (resource: AnyRow) =>

@@ -548,7 +548,7 @@ export async function POST(request: NextRequest) {
       const name = String(body.name || "").trim();
       const capacity = Number(body.capacity || 0);
       if (!name || capacity < 1) throw Object.assign(new Error("Room name and capacity are required."), { status: 400 });
-      const { data, error } = await client.from("live_class_rooms").insert({ name, capacity, provider: body.provider || "100ms", is_active: true }).select("*").single();
+      const { data, error } = await client.from("live_class_rooms").insert({ name, capacity, provider: "livekit", is_active: true }).select("*").single();
       if (error) throw error;
       return NextResponse.json({ ok: true, room: data });
     }

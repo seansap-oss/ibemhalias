@@ -54,10 +54,9 @@ export default function TeacherStudioList() {
           Teacher Live Studio
         </h1>
         <p className="mt-1 text-xs text-slate-500">
-          Provision 100ms, start the teacher
-          camera/mic, share the screen, record,
-          upload PDFs and copy the protected
-          student join link.
+          Start Live Now, use the teacher camera/mic,
+          share the screen, present PDFs, moderate
+          students and copy the protected join link.
         </p>
       </div>
 

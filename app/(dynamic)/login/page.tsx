@@ -94,6 +94,35 @@ function LoginForm() {
       return;
     }
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      await supabase.auth.signOut();
+      setError("Unable to verify this student account.");
+      setBusy(false);
+      return;
+    }
+
+    const { data: profile, error: profileError } =
+      await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+    const role = String(profile?.role || "").toLowerCase();
+
+    if (profileError || role !== "student") {
+      await supabase.auth.signOut();
+      setError(
+        "This login is not a student account. Please use the Admin Login for administrator access."
+      );
+      setBusy(false);
+      return;
+    }
+
     await claimDevice();
 
     const requested = params.get("redirectedFrom");

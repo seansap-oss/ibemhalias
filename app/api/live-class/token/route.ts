@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSessionClient } from "@/lib/supabase/server-session";
 import { liveService } from "@/lib/live-class/server";
-import {
-  createHmsAppToken,
-  hmsConfigStatus,
-} from "@/lib/live-class/hms-server";
+import { hmsConfigStatus } from "@/lib/live-class/hms-server";
+import { create100msJoinToken } from "@/lib/live-class/providers/100ms";
+import { normalizeLiveProvider } from "@/lib/live-class/providers";
 import {
   getAdminCookieName,
   verifyAdminSessionToken,
@@ -30,11 +29,18 @@ export async function GET(request: NextRequest) {
     const { data: liveClass, error } = await service
       .from("live_classes")
       .select(
-        "id,title,topic,faculty_name,provider_room_id,status"
+        "id,title,topic,faculty_name,provider,provider_room_id,status"
       )
       .eq("id", classId)
       .single();
     if (error) throw error;
+
+    if (normalizeLiveProvider(liveClass.provider) !== "100ms") {
+      return NextResponse.json(
+        { ok: false, error: "This class is not using the 100ms provider." },
+        { status: 409 }
+      );
+    }
 
     if (!liveClass.provider_room_id) {
       return NextResponse.json(
@@ -112,16 +118,19 @@ export async function GET(request: NextRequest) {
         "Student";
     }
 
+    const joined = await create100msJoinToken({
+      roomName: liveClass.provider_room_id,
+      userId,
+      displayName: userName,
+      role: role as "teacher" | "student",
+    });
+
     return NextResponse.json({
       ok: true,
-      roomId: liveClass.provider_room_id,
-      userName,
-      role,
-      authToken: createHmsAppToken({
-        roomId: liveClass.provider_room_id,
-        userId,
-        role,
-      }),
+      roomId: joined.roomName,
+      userName: joined.userName,
+      role: joined.role,
+      authToken: joined.token,
       config: hmsConfigStatus(),
     });
   } catch (error: any) {
