@@ -1,6 +1,6 @@
 {
   "name": "ibemhal-ias-lms",
-  "version": "5.2.0",
+  "version": "5.2.2",
   "private": true,
   "scripts": {
     "dev": "next dev",

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { adminError, liveService, normalizeIndianWhatsAppPhone, randomPassword, requireLiveAdmin, safeOrigin } from "@/lib/live-class/server";
 import { sendWhatsAppTemplate, whatsappStatus } from "@/lib/live-class/whatsapp";
 
@@ -266,38 +266,251 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, liveClass: data });
     }
 
+    if (action === "student_account_detail") {
+      const studentId = String(body.studentId || "");
+      if (!studentId) {
+        throw Object.assign(new Error("studentId required"), { status: 400 });
+      }
+
+      const { data: authData, error: authError } =
+        await client.auth.admin.getUserById(studentId);
+
+      if (authError) throw authError;
+      if (!authData.user) {
+        throw Object.assign(new Error("Student Auth account not found."), { status: 404 });
+      }
+
+      const user = authData.user;
+      const bannedUntil = user.banned_until ? Date.parse(user.banned_until) : 0;
+
+      return NextResponse.json({
+        ok: true,
+        account: {
+          email: user.email || "",
+          status: bannedUntil && bannedUntil > Date.now() ? "inactive" : "active",
+          batch: String(user.user_metadata?.batch || ""),
+          remarks: String(user.user_metadata?.remarks || ""),
+          createdAt: user.created_at || null,
+          lastSignInAt: user.last_sign_in_at || null,
+        },
+      });
+    }
+
     if (action === "create_student") {
       const email = String(body.email || "").trim().toLowerCase();
       const fullName = String(body.fullName || "").trim();
       const phone = normalizeIndianWhatsAppPhone(body.phone);
-      if (!email || !fullName || !phone) throw Object.assign(new Error("Name, email and phone are required."), { status: 400 });
-      const password = String(body.password || randomPassword());
-      const { data: created, error: authError } = await client.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { full_name: fullName, role: "student" } });
+      const password = String(body.password || "").trim();
+
+      if (!email || !fullName || !phone) {
+        throw Object.assign(new Error("Name, email and phone are required."), { status: 400 });
+      }
+
+      if (!password || password.length < 6) {
+        throw Object.assign(new Error("A student password of at least 6 characters is required."), { status: 400 });
+      }
+
+      const { data: created, error: authError } = await client.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: fullName,
+          role: "student",
+        },
+      });
+
       if (authError) throw authError;
       if (!created.user) throw new Error("Student account was not created.");
-      const { error: profileError } = await client.from("profiles").update({ full_name: fullName, phone, whatsapp_opt_in: body.whatsappOptIn !== false }).eq("id", created.user.id);
+
+      const { error: profileError } = await client
+        .from("profiles")
+        .upsert(
+          {
+            id: created.user.id,
+            email,
+            full_name: fullName,
+            phone,
+            role: "student",
+            tier: "free",
+            whatsapp_opt_in: body.whatsappOptIn !== false,
+          },
+          { onConflict: "id" }
+        );
+
       if (profileError) throw profileError;
-      const courseIds = Array.isArray(body.courseIds) ? body.courseIds.filter(Boolean) : [];
+
+      const courseIds = Array.isArray(body.courseIds)
+        ? body.courseIds.filter(Boolean)
+        : [];
+
       if (courseIds.length) {
-        const rows = courseIds.map((courseId: string) => ({ user_id: created.user.id, course_id: courseId, amount_paid: 0, enrolled_via: "admin_manual", payment_status: "paid", notes: `Created by ${admin.email || "admin"}` }));
-        const { error } = await client.from("enrollments").upsert(rows, { onConflict: "user_id,course_id" });
+        const rows = courseIds.map((courseId: string) => ({
+          user_id: created.user.id,
+          course_id: courseId,
+          amount_paid: 0,
+          enrolled_via: "admin_manual",
+          payment_status: "paid",
+          notes: `Created by ${admin.email || "admin"}`,
+        }));
+
+        const { error } = await client
+          .from("enrollments")
+          .upsert(rows, { onConflict: "user_id,course_id" });
+
         if (error) throw error;
       }
-      await client.rpc("sync_live_class_assignments", { p_class_id: null, p_student_id: created.user.id });
-      const { data: profile } = await client.from("profiles").select("id,student_code,full_name,email,phone").eq("id", created.user.id).single();
-      return NextResponse.json({ ok: true, student: profile, temporaryPassword: password });
+
+      await client.rpc("sync_live_class_assignments", {
+        p_class_id: null,
+        p_student_id: created.user.id,
+      });
+
+      const { data: profile, error: readError } = await client
+        .from("profiles")
+        .select("id,student_code,full_name,email,phone")
+        .eq("id", created.user.id)
+        .single();
+
+      if (readError) throw readError;
+
+      return NextResponse.json({
+        ok: true,
+        student: profile,
+        passwordSet: true,
+      });
     }
 
     if (action === "update_student") {
       const studentId = String(body.studentId || "");
-      const patch: AnyRow = {};
-      if (body.fullName !== undefined) patch.full_name = String(body.fullName || "").trim();
-      if (body.phone !== undefined) patch.phone = normalizeIndianWhatsAppPhone(body.phone);
-      if (body.whatsappOptIn !== undefined) patch.whatsapp_opt_in = Boolean(body.whatsappOptIn);
-      if (body.tier !== undefined) patch.tier = body.tier;
-      const { data, error } = await client.from("profiles").update(patch).eq("id", studentId).select("id,student_code,full_name,email,phone,whatsapp_opt_in,tier").single();
+      if (!studentId) {
+        throw Object.assign(new Error("studentId required"), { status: 400 });
+      }
+
+      const [{ data: currentProfile, error: currentError }, { data: authData, error: authReadError }] =
+        await Promise.all([
+          client
+            .from("profiles")
+            .select("id,email,full_name,phone,whatsapp_opt_in,tier")
+            .eq("id", studentId)
+            .single(),
+          client.auth.admin.getUserById(studentId),
+        ]);
+
+      if (currentError) throw currentError;
+      if (authReadError) throw authReadError;
+      if (!authData.user) {
+        throw Object.assign(new Error("Student Auth account not found."), { status: 404 });
+      }
+
+      const fullName =
+        body.fullName !== undefined
+          ? String(body.fullName || "").trim()
+          : String(currentProfile.full_name || "").trim();
+
+      const email =
+        body.email !== undefined
+          ? String(body.email || "").trim().toLowerCase()
+          : String(currentProfile.email || "").trim().toLowerCase();
+
+      const phone =
+        body.phone !== undefined
+          ? normalizeIndianWhatsAppPhone(body.phone)
+          : currentProfile.phone;
+
+      const password =
+        body.password !== undefined
+          ? String(body.password || "").trim()
+          : "";
+
+      const batch =
+        body.batch !== undefined
+          ? String(body.batch || "").trim()
+          : String(authData.user.user_metadata?.batch || "");
+
+      const remarks =
+        body.remarks !== undefined
+          ? String(body.remarks || "").trim()
+          : String(authData.user.user_metadata?.remarks || "");
+
+      const accountStatus =
+        body.accountStatus === "inactive" ? "inactive" : "active";
+
+      if (!fullName) {
+        throw Object.assign(new Error("Student name is required."), { status: 400 });
+      }
+
+      if (!email || !email.includes("@")) {
+        throw Object.assign(new Error("A valid student email is required."), { status: 400 });
+      }
+
+      if (!phone) {
+        throw Object.assign(new Error("A valid student phone number is required."), { status: 400 });
+      }
+
+      if (password && password.length < 6) {
+        throw Object.assign(new Error("New password must be at least 6 characters."), { status: 400 });
+      }
+
+      const authPatch: AnyRow = {
+        email,
+        email_confirm: true,
+        user_metadata: {
+          ...(authData.user.user_metadata || {}),
+          full_name: fullName,
+          role: "student",
+          batch,
+          remarks,
+        },
+        ban_duration: accountStatus === "inactive" ? "876000h" : "none",
+      };
+
+      if (password) {
+        authPatch.password = password;
+      }
+
+      const { error: authError } = await client.auth.admin.updateUserById(
+        studentId,
+        authPatch
+      );
+
+      if (authError) throw authError;
+
+      const profilePatch: AnyRow = {
+        email,
+        full_name: fullName,
+        phone,
+      };
+
+      if (body.whatsappOptIn !== undefined) {
+        profilePatch.whatsapp_opt_in = Boolean(body.whatsappOptIn);
+      }
+
+      if (body.tier !== undefined) {
+        profilePatch.tier = body.tier;
+      }
+
+      const { data, error } = await client
+        .from("profiles")
+        .update(profilePatch)
+        .eq("id", studentId)
+        .select("id,student_code,full_name,email,phone,whatsapp_opt_in,tier")
+        .single();
+
       if (error) throw error;
-      return NextResponse.json({ ok: true, student: data });
+
+      return NextResponse.json({
+        ok: true,
+        student: data,
+        account: {
+          status: accountStatus,
+          batch,
+          remarks,
+        },
+        emailUpdated:
+          email !== String(currentProfile.email || "").toLowerCase(),
+        passwordUpdated: Boolean(password),
+      });
     }
 
     if (action === "assign_classes") {
@@ -413,3 +626,5 @@ export async function POST(request: NextRequest) {
     return adminError(error);
   }
 }
+
+

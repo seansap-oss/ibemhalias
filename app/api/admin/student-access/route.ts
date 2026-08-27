@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import {
   adminError,
   liveService,
@@ -73,6 +73,15 @@ async function loadData(client: any) {
   if (classError) throw classError;
   if (prefError) throw prefError;
 
+  const { data: authPage, error: authListError } =
+    await client.auth.admin.listUsers({ page: 1, perPage: 1000 });
+
+  if (authListError) throw authListError;
+
+  const authMap = new Map<string, any>(
+    (authPage?.users || []).map((user: any) => [user.id, user])
+  );
+
   const courseMap = new Map<string, string>(
     (courses || []).map((course: AnyRow) => [course.id, course.title])
   );
@@ -113,8 +122,17 @@ async function loadData(client: any) {
 
   const students = (profiles || []).map((profile: AnyRow) => {
     const preference = prefMap.get(profile.id);
+    const authUser = authMap.get(profile.id);
+    const bannedUntil = authUser?.banned_until
+      ? Date.parse(authUser.banned_until)
+      : 0;
+    const accountStatus =
+      bannedUntil && bannedUntil > Date.now() ? "inactive" : "active";
+
     return {
       ...profile,
+      account_status: accountStatus,
+      batch: String(authUser?.user_metadata?.batch || ""),
       package_ids: packageIds.get(profile.id) || [],
       package_names: packageNames.get(profile.id) || [],
       assigned_class_ids: assignedIds.get(profile.id) || [],
@@ -462,3 +480,4 @@ export async function POST(request: NextRequest) {
     return adminError(error);
   }
 }
+

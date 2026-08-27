@@ -10,6 +10,7 @@ import {
   Download,
   Edit3,
   Eye,
+  EyeOff,
   FileDown,
   FileUp,
   Loader2,
@@ -50,6 +51,8 @@ type StudentRow = {
   assigned_class_ids: string[];
   assigned_count: number;
   payment_source: PaymentSource;
+  account_status?: "active" | "inactive";
+  batch?: string;
   preferences?: {
     reminder_day_before?: boolean;
     reminder_hour_before?: boolean;
@@ -180,10 +183,27 @@ export function StudentManagementDashboard() {
   const [saving, setSaving] = React.useState(false);
   const [message, setMessage] = React.useState("");
   const [showAdd, setShowAdd] = React.useState(false);
+  const [showAddPassword, setShowAddPassword] = React.useState(false);
+  const [editingStudent, setEditingStudent] = React.useState<StudentRow | null>(null);
+  const [showEditPassword, setShowEditPassword] = React.useState(false);
+  const [editTab, setEditTab] = React.useState<"profile" | "access" | "activity" | "notes">("profile");
+  const [editLoading, setEditLoading] = React.useState(false);
+  const [editStudentDraft, setEditStudentDraft] = React.useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    password: "",
+    accountStatus: "active" as "active" | "inactive",
+    batch: "",
+    remarks: "",
+    createdAt: "",
+    lastSignInAt: "",
+  });
   const [newStudent, setNewStudent] = React.useState({
     fullName: "",
     email: "",
     phone: "",
+    password: "",
     whatsappOptIn: true,
   });
   const importRef = React.useRef<HTMLInputElement | null>(null);
@@ -346,8 +366,10 @@ export function StudentManagementDashboard() {
         fullName: "",
         email: "",
         phone: "",
+        password: "",
         whatsappOptIn: true,
       });
+      setShowAddPassword(false);
       setMessage("Student created.");
       await load();
     } catch (error: any) {
@@ -357,20 +379,76 @@ export function StudentManagementDashboard() {
     }
   };
 
-  const editStudent = async (student: StudentRow) => {
-    const fullName = window.prompt("Student name", student.full_name);
-    if (fullName === null) return;
-    const phone = window.prompt("Mobile / WhatsApp number", student.phone || "");
-    if (phone === null) return;
+  const openEditStudent = async (student: StudentRow) => {
+    setEditingStudent(student);
+    setShowEditPassword(false);
+    setEditTab("profile");
+    setEditLoading(true);
+    setEditStudentDraft({
+      fullName: student.full_name || "",
+      email: student.email || "",
+      phone: student.phone || "",
+      password: "",
+      accountStatus: student.account_status === "inactive" ? "inactive" : "active",
+      batch: student.batch || "",
+      remarks: "",
+      createdAt: student.created_at || "",
+      lastSignInAt: "",
+    });
+
+    try {
+      const payload = await postLive("student_account_detail", {
+        studentId: student.id,
+      });
+
+      const account = payload.account || {};
+      setEditStudentDraft((current) => ({
+        ...current,
+        email: account.email || current.email,
+        accountStatus:
+          account.status === "inactive" ? "inactive" : "active",
+        batch: account.batch || "",
+        remarks: account.remarks || "",
+        createdAt: account.createdAt || current.createdAt,
+        lastSignInAt: account.lastSignInAt || "",
+      }));
+    } catch (error: any) {
+      setMessage(
+        error?.message ||
+          "Student profile opened, but account security details could not be loaded."
+      );
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const saveEditedStudent = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editingStudent) return;
 
     setSaving(true);
+    setMessage("");
+
     try {
       await postLive("update_student", {
-        studentId: student.id,
-        fullName,
-        phone,
+        studentId: editingStudent.id,
+        fullName: editStudentDraft.fullName,
+        email: editStudentDraft.email,
+        phone: editStudentDraft.phone,
+        password: editStudentDraft.password || undefined,
+        accountStatus: editStudentDraft.accountStatus,
+        batch: editStudentDraft.batch,
+        remarks: editStudentDraft.remarks,
       });
-      setMessage("Student updated.");
+
+      setMessage(
+        editStudentDraft.password
+          ? "Student profile, login and password updated."
+          : "Student profile and login details updated."
+      );
+
+      setEditingStudent(null);
+      setShowEditPassword(false);
       await load();
     } catch (error: any) {
       setMessage(error?.message || "Unable to update student.");
@@ -599,7 +677,7 @@ export function StudentManagementDashboard() {
             {showAdd ? (
               <form
                 onSubmit={addStudent}
-                className="mt-4 grid gap-3 rounded-xl border border-blue-100 bg-blue-50/40 p-4 md:grid-cols-4"
+                className="mt-4 grid gap-3 rounded-xl border border-blue-100 bg-blue-50/40 p-4 md:grid-cols-5"
               >
                 <input
                   required
@@ -623,6 +701,31 @@ export function StudentManagementDashboard() {
                   placeholder="Mobile / WhatsApp"
                   className="h-10 rounded-lg border px-3 text-xs"
                 />
+                <div className="relative">
+                  <input
+                    required
+                    minLength={6}
+                    type={showAddPassword ? "text" : "password"}
+                    value={newStudent.password}
+                    onChange={(e) => setNewStudent({ ...newStudent, password: e.target.value })}
+                    placeholder="Student password"
+                    autoComplete="new-password"
+                    className="h-10 w-full rounded-lg border px-3 pr-10 text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAddPassword((value) => !value)}
+                    className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-md text-slate-500 hover:bg-slate-100"
+                    aria-label={showAddPassword ? "Hide password" : "Show password"}
+                    title={showAddPassword ? "Hide password" : "Show password"}
+                  >
+                    {showAddPassword ? (
+                      <EyeOff className="h-3.5 w-3.5" />
+                    ) : (
+                      <Eye className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                </div>
                 <button
                   disabled={saving}
                   className="rounded-lg bg-[#174699] px-4 text-xs font-black text-white"
@@ -630,6 +733,528 @@ export function StudentManagementDashboard() {
                   {saving ? "Creating…" : "Create Student"}
                 </button>
               </form>
+            ) : null}
+
+            {editingStudent ? (
+              <div
+                className="fixed inset-0 z-[180] overflow-y-auto bg-slate-950/50 p-0 backdrop-blur-[2px] sm:p-4"
+                onMouseDown={(event) => {
+                  if (event.target === event.currentTarget && !saving) {
+                    setEditingStudent(null);
+                  }
+                }}
+              >
+                <div className="mx-auto flex min-h-full w-full items-start justify-center sm:items-center">
+                  <form
+                    onSubmit={saveEditedStudent}
+                    className="flex min-h-screen w-full flex-col overflow-hidden bg-white shadow-2xl sm:min-h-0 sm:max-h-[94vh] sm:max-w-[1120px] sm:rounded-3xl sm:border sm:border-slate-200"
+                  >
+                    <div className="border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-indigo-600 to-violet-500 text-sm font-black text-white shadow-sm">
+                            {editingStudent.full_name
+                              .split(/\s+/)
+                              .slice(0, 2)
+                              .map((part) => part[0])
+                              .join("")
+                              .toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h2 className="truncate text-lg font-black tracking-tight text-slate-950 sm:text-xl">
+                                Edit Student
+                              </h2>
+                              <span
+                                className={[
+                                  "rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-wide",
+                                  editStudentDraft.accountStatus === "inactive"
+                                    ? "bg-slate-100 text-slate-600"
+                                    : "bg-green-100 text-green-700",
+                                ].join(" ")}
+                              >
+                                {editStudentDraft.accountStatus}
+                              </span>
+                            </div>
+                            <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-[10px] font-semibold text-slate-500">
+                              <span>
+                                Student ID:{" "}
+                                {editingStudent.student_code ||
+                                  editingStudent.id.slice(0, 8)}
+                              </span>
+                              <span>•</span>
+                              <span>
+                                Registered{" "}
+                                {new Date(
+                                  editStudentDraft.createdAt ||
+                                    editingStudent.created_at
+                                ).toLocaleDateString("en-IN", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={() => setEditingStudent(null)}
+                          className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 disabled:opacity-50"
+                          aria-label="Close student editor"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      <div className="mt-4 flex gap-1 overflow-x-auto rounded-xl bg-slate-50 p-1">
+                        {[
+                          ["profile", "Profile"],
+                          ["access", "Packages & Access"],
+                          ["activity", "Activity"],
+                          ["notes", "Notes"],
+                        ].map(([value, label]) => (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() =>
+                              setEditTab(
+                                value as
+                                  | "profile"
+                                  | "access"
+                                  | "activity"
+                                  | "notes"
+                              )
+                            }
+                            className={[
+                              "whitespace-nowrap rounded-lg px-3 py-2 text-[10px] font-black transition sm:text-xs",
+                              editTab === value
+                                ? "bg-white text-[#174699] shadow-sm ring-1 ring-slate-200"
+                                : "text-slate-500 hover:text-slate-800",
+                            ].join(" ")}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1fr)_330px]">
+                      <div className="min-h-0 overflow-y-auto p-4 sm:p-6">
+                        {editLoading ? (
+                          <div className="mb-4 flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-[10px] font-bold text-blue-700">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            Loading account security details…
+                          </div>
+                        ) : null}
+
+                        {editTab === "profile" ? (
+                          <div>
+                            <div className="mb-4">
+                              <h3 className="text-sm font-black text-slate-950">
+                                Profile & Login
+                              </h3>
+                              <p className="mt-1 text-[10px] font-semibold leading-relaxed text-slate-500">
+                                Update the student identity and login details in one place.
+                                Email and password changes are applied to Supabase Auth.
+                              </p>
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-2">
+                              <label className="block text-xs font-black text-slate-700">
+                                Full Name <span className="text-red-500">*</span>
+                                <input
+                                  required
+                                  value={editStudentDraft.fullName}
+                                  onChange={(event) =>
+                                    setEditStudentDraft((current) => ({
+                                      ...current,
+                                      fullName: event.target.value,
+                                    }))
+                                  }
+                                  className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-[#174699] focus:ring-4 focus:ring-blue-50"
+                                />
+                              </label>
+
+                              <label className="block text-xs font-black text-slate-700">
+                                Email Address <span className="text-red-500">*</span>
+                                <input
+                                  required
+                                  type="email"
+                                  value={editStudentDraft.email}
+                                  onChange={(event) =>
+                                    setEditStudentDraft((current) => ({
+                                      ...current,
+                                      email: event.target.value,
+                                    }))
+                                  }
+                                  className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-[#174699] focus:ring-4 focus:ring-blue-50"
+                                />
+                              </label>
+
+                              <label className="block text-xs font-black text-slate-700">
+                                Mobile / WhatsApp <span className="text-red-500">*</span>
+                                <input
+                                  required
+                                  value={editStudentDraft.phone}
+                                  onChange={(event) =>
+                                    setEditStudentDraft((current) => ({
+                                      ...current,
+                                      phone: event.target.value,
+                                    }))
+                                  }
+                                  className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-[#174699] focus:ring-4 focus:ring-blue-50"
+                                />
+                              </label>
+
+                              <label className="block text-xs font-black text-slate-700">
+                                New Password
+                                <div className="relative mt-1.5">
+                                  <input
+                                    minLength={6}
+                                    type={showEditPassword ? "text" : "password"}
+                                    value={editStudentDraft.password}
+                                    onChange={(event) =>
+                                      setEditStudentDraft((current) => ({
+                                        ...current,
+                                        password: event.target.value,
+                                      }))
+                                    }
+                                    placeholder="Leave blank to keep current password"
+                                    autoComplete="new-password"
+                                    className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 pr-11 text-sm outline-none transition focus:border-[#174699] focus:ring-4 focus:ring-blue-50"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setShowEditPassword((value) => !value)
+                                    }
+                                    className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"
+                                    aria-label={
+                                      showEditPassword
+                                        ? "Hide new password"
+                                        : "Show new password"
+                                    }
+                                  >
+                                    {showEditPassword ? (
+                                      <EyeOff className="h-4 w-4" />
+                                    ) : (
+                                      <Eye className="h-4 w-4" />
+                                    )}
+                                  </button>
+                                </div>
+                                <span className="mt-1 block text-[9px] font-semibold text-slate-400">
+                                  Current passwords are never displayed. Enter a new password only when resetting it.
+                                </span>
+                              </label>
+
+                              <label className="block text-xs font-black text-slate-700">
+                                Account Status
+                                <select
+                                  value={editStudentDraft.accountStatus}
+                                  onChange={(event) =>
+                                    setEditStudentDraft((current) => ({
+                                      ...current,
+                                      accountStatus:
+                                        event.target.value === "inactive"
+                                          ? "inactive"
+                                          : "active",
+                                    }))
+                                  }
+                                  className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-[#174699] focus:ring-4 focus:ring-blue-50"
+                                >
+                                  <option value="active">Active</option>
+                                  <option value="inactive">Inactive</option>
+                                </select>
+                              </label>
+
+                              <label className="block text-xs font-black text-slate-700">
+                                Student Group / Batch
+                                <input
+                                  value={editStudentDraft.batch}
+                                  onChange={(event) =>
+                                    setEditStudentDraft((current) => ({
+                                      ...current,
+                                      batch: event.target.value,
+                                    }))
+                                  }
+                                  placeholder="e.g. Foundation Batch 2026"
+                                  className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-[#174699] focus:ring-4 focus:ring-blue-50"
+                                />
+                              </label>
+                            </div>
+                          </div>
+                        ) : null}
+
+                        {editTab === "access" ? (
+                          <div>
+                            <h3 className="text-sm font-black text-slate-950">
+                              Packages & Access
+                            </h3>
+                            <p className="mt-1 text-[10px] font-semibold text-slate-500">
+                              Review the current access here. Use the existing assignment panel
+                              after saving if you need to change packages, live classes or premium material.
+                            </p>
+
+                            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                <div className="text-[9px] font-black uppercase tracking-wide text-slate-400">
+                                  Packages
+                                </div>
+                                <div className="mt-2 text-2xl font-black text-slate-950">
+                                  {editingStudent.package_ids.length}
+                                </div>
+                              </div>
+                              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                <div className="text-[9px] font-black uppercase tracking-wide text-slate-400">
+                                  Live Classes
+                                </div>
+                                <div className="mt-2 text-2xl font-black text-slate-950">
+                                  {editingStudent.assigned_count}/{classes.length}
+                                </div>
+                              </div>
+                              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                <div className="text-[9px] font-black uppercase tracking-wide text-slate-400">
+                                  Material Tier
+                                </div>
+                                <div className="mt-2 text-sm font-black capitalize text-[#174699]">
+                                  {editingStudent.tier.replace("-", " + ")}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="mt-4 rounded-2xl border border-slate-200 p-4">
+                              <div className="text-xs font-black text-slate-800">
+                                Current Packages
+                              </div>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {editingStudent.package_names.length ? (
+                                  editingStudent.package_names.map((name) => (
+                                    <span
+                                      key={name}
+                                      className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-bold text-blue-700"
+                                    >
+                                      {name}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-[10px] font-semibold text-slate-400">
+                                    No package assigned.
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-[10px] font-semibold leading-relaxed text-blue-800">
+                              Package, class and premium-material assignment remains in the
+                              right-side Student Access panel so there is one source of truth
+                              for access control.
+                            </div>
+                          </div>
+                        ) : null}
+
+                        {editTab === "activity" ? (
+                          <div>
+                            <h3 className="text-sm font-black text-slate-950">
+                              Account Activity
+                            </h3>
+                            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                              <div className="rounded-2xl border border-slate-200 p-4">
+                                <div className="text-[9px] font-black uppercase tracking-wide text-slate-400">
+                                  Registered
+                                </div>
+                                <div className="mt-2 text-sm font-black text-slate-800">
+                                  {editStudentDraft.createdAt
+                                    ? new Date(editStudentDraft.createdAt).toLocaleString("en-IN")
+                                    : "Not available"}
+                                </div>
+                              </div>
+                              <div className="rounded-2xl border border-slate-200 p-4">
+                                <div className="text-[9px] font-black uppercase tracking-wide text-slate-400">
+                                  Last Sign In
+                                </div>
+                                <div className="mt-2 text-sm font-black text-slate-800">
+                                  {editStudentDraft.lastSignInAt
+                                    ? new Date(editStudentDraft.lastSignInAt).toLocaleString("en-IN")
+                                    : "No recorded sign in"}
+                                </div>
+                              </div>
+                              <div className="rounded-2xl border border-slate-200 p-4">
+                                <div className="text-[9px] font-black uppercase tracking-wide text-slate-400">
+                                  Assigned Classes
+                                </div>
+                                <div className="mt-2 text-sm font-black text-slate-800">
+                                  {editingStudent.assigned_count} active assignment(s)
+                                </div>
+                              </div>
+                              <div className="rounded-2xl border border-slate-200 p-4">
+                                <div className="text-[9px] font-black uppercase tracking-wide text-slate-400">
+                                  Login Protection
+                                </div>
+                                <div className="mt-2 text-sm font-black text-slate-800">
+                                  One active device
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : null}
+
+                        {editTab === "notes" ? (
+                          <div>
+                            <h3 className="text-sm font-black text-slate-950">
+                              Admin Notes
+                            </h3>
+                            <p className="mt-1 text-[10px] font-semibold text-slate-500">
+                              Keep internal remarks about this student. These notes are not shown
+                              in the Student Portal.
+                            </p>
+                            <textarea
+                              rows={8}
+                              value={editStudentDraft.remarks}
+                              onChange={(event) =>
+                                setEditStudentDraft((current) => ({
+                                  ...current,
+                                  remarks: event.target.value,
+                                }))
+                              }
+                              placeholder="Add notes about this student…"
+                              className="mt-4 w-full resize-y rounded-2xl border border-slate-300 bg-white p-4 text-sm outline-none transition focus:border-[#174699] focus:ring-4 focus:ring-blue-50"
+                            />
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <aside className="border-t border-slate-200 bg-slate-50/70 p-4 sm:p-5 lg:border-l lg:border-t-0">
+                        <div className="sticky top-0 space-y-4">
+                          <div>
+                            <div className="text-[9px] font-black uppercase tracking-[0.16em] text-[#174699]">
+                              Quick Overview
+                            </div>
+                            <div className="mt-3 grid grid-cols-2 gap-2">
+                              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                <div className="text-lg font-black text-slate-950">
+                                  {editingStudent.assigned_count}/{classes.length}
+                                </div>
+                                <div className="mt-1 text-[9px] font-bold text-slate-400">
+                                  Assigned Classes
+                                </div>
+                              </div>
+                              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                <div className="text-sm font-black capitalize text-slate-950">
+                                  {editingStudent.tier.replace("-", " + ")}
+                                </div>
+                                <div className="mt-1 text-[9px] font-bold text-slate-400">
+                                  Material Access
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                            <div className="text-xs font-black text-slate-800">
+                              Profile Information
+                            </div>
+                            <dl className="mt-3 space-y-2 text-[10px]">
+                              <div className="flex justify-between gap-3">
+                                <dt className="font-semibold text-slate-400">Name</dt>
+                                <dd className="text-right font-bold text-slate-700">
+                                  {editStudentDraft.fullName}
+                                </dd>
+                              </div>
+                              <div className="flex justify-between gap-3">
+                                <dt className="font-semibold text-slate-400">Email</dt>
+                                <dd className="max-w-[190px] truncate text-right font-bold text-slate-700">
+                                  {editStudentDraft.email}
+                                </dd>
+                              </div>
+                              <div className="flex justify-between gap-3">
+                                <dt className="font-semibold text-slate-400">Mobile</dt>
+                                <dd className="text-right font-bold text-slate-700">
+                                  {editStudentDraft.phone}
+                                </dd>
+                              </div>
+                              <div className="flex justify-between gap-3">
+                                <dt className="font-semibold text-slate-400">Batch</dt>
+                                <dd className="text-right font-bold text-slate-700">
+                                  {editStudentDraft.batch || "—"}
+                                </dd>
+                              </div>
+                              <div className="flex justify-between gap-3">
+                                <dt className="font-semibold text-slate-400">Status</dt>
+                                <dd
+                                  className={
+                                    editStudentDraft.accountStatus === "inactive"
+                                      ? "font-black text-slate-500"
+                                      : "font-black text-green-600"
+                                  }
+                                >
+                                  {editStudentDraft.accountStatus === "inactive"
+                                    ? "Inactive"
+                                    : "Active"}
+                                </dd>
+                              </div>
+                            </dl>
+                          </div>
+
+                          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                            <div className="text-xs font-black text-amber-800">
+                              Security
+                            </div>
+                            <p className="mt-2 text-[9px] font-semibold leading-relaxed text-amber-700">
+                              Passwords are never readable by administrators. To change one,
+                              enter a new password in the Profile tab and save.
+                            </p>
+                          </div>
+
+                          <button
+                            type="button"
+                            disabled={saving}
+                            onClick={() => {
+                              setEditingStudent(null);
+                              window.setTimeout(() => {
+                                void deactivateStudent(editingStudent);
+                              }, 0);
+                            }}
+                            className="w-full rounded-xl border border-red-200 bg-white px-4 py-2.5 text-[10px] font-black text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                          >
+                            Clear Package / Class Access
+                          </button>
+                        </div>
+                      </aside>
+                    </div>
+
+                    <div className="sticky bottom-0 flex flex-col-reverse gap-2 border-t border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                      <div className="text-[9px] font-semibold text-slate-400">
+                        Changes to email, password and account status take effect immediately after saving.
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={() => setEditingStudent(null)}
+                          className="min-h-10 flex-1 rounded-xl border border-slate-300 bg-white px-5 text-xs font-black text-slate-700 sm:flex-none disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={saving || editLoading}
+                          className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#174699] to-indigo-600 px-5 text-xs font-black text-white shadow-sm transition hover:brightness-105 sm:flex-none disabled:opacity-50"
+                        >
+                          {saving ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Save className="h-4 w-4" />
+                          )}
+                          Save Changes
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
             ) : null}
 
             {message ? (
@@ -769,7 +1394,16 @@ export function StudentManagementDashboard() {
                           {student.payment_source.replaceAll("_", " ")}
                         </td>
                         <td className="px-3 py-3">
-                          <span className="rounded-md bg-green-600 px-2 py-1 font-black text-white">Active</span>
+                          <span
+                            className={[
+                              "rounded-md px-2 py-1 font-black text-white",
+                              student.account_status === "inactive"
+                                ? "bg-slate-500"
+                                : "bg-green-600",
+                            ].join(" ")}
+                          >
+                            {student.account_status === "inactive" ? "Inactive" : "Active"}
+                          </span>
                         </td>
                         <td className="px-3 py-3">
                           <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
@@ -779,7 +1413,7 @@ export function StudentManagementDashboard() {
                             <ActionButton title="Assign packages/classes" onClick={() => setSelectedId(student.id)}>
                               <Users className="h-3.5 w-3.5" />
                             </ActionButton>
-                            <ActionButton title="Edit student" tone="orange" onClick={() => void editStudent(student)}>
+                            <ActionButton title="Edit student" tone="orange" onClick={() => void openEditStudent(student)}>
                               <Edit3 className="h-3.5 w-3.5" />
                             </ActionButton>
                             <ActionButton title="Open access control" tone="blue" onClick={() => setSelectedId(student.id)}>
@@ -1107,4 +1741,7 @@ export function StudentManagementDashboard() {
     </div>
   );
 }
+
+
+
 
