@@ -30,7 +30,7 @@ const updates = [
 
 export function WhatsNew() {
   return (
-    <aside className="hidden xl:block w-[210px] shrink-0 rounded-[28px] border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/50">
+    <aside className="portal-whats-new hidden xl:block w-[210px] shrink-0 rounded-[28px] border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/50">
       <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
         <Bell className="h-5 w-5 text-indigo-600" />
         <h2 className="font-black text-slate-950">What&apos;s New</h2>

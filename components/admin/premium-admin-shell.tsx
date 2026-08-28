@@ -20,6 +20,7 @@ import {
   Monitor,
   PanelLeft,
   PanelTop,
+  Palette,
   Phone,
   Radio,
   ShieldCheck,
@@ -99,6 +100,7 @@ const clientNavGroups: NavGroup[] = [
       { href: "/admin/banner", label: "Manage Banner shown in Hero page", icon: Monitor, code: "E5" },
       { href: "/admin/helpdesk", label: "Help Desk Mail", icon: Mail, code: "E6" },
       { href: "/admin/network-check", label: "Network Connection Check", icon: Wifi, code: "E7" },
+      { href: "/admin/website-theme", label: "Website Theme", icon: Palette, code: "E8" },
     ],
   },
   {
@@ -344,6 +346,9 @@ export function PremiumAdminShell({ children }: { children: React.ReactNode }) {
 
             {profileOpen ? (
               <div className="absolute right-0 top-[calc(100%+8px)] w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+                <Link href="/admin/website-theme" className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
+                  <Palette className="h-4 w-4" /> Website Theme
+                </Link>
                 <Link href="/admin/profile" className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
                   <UserRound className="h-4 w-4" /> Admin Profile
                 </Link>

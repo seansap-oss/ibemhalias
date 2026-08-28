@@ -37,7 +37,7 @@ export function MobileBottomBar() {
     <nav
       role="navigation"
       aria-label="Primary mobile navigation"
-      className="md:hidden fixed bottom-0 left-0 right-0 z-[80] bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800 pb-safe"
+      className="site-mobile-bottom-bar md:hidden fixed bottom-0 left-0 right-0 z-[80] bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800 pb-safe"
     >
       <ul className="flex items-stretch justify-around h-14">
         {NAV_ITEMS.map((item) => {

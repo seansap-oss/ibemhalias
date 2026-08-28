@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import * as React from "react";
 import Link from "next/link";
@@ -48,7 +48,7 @@ export function Navbar() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/75 bg-white/95 backdrop-blur-xl">
+      <header className="site-navbar fixed inset-x-0 top-0 z-50 border-b border-slate-200/75 bg-white/95 backdrop-blur-xl">
         <nav className="mx-auto flex h-[76px] max-w-[1500px] items-center gap-3 px-4 sm:px-6 lg:px-8">
           <button
             onClick={() => setMenuOpen(true)}
@@ -119,7 +119,7 @@ export function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", stiffness: 320, damping: 32 }}
-              className="fixed inset-y-0 left-0 z-[70] flex w-[88vw] max-w-[360px] flex-col bg-gradient-to-b from-[#14256f] via-[#15327f] to-[#0d225f] p-4 text-white shadow-2xl"
+              className="site-mobile-drawer fixed inset-y-0 left-0 z-[70] flex w-[88vw] max-w-[360px] flex-col bg-gradient-to-b from-[#14256f] via-[#15327f] to-[#0d225f] p-4 text-white shadow-2xl"
             >
               <div className="flex items-center justify-between">
                 <div>

@@ -56,3 +56,4 @@ _*-backup-*/
 *backup*/
 *.backup-*
 .vercel/
+.env*

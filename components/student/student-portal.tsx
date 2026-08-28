@@ -42,6 +42,7 @@ import { cleanDisplayText } from "@/lib/text/clean-display-text";
 import { formatFileSize } from "@/lib/cms/media";
 import { StudentMaterialViewer } from "./student-material-viewer";
 import { CommunityChat } from "@/components/chat/community-chat";
+import { StudentDashboardMockTests } from "@/components/mock-test/student-dashboard-center";
 import { SITE_VERSION_LABEL } from "@/lib/site-version";
 
 type AnyRow = Record<string, any>;
@@ -376,15 +377,11 @@ export function StudentPortal() {
       </div>
     </Section>
   ) : view === "mock" ? (
-    <Section title="Mock Tests" subtitle="Mock tests assigned to your Student ID will appear here without leaving the Student Portal.">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mx-auto max-w-xl py-8 text-center">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-blue-50 text-[#174699]"><ClipboardCheck className="h-7 w-7" /></div>
-          <h2 className="mt-4 text-lg font-black text-slate-950">No assigned mock tests yet</h2>
-          <p className="mt-2 text-sm leading-relaxed text-slate-500">When Ibemhal IAS assigns a paid or student-specific mock test, it will appear here. Public/free material remains on the main website.</p>
-          <Link href="/" className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#14256f] px-5 text-sm font-black text-white"><Globe2 className="h-4 w-4" /> Browse Main Website</Link>
-        </div>
-      </div>
+    <Section
+      title="Mock Tests"
+      subtitle="Free Mock Tests and tests assigned to your student account are available here without leaving the Student Portal."
+    >
+      <StudentDashboardMockTests />
     </Section>
   ) : view === "courses" ? (
     <Section title="My Courses" subtitle="Courses and packages assigned to your Student ID."><div className="rounded-2xl border border-slate-200 bg-white px-4">{data.courses.length ? data.courses.map((c) => <CourseRow key={c.id} course={c} />) : <Empty text="No courses have been assigned yet." />}</div></Section>

@@ -15,7 +15,7 @@ export function Footer() {
   return (
     <footer
       id="contact"
-      className="border-t border-slate-200 bg-[#0c1f5f] text-white"
+      className="site-footer border-t border-slate-200 bg-[#0c1f5f] text-white"
     >
       <div className="mx-auto max-w-[1500px] px-4 py-10 sm:px-6 lg:px-8">
         <div className="grid gap-6 lg:grid-cols-[1.5fr_.7fr]">

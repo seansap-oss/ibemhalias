@@ -1,8 +1,10 @@
-﻿import type { Metadata, Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import "./premium-theme.css";
 import { NativeAppProvider } from "@/components/providers/native-app-provider";
 import { PwaProvider } from "@/components/providers/pwa-provider";
+import { SiteThemeProvider } from "@/components/theme/site-theme-provider";
 import { MobileBottomBar, MobileBottomBarSpacer } from "@/components/navigation/mobile-bottom-bar";
 import { DeviceGuard } from "@/components/security/device-guard";
 import { ScreenCaptureShield } from "@/components/security/screen-capture-shield";
@@ -58,16 +60,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased overscroll-none`}>
-        <NativeAppProvider>
-          <DeviceGuard>
+        <SiteThemeProvider>
+          <NativeAppProvider>
+            <DeviceGuard>
             <ScreenCaptureShield>
               {children}
               <MobileBottomBarSpacer />
               <MobileBottomBar />
             </ScreenCaptureShield>
-          </DeviceGuard>
-        </NativeAppProvider>
-        <PwaProvider />
+            </DeviceGuard>
+          </NativeAppProvider>
+          <PwaProvider />
+        </SiteThemeProvider>
       </body>
     </html>
   );

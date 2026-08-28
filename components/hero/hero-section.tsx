@@ -8,6 +8,8 @@ import { PortalSidebar } from "@/components/portal/portal-sidebar";
 import { WhatsNew } from "@/components/portal/whats-new";
 import { PortalFloatingControls } from "@/components/portal/portal-floating-controls";
 import { HeroCmsDeck } from "@/components/cms/hero-cms-deck";
+import { useSiteTheme } from "@/components/theme/site-theme-provider";
+import { PremiumHome } from "@/components/premium/premium-home";
 
 const stories = [
   {
@@ -158,6 +160,9 @@ function FallbackHero() {
 }
 
 export function HeroSection() {
+  const { theme } = useSiteTheme();
+  if (theme === "premium") return <PremiumHome />;
+
   return (
     <section className="bg-[radial-gradient(circle_at_top,_#eef3ff_0,_#ffffff_40%,_#ffffff_100%)] pt-24">
       <div className="mx-auto max-w-[1500px] px-4 pb-12 sm:px-6 lg:px-8">

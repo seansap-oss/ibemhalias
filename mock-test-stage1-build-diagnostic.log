@@ -1,0 +1,18 @@
+
+> ibemhal-ias-lms@5.5.1 build
+> next build
+
+   ▲ Next.js 15.5.24
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+Failed to compile.
+
+app\(dynamic)\admin\mock-test\page.tsx
+You cannot have two parallel pages that resolve to the same path. Please check /(dynamic)/admin/mock-test/page and /admin/mock-test/page. Refer to the route group docs for more information: https://nextjs.org/docs/app/building-your-application/routing/route-groups
+
+app\admin\mock-test\page.tsx
+You cannot have two parallel pages that resolve to the same path. Please check /(dynamic)/admin/mock-test/page and /admin/mock-test/page. Refer to the route group docs for more information: https://nextjs.org/docs/app/building-your-application/routing/route-groups
+
+
+> Build failed because of webpack errors

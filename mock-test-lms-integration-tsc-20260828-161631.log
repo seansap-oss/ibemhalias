@@ -1,0 +1,8 @@
+.next/types/validator.ts(458,39): error TS2307: Cannot find module '../../app/admin/mock-test/questions/page.js' or its corresponding type declarations.
+.next/types/validator.ts(467,39): error TS2307: Cannot find module '../../app/admin/mock-test/reports/page.js' or its corresponding type declarations.
+.next/types/validator.ts(476,39): error TS2307: Cannot find module '../../app/admin/mock-test/results/page.js' or its corresponding type declarations.
+.next/types/validator.ts(485,39): error TS2307: Cannot find module '../../app/admin/mock-test/tests/[testId]/page.js' or its corresponding type declarations.
+.next/types/validator.ts(494,39): error TS2307: Cannot find module '../../app/admin/mock-test/tests/new/page.js' or its corresponding type declarations.
+.next/types/validator.ts(503,39): error TS2307: Cannot find module '../../app/admin/mock-test/tests/page.js' or its corresponding type declarations.
+components/mock-test/lms-student-center.tsx(19,54): error TS2339: Property 'error' does not exist on type '{} | {}'.
+  Property 'error' does not exist on type '{}'.

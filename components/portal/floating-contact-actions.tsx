@@ -1,192 +1,179 @@
 "use client";
 
 import * as React from "react";
-import { usePathname } from "next/navigation";
-import { MessageCircle, Phone } from "lucide-react";
-import {
-  SITE_CONTACT,
-  SITE_WHATSAPP_HREF,
-} from "@/lib/site-contact";
+import { GripVertical, MessageCircle, Phone } from "lucide-react";
+import { SITE_CONTACT, SITE_WHATSAPP_HREF } from "@/lib/site-contact";
 
-type Point = { x: number; y: number };
-type ButtonId = "call" | "whatsapp";
+type Side = "left" | "right";
+type DockState = { side: Side; y: number };
 
-const BUTTON_SIZE = 48;
-const EDGE_GAP = 10;
-const TOP_SAFE = 82;
-const STORAGE_PREFIX = "ibemhal-contact-position-v4";
+const BUTTON_SIZE = 50;
+const GAP = 10;
+const HANDLE_HEIGHT = 28;
+const RAIL_HEIGHT = BUTTON_SIZE * 2 + GAP + HANDLE_HEIGHT;
+const EDGE = 12;
+const TOP_SAFE = 86;
+const STORAGE_KEY = "ibemhal-contact-dock-v5";
 
 function bottomSafe() {
-  return typeof window !== "undefined" && window.innerWidth < 768 ? 96 : 20;
+  if (typeof window === "undefined") return 96;
+  return window.innerWidth < 768 ? 88 : 18;
 }
 
-function clamp(point: Point) {
-  if (typeof window === "undefined") return point;
+function clampY(y: number) {
+  if (typeof window === "undefined") return y;
+  const maxY = Math.max(TOP_SAFE, window.innerHeight - RAIL_HEIGHT - bottomSafe());
+  return Math.min(Math.max(Number.isFinite(y) ? y : TOP_SAFE, TOP_SAFE), maxY);
+}
+
+function defaultState(): DockState {
+  if (typeof window === "undefined") return { side: "right", y: TOP_SAFE };
   return {
-    x: Math.min(
-      Math.max(point.x, EDGE_GAP),
-      Math.max(EDGE_GAP, window.innerWidth - BUTTON_SIZE - EDGE_GAP)
-    ),
-    y: Math.min(
-      Math.max(point.y, TOP_SAFE),
-      Math.max(
-        TOP_SAFE,
-        window.innerHeight - BUTTON_SIZE - bottomSafe()
-      )
-    ),
+    side: "right",
+    y: clampY(window.innerHeight - RAIL_HEIGHT - bottomSafe() - 12),
   };
 }
 
-function defaultPoint(id: ButtonId): Point {
-  if (typeof window === "undefined") return { x: EDGE_GAP, y: TOP_SAFE };
-  const x = window.innerWidth - BUTTON_SIZE - 14;
-  const callY = window.innerHeight - BUTTON_SIZE - bottomSafe() - 8;
-  return clamp({
-    x,
-    y: id === "call" ? callY : callY - BUTTON_SIZE - 10,
-  });
+function readStoredState(): DockState {
+  const fallback = defaultState();
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw) as Partial<DockState>;
+    return {
+      side: parsed.side === "left" ? "left" : "right",
+      y: clampY(Number(parsed.y)),
+    };
+  } catch {
+    return fallback;
+  }
 }
 
-function Movable({
-  id,
-  href,
-  title,
-  external,
-  className,
-  children,
-}: {
-  id: ButtonId;
-  href: string;
-  title: string;
-  external?: boolean;
-  className: string;
-  children: React.ReactNode;
-}) {
+export function FloatingContactActions() {
   const [mounted, setMounted] = React.useState(false);
-  const [position, setPosition] = React.useState<Point>({ x: EDGE_GAP, y: TOP_SAFE });
-  const drag = React.useRef<any>(null);
+  const [dock, setDock] = React.useState<DockState>({ side: "right", y: TOP_SAFE });
+  const drag = React.useRef<{
+    pointerId: number;
+    pointerY: number;
+    startY: number;
+    moved: boolean;
+  } | null>(null);
 
-  const save = React.useCallback((point: Point) => {
+  const save = React.useCallback((next: DockState) => {
     try {
-      localStorage.setItem(`${STORAGE_PREFIX}:${id}`, JSON.stringify(point));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     } catch {}
-  }, [id]);
+  }, []);
 
   React.useEffect(() => {
     setMounted(true);
-    try {
-      const raw = localStorage.getItem(`${STORAGE_PREFIX}:${id}`);
-      setPosition(raw ? clamp(JSON.parse(raw)) : defaultPoint(id));
-    } catch {
-      setPosition(defaultPoint(id));
-    }
+    setDock(readStoredState());
 
-    const resize = () => {
-      setPosition((current) => {
-        const next = clamp(current);
+    const reclamp = () => {
+      setDock((current) => {
+        const next = { ...current, y: clampY(current.y) };
         save(next);
         return next;
       });
     };
-    window.addEventListener("resize", resize);
-    window.addEventListener("orientationchange", resize);
-    return () => {
-      window.removeEventListener("resize", resize);
-      window.removeEventListener("orientationchange", resize);
-    };
-  }, [id, save]);
 
-  const onPointerDown = (event: React.PointerEvent<HTMLAnchorElement>) => {
+    window.addEventListener("resize", reclamp);
+    window.addEventListener("orientationchange", reclamp);
+    return () => {
+      window.removeEventListener("resize", reclamp);
+      window.removeEventListener("orientationchange", reclamp);
+    };
+  }, [save]);
+
+  const beginDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
     drag.current = {
       pointerId: event.pointerId,
-      startX: position.x,
-      startY: position.y,
-      pointerX: event.clientX,
       pointerY: event.clientY,
+      startY: dock.y,
       moved: false,
     };
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
-  const onPointerMove = (event: React.PointerEvent<HTMLAnchorElement>) => {
+  const moveDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
     const state = drag.current;
     if (!state || state.pointerId !== event.pointerId) return;
-    const dx = event.clientX - state.pointerX;
     const dy = event.clientY - state.pointerY;
-    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) state.moved = true;
-    setPosition(clamp({ x: state.startX + dx, y: state.startY + dy }));
+    if (Math.abs(dy) > 3) state.moved = true;
+    setDock((current) => ({ ...current, y: clampY(state.startY + dy) }));
   };
 
-  const finish = (event: React.PointerEvent<HTMLAnchorElement>) => {
+  const finishDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
     const state = drag.current;
-    if (!state) return;
-    const next = clamp(position);
-    setPosition(next);
-    save(next);
+    if (!state || state.pointerId !== event.pointerId) return;
+
+    if (!state.moved) {
+      setDock((current) => {
+        const next: DockState = {
+          side: current.side === "right" ? "left" : "right",
+          y: clampY(current.y),
+        };
+        save(next);
+        return next;
+      });
+    } else {
+      const side: Side = event.clientX < window.innerWidth / 2 ? "left" : "right";
+      setDock((current) => {
+        const next = { side, y: clampY(current.y) };
+        save(next);
+        return next;
+      });
+    }
+
     try {
       event.currentTarget.releasePointerCapture(event.pointerId);
     } catch {}
-    window.setTimeout(() => {
-      drag.current = null;
-    }, 0);
+    drag.current = null;
   };
 
-  const style: React.CSSProperties = mounted
-    ? { left: position.x, top: position.y }
-    : id === "whatsapp"
-      ? { right: 14, bottom: 154 }
-      : { right: 14, bottom: 96 };
+  if (!mounted) return null;
+
+  const sideStyle: React.CSSProperties =
+    dock.side === "left" ? { left: EDGE, top: dock.y } : { right: EDGE, top: dock.y };
 
   return (
-    <a
-      href={href}
-      target={external ? "_blank" : undefined}
-      rel={external ? "noopener noreferrer" : undefined}
-      title={`${title} · drag to move · double-click to reset`}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={finish}
-      onPointerCancel={finish}
-      onClick={(event) => {
-        if (drag.current?.moved) event.preventDefault();
-      }}
-      onDoubleClick={(event) => {
-        event.preventDefault();
-        const next = defaultPoint(id);
-        setPosition(next);
-        save(next);
-      }}
-      style={style}
-      className={`fixed z-[56] grid h-12 w-12 touch-none select-none place-items-center rounded-full shadow-xl cursor-grab active:cursor-grabbing ${className}`}
+    <div
+      style={sideStyle}
+      className="fixed z-[96] flex w-[50px] flex-col items-center gap-2.5"
+      data-floating-contact-dock={dock.side}
     >
-      {children}
-    </a>
-  );
-}
-
-export function FloatingContactActions() {
-  const pathname = usePathname();
-  const dim = pathname !== "/" ? "opacity-70 hover:opacity-100" : "opacity-100";
-
-  return (
-    <>
-      <Movable
-        id="whatsapp"
+      <a
         href={SITE_WHATSAPP_HREF}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`WhatsApp ${SITE_CONTACT.phoneDisplay}`}
         title={`WhatsApp ${SITE_CONTACT.phoneDisplay}`}
-        external
-        className={`bg-green-500 text-white ring-1 ring-green-600/20 ${dim}`}
+        className="grid h-[50px] w-[50px] place-items-center rounded-full bg-green-500 text-white shadow-2xl ring-2 ring-white/90 transition active:scale-95"
       >
-        <MessageCircle className="h-5 w-5" />
-      </Movable>
-      <Movable
-        id="call"
+        <MessageCircle className="h-6 w-6" />
+      </a>
+
+      <a
         href={`tel:${SITE_CONTACT.phoneE164}`}
+        aria-label={`Call ${SITE_CONTACT.phoneDisplay}`}
         title={`Call ${SITE_CONTACT.phoneDisplay}`}
-        className={`bg-white text-[#14256f] ring-1 ring-slate-200 ${dim}`}
+        className="grid h-[50px] w-[50px] place-items-center rounded-full bg-white text-[#14256f] shadow-2xl ring-1 ring-slate-200 transition active:scale-95"
       >
-        <Phone className="h-5 w-5" />
-      </Movable>
-    </>
+        <Phone className="h-6 w-6" />
+      </a>
+
+      <button
+        type="button"
+        aria-label={`Move contact buttons to the ${dock.side === "right" ? "left" : "right"} side`}
+        title="Drag vertically and release on the left or right. Tap once to swap sides."
+        onPointerDown={beginDrag}
+        onPointerMove={moveDrag}
+        onPointerUp={finishDrag}
+        onPointerCancel={finishDrag}
+        className="grid h-7 w-9 touch-none place-items-center rounded-full border border-slate-200 bg-white/95 text-slate-500 shadow-lg backdrop-blur active:cursor-grabbing"
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+    </div>
   );
 }

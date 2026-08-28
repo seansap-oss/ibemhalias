@@ -1,0 +1,67 @@
+IBEMHAL MOCK TEST STAGE 1 INSTALL LOG
+
+=== CURRENT PROJECT ===
+5.5.1
+ M .gitignore
+ M .live-now-logs/livekit-error.log
+ M app/layout.tsx
+ M app/page.tsx
+ M components/admin/premium-admin-shell.tsx
+ M components/hero/hero-section.tsx
+ M components/landing/footer.tsx
+ M components/landing/navbar.tsx
+ M components/live-class/live-class-promo.tsx
+ M components/navigation/mobile-bottom-bar.tsx
+ M components/portal/floating-contact-actions.tsx
+ M components/portal/floating-whats-new.tsx
+ M components/portal/page-components.tsx
+ M components/portal/portal-page-shell.tsx
+ M components/portal/portal-sidebar.tsx
+ M components/portal/whats-new.tsx
+ M lib/site-version.ts
+ M package-lock.json
+ M package.json
+?? app/(dynamic)/admin/website-theme/
+?? app/api/admin/site-theme/
+?? app/api/mock-tests/
+?? app/api/site-theme/
+?? app/premium-theme.css
+?? components/admin/site-theme-manager.tsx
+?? components/premium/
+?? components/theme/
+?? lib/mock-test/
+?? mock-test-stage1-install-20260828-114004.log
+?? mock-test-stage1-install-20260828-114252.log
+?? mock-test-stage1-install-20260828-115536.log
+?? supabase/migrations/011_mock_test_stage1.sql
+
+=== CREATE BACKUP AND APPLY ADDITIVE FILES ===
+COPIED supabase\migrations\011_mock_test_stage1.sql
+COPIED lib\mock-test\server.ts
+COPIED lib\mock-test\student.ts
+COPIED app\api\mock-tests\route.ts
+COPIED app\api\mock-tests\[testId]\start\route.ts
+COPIED app\api\mock-attempts\[attemptId]\answer\route.ts
+COPIED app\api\mock-attempts\[attemptId]\submit\route.ts
+COPIED app\api\mock-attempts\[attemptId]\result\route.ts
+COPIED app\api\mock-attempts\[attemptId]\review\route.ts
+COPIED app\api\admin\mock-tests\route.ts
+COPIED app\api\admin\mock-tests\[testId]\route.ts
+COPIED components\mock-test\mock-test-center.tsx
+COPIED components\mock-test\test-runner.tsx
+COPIED components\mock-test\result-view.tsx
+COPIED components\mock-test\review-view.tsx
+COPIED components\mock-test\admin-tests.tsx
+COPIED app\student\mock-tests\page.tsx
+COPIED app\student\mock-tests\[testId]\page.tsx
+COPIED app\student\mock-tests\result\[attemptId]\page.tsx
+COPIED app\student\mock-tests\review\[attemptId]\page.tsx
+COPIED app\admin\mock-test\page.tsx
+COPIED app\admin\mock-test\tests\page.tsx
+COPIED app\admin\mock-test\tests\[testId]\page.tsx
+COPIED app\admin\mock-test\questions\page.tsx
+COPIED styles\mock-test.css
+
+=== TYPESCRIPT VERIFICATION ===
+
+=== PRODUCTION BUILD VERIFICATION ===

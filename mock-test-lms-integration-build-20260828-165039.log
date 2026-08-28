@@ -1,0 +1,220 @@
+
+> ibemhal-ias-lms@5.5.1 build
+> next build
+
+   ▲ Next.js 15.5.24
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (107kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (258kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ✓ Compiled successfully in 32.8s
+   Linting and checking validity of types ...
+
+./components/cms/media-card.tsx
+92:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/hero/hero-section.tsx
+94:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/landing/courses-section.tsx
+75:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/landing/facilities-section.tsx
+43:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/live-class/live-admin-console.tsx
+150:226  Warning: React Hook React.useEffect has a missing dependency: 'selected'. Either include it or remove the dependency array. If 'setIds' needs the current value of 'selected', you can also switch to useReducer instead of useState and read 'selected' in the reducer.  react-hooks/exhaustive-deps
+150:227  Warning: React Hook React.useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked.  react-hooks/exhaustive-deps
+
+./components/live-class/providers/livekit/livekit-teleclass-room.tsx
+195:9  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/live-class/providers/livekit/whiteboard.tsx
+60:6  Warning: React Hook useEffect has a missing dependency: 'redraw'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/mock-test/approved-test-runner.tsx
+75:9  Warning: The 'qs' logical expression could make the dependencies of useMemo Hook (at line 93) change on every render. To fix this, wrap the initialization of 'qs' in its own useMemo() Hook.  react-hooks/exhaustive-deps
+80:5  Warning: React Hook useEffect has a missing dependency: 'current'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/mock-test/test-runner.tsx
+93:9  Warning: The 'questions' logical expression could make the dependencies of useMemo Hook (at line 102) change on every render. To fix this, wrap the initialization of 'questions' in its own useMemo() Hook.  react-hooks/exhaustive-deps
+
+./components/premium/premium-home.tsx
+78:9  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+165:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/ui/avatar.tsx
+35:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/60) ...
+   Generating static pages (15/60) 
+   Generating static pages (30/60) 
+   Generating static pages (45/60) 
+ ✓ Generating static pages (60/60)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                                      Size  First Load JS
+┌ ○ /                                                          7.1 kB         176 kB
+├ ○ /_not-found                                                 298 B         103 kB
+├ ○ /about                                                      603 B         169 kB
+├ ƒ /admin/ai-health                                          3.76 kB         149 kB
+├ ƒ /admin/banner                                               298 B         103 kB
+├ ƒ /admin/community-chat                                     1.89 kB         179 kB
+├ ƒ /admin/content                                             6.3 kB         109 kB
+├ ƒ /admin/courses                                            4.76 kB         154 kB
+├ ƒ /admin/courses/[id]                                       5.16 kB         154 kB
+├ ƒ /admin/courses/[id]/edit                                  4.78 kB         118 kB
+├ ƒ /admin/courses/[id]/lessons/new                           6.59 kB         155 kB
+├ ƒ /admin/courses/new                                        3.16 kB         116 kB
+├ ƒ /admin/dashboard                                          5.67 kB         112 kB
+├ ƒ /admin/helpdesk                                             168 B         111 kB
+├ ƒ /admin/ingest                                              5.2 kB         151 kB
+├ ƒ /admin/live-classes                                         186 B         116 kB
+├ ƒ /admin/live-classes/attendance                              186 B         116 kB
+├ ƒ /admin/live-classes/classes/[classId]                       168 B         116 kB
+├ ƒ /admin/live-classes/classrooms                              186 B         116 kB
+├ ƒ /admin/live-classes/packages                                186 B         116 kB
+├ ƒ /admin/live-classes/reminders                               186 B         116 kB
+├ ƒ /admin/live-classes/schedule                                186 B         116 kB
+├ ƒ /admin/live-classes/students                              12.5 kB         118 kB
+├ ƒ /admin/live-classes/students/[studentId]                    168 B         116 kB
+├ ƒ /admin/live-classes/studio                                2.18 kB         108 kB
+├ ƒ /admin/live-classes/studio/[sessionId]                      336 B         339 kB
+├ ƒ /admin/login                                              3.51 kB         158 kB
+├ ƒ /admin/mentorship                                           168 B         111 kB
+├ ƒ /admin/mock-test                                          3.66 kB         110 kB
+├ ƒ /admin/mock-test/questions                                 3.2 kB         109 kB
+├ ƒ /admin/mock-test/reports                                  3.01 kB         109 kB
+├ ƒ /admin/mock-test/results                                  3.19 kB         109 kB
+├ ƒ /admin/mock-test/tests                                    3.48 kB         109 kB
+├ ƒ /admin/mock-test/tests/[testId]                             139 B         116 kB
+├ ƒ /admin/mock-test/tests/new                                  139 B         116 kB
+├ ƒ /admin/network-check                                      5.03 kB         115 kB
+├ ƒ /admin/notifications                                        168 B         111 kB
+├ ƒ /admin/profile                                              168 B         111 kB
+├ ƒ /admin/student-space                                        169 B         111 kB
+├ ƒ /admin/test-student                                        2.1 kB         108 kB
+├ ƒ /admin/website-theme                                      3.98 kB         107 kB
+├ ƒ /ai-tutor                                                 6.72 kB         156 kB
+├ ƒ /api/admin/login                                            298 B         103 kB
+├ ƒ /api/admin/logout                                           298 B         103 kB
+├ ƒ /api/admin/mock-questions                                   298 B         103 kB
+├ ƒ /api/admin/mock-questions/[questionId]                      298 B         103 kB
+├ ƒ /api/admin/mock-reports                                     298 B         103 kB
+├ ƒ /api/admin/mock-results                                     298 B         103 kB
+├ ƒ /api/admin/mock-tests                                       298 B         103 kB
+├ ƒ /api/admin/mock-tests/[testId]                              298 B         103 kB
+├ ƒ /api/admin/mock-tests/[testId]/imports/csv                  298 B         103 kB
+├ ƒ /api/admin/mock-tests/[testId]/imports/pdf                  298 B         103 kB
+├ ƒ /api/admin/mock-tests/[testId]/questions                    298 B         103 kB
+├ ƒ /api/admin/mock-tests/[testId]/smart-import/commit          298 B         103 kB
+├ ƒ /api/admin/mock-tests/[testId]/smart-import/preview         298 B         103 kB
+├ ƒ /api/admin/session                                          298 B         103 kB
+├ ƒ /api/admin/site-theme                                       298 B         103 kB
+├ ƒ /api/admin/student-access                                   298 B         103 kB
+├ ƒ /api/admin/test-student                                     298 B         103 kB
+├ ƒ /api/ai/agent                                               298 B         103 kB
+├ ƒ /api/ai/calendar                                            298 B         103 kB
+├ ƒ /api/ai/quiz                                                298 B         103 kB
+├ ƒ /api/ai/youtube                                             298 B         103 kB
+├ ƒ /api/chat/messages                                          298 B         103 kB
+├ ƒ /api/chat/moderate                                          298 B         103 kB
+├ ƒ /api/chat/reactions                                         298 B         103 kB
+├ ƒ /api/chat/read                                              298 B         103 kB
+├ ƒ /api/chat/report                                            298 B         103 kB
+├ ƒ /api/chat/rooms                                             298 B         103 kB
+├ ƒ /api/chat/upload                                            298 B         103 kB
+├ ƒ /api/cms/content                                            298 B         103 kB
+├ ƒ /api/cms/health                                             298 B         103 kB
+├ ƒ /api/cms/upload                                             298 B         103 kB
+├ ƒ /api/discounts/validate                                     298 B         103 kB
+├ ƒ /api/live-class/admin                                       298 B         103 kB
+├ ƒ /api/live-class/admin/upload                                298 B         103 kB
+├ ƒ /api/live-class/lighting                                    298 B         103 kB
+├ ƒ /api/live-class/provider                                    298 B         103 kB
+├ ƒ /api/live-class/provider/moderate                           298 B         103 kB
+├ ƒ /api/live-class/provider/token                              298 B         103 kB
+├ ƒ /api/live-class/reminders/process                           298 B         103 kB
+├ ƒ /api/live-class/resource                                    298 B         103 kB
+├ ƒ /api/live-class/student                                     298 B         103 kB
+├ ƒ /api/live-class/token                                       298 B         103 kB
+├ ƒ /api/live-now/license/status                                298 B         103 kB
+├ ƒ /api/mock-attempts/[attemptId]/answer                       298 B         103 kB
+├ ƒ /api/mock-attempts/[attemptId]/result                       298 B         103 kB
+├ ƒ /api/mock-attempts/[attemptId]/review                       298 B         103 kB
+├ ƒ /api/mock-attempts/[attemptId]/submit                       298 B         103 kB
+├ ƒ /api/mock-tests                                             298 B         103 kB
+├ ƒ /api/mock-tests/[testId]/start                              298 B         103 kB
+├ ƒ /api/mock-tests/summary                                     298 B         103 kB
+├ ƒ /api/network-check/download                                 298 B         103 kB
+├ ƒ /api/network-check/ping                                     298 B         103 kB
+├ ƒ /api/network-check/upload                                   298 B         103 kB
+├ ƒ /api/site-theme                                             298 B         103 kB
+├ ƒ /api/student/dashboard                                      298 B         103 kB
+├ ƒ /api/student/material-progress                              298 B         103 kB
+├ ƒ /api/transcribe                                             298 B         103 kB
+├ ƒ /api/upload                                                 298 B         103 kB
+├ ○ /courses                                                    603 B         169 kB
+├ ○ /current-affairs/daily                                      685 B         169 kB
+├ ○ /current-affairs/daily/civil-service                        685 B         169 kB
+├ ○ /current-affairs/daily/civil-service/editorial-analysis     685 B         169 kB
+├ ○ /current-affairs/daily/civil-service/news-analysis          685 B         169 kB
+├ ○ /current-affairs/daily/civil-service/others                 685 B         169 kB
+├ ○ /current-affairs/daily/ssc-banking                          685 B         169 kB
+├ ○ /current-affairs/daily/ssc-banking/daily-ca                 685 B         169 kB
+├ ○ /current-affairs/daily/ssc-banking/daily-general-studies    685 B         169 kB
+├ ○ /current-affairs/daily/ssc-banking/others                   685 B         169 kB
+├ ○ /current-affairs/monthly                                    685 B         169 kB
+├ ○ /current-affairs/monthly/civil-service                      685 B         169 kB
+├ ○ /current-affairs/monthly/civil-service/august               685 B         169 kB
+├ ○ /current-affairs/monthly/civil-service/oct                  685 B         169 kB
+├ ○ /current-affairs/monthly/civil-service/sept                 685 B         169 kB
+├ ○ /current-affairs/monthly/ssc-banking                        685 B         169 kB
+├ ○ /current-affairs/monthly/ssc-banking/august                 685 B         169 kB
+├ ○ /current-affairs/monthly/ssc-banking/oct                    685 B         169 kB
+├ ○ /current-affairs/monthly/ssc-banking/sept                   685 B         169 kB
+├ ƒ /dashboard                                                13.7 kB         200 kB
+├ ƒ /dashboard/calendar                                         22 kB         238 kB
+├ ƒ /learn/[slug]                                               11 kB         227 kB
+├ ƒ /live-classes                                             3.01 kB         109 kB
+├ ƒ /live-classes/[sessionId]                                   334 B         339 kB
+├ ƒ /local-admin                                                12 kB         228 kB
+├ ○ /locations                                                  603 B         169 kB
+├ ƒ /login                                                    6.14 kB         228 kB
+├ ○ /manifest.webmanifest                                       298 B         103 kB
+├ ○ /mentorship                                               3.46 kB         172 kB
+├ ƒ /mock-test                                                3.04 kB         172 kB
+├ ƒ /mock-test/[testId]                                       3.68 kB         106 kB
+├ ƒ /mock-test/result/[attemptId]                             2.37 kB         171 kB
+├ ƒ /mock-test/review/[attemptId]                             2.09 kB         171 kB
+├ ƒ /offline                                                    169 B         106 kB
+├ ƒ /profile                                                  4.92 kB         154 kB
+├ ○ /resources                                                  685 B         169 kB
+├ ○ /resources/civil-service                                    685 B         169 kB
+├ ○ /resources/civil-service/mains-pyqs-solutions               685 B         169 kB
+├ ○ /resources/civil-service/ncert-free-books                   685 B         169 kB
+├ ○ /resources/civil-service/others                             685 B         169 kB
+├ ○ /resources/civil-service/prelims-pyqs-solutions             685 B         169 kB
+├ ○ /resources/ssc-banking                                      685 B         169 kB
+├ ○ /resources/ssc-banking/others                               685 B         169 kB
+├ ○ /resources/ssc-banking/pyqs                                 685 B         169 kB
+├ ƒ /student-space                                              685 B         169 kB
+├ ○ /student/mock-tests                                         298 B         103 kB
+├ ƒ /student/mock-tests/[testId]                                298 B         103 kB
+├ ƒ /student/mock-tests/result/[attemptId]                      298 B         103 kB
+└ ƒ /student/mock-tests/review/[attemptId]                      298 B         103 kB
++ First Load JS shared by all                                  103 kB
+  ├ chunks/1255-7b4b5a04291b6a94.js                           46.1 kB
+  ├ chunks/4bd1b696-100b9d70ed4e49c1.js                       54.2 kB
+  └ other shared chunks (total)                               2.23 kB
+
+
+ƒ Middleware                                                  93.6 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

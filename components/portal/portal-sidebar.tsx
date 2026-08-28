@@ -13,7 +13,7 @@ export function PortalSidebar() {
   return (
     <aside
       className={[
-        "hidden lg:flex shrink-0 flex-col rounded-[28px] bg-gradient-to-b from-[#111f70] via-[#132d80] to-[#0b225f] text-white shadow-2xl shadow-blue-950/10 transition-all duration-300",
+        "portal-sidebar hidden lg:flex shrink-0 flex-col rounded-[28px] bg-gradient-to-b from-[#111f70] via-[#132d80] to-[#0b225f] text-white shadow-2xl shadow-blue-950/10 transition-all duration-300",
         expanded ? "w-[270px]" : "w-[86px]",
       ].join(" ")}
     >

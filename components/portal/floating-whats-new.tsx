@@ -2,228 +2,188 @@
 
 import * as React from "react";
 import Link from "next/link";
-import {
-  Bell,
-  BookOpen,
-  CalendarClock,
-  FileText,
-  Megaphone,
-  X,
-} from "lucide-react";
+import { Bell, BookOpen, CalendarClock, FileText, Megaphone, X } from "lucide-react";
 
 const updates = [
-  {
-    icon: Megaphone,
-    title: "New mentorship batch",
-    detail: "Admissions and counselling updates",
-    href: "/mentorship",
-  },
-  {
-    icon: FileText,
-    title: "Daily Current Affairs",
-    detail: "Civil Service and SSC/Banking",
-    href: "/current-affairs/daily",
-  },
-  {
-    icon: CalendarClock,
-    title: "Monthly Current Affairs",
-    detail: "Month-wise archive",
-    href: "/current-affairs/monthly",
-  },
-  {
-    icon: BookOpen,
-    title: "Free Resources",
-    detail: "NCERT books, PYQs and solutions",
-    href: "/resources",
-  },
+  { icon: Megaphone, title: "New mentorship batch", detail: "Admissions and counselling updates", href: "/mentorship" },
+  { icon: FileText, title: "Daily Current Affairs", detail: "Civil Service and SSC/Banking", href: "/current-affairs/daily" },
+  { icon: CalendarClock, title: "Monthly Current Affairs", detail: "Month-wise archive", href: "/current-affairs/monthly" },
+  { icon: BookOpen, title: "Free Resources", detail: "NCERT books, PYQs and solutions", href: "/resources" },
 ];
 
-type Point = { x: number; y: number };
+type Side = "left" | "right";
+type DockState = { side: Side; y: number };
 
-const STORAGE_KEY = "ibemhal-floating-whats-new-position-v2";
-const EDGE = 10;
+const STORAGE_KEY = "ibemhal-floating-whats-new-dock-v3";
+const LEGACY_STORAGE_KEY = "ibemhal-floating-whats-new-position-v2";
+const EDGE = 12;
 const TOP_SAFE = 86;
-const BOTTOM_MOBILE = 92;
-const BOTTOM_DESKTOP = 12;
 
-function clampPoint(point: Point, width: number, height: number): Point {
-  if (typeof window === "undefined") return point;
-  const bottom = window.innerWidth < 768 ? BOTTOM_MOBILE : BOTTOM_DESKTOP;
-  const maxX = Math.max(EDGE, window.innerWidth - width - EDGE);
-  const maxY = Math.max(TOP_SAFE, window.innerHeight - height - bottom);
-  return {
-    x: Math.min(Math.max(point.x, EDGE), maxX),
-    y: Math.min(Math.max(point.y, TOP_SAFE), maxY),
-  };
+function bottomSafe() {
+  if (typeof window === "undefined") return 96;
+  return window.innerWidth < 768 ? 88 : 16;
+}
+
+function panelWidth(open: boolean) {
+  if (typeof window === "undefined") return open ? 320 : 56;
+  return open ? Math.min(window.innerWidth * 0.86, 320) : 56;
+}
+
+function panelHeight(open: boolean) {
+  return open ? 430 : 56;
+}
+
+function clampY(y: number, open: boolean) {
+  if (typeof window === "undefined") return y;
+  const maxY = Math.max(TOP_SAFE, window.innerHeight - panelHeight(open) - bottomSafe());
+  return Math.min(Math.max(Number.isFinite(y) ? y : TOP_SAFE, TOP_SAFE), maxY);
+}
+
+function defaultDock(): DockState {
+  return { side: "right", y: 112 };
+}
+
+function readDock(): DockState {
+  const fallback = defaultDock();
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<DockState>;
+      return { side: parsed.side === "left" ? "left" : "right", y: clampY(Number(parsed.y), false) };
+    }
+    const legacy = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacy) {
+      const parsed = JSON.parse(legacy) as { x?: number; y?: number };
+      const side: Side = Number(parsed.x) < window.innerWidth / 2 ? "left" : "right";
+      return { side, y: clampY(Number(parsed.y), false) };
+    }
+  } catch {}
+  return fallback;
 }
 
 export function FloatingWhatsNew() {
-  const [open, setOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
-  const [position, setPosition] = React.useState<Point>({ x: EDGE, y: 112 });
-  const ref = React.useRef<HTMLDivElement | null>(null);
-  const dragRef = React.useRef<{
+  const [open, setOpen] = React.useState(false);
+  const [dock, setDock] = React.useState<DockState>(defaultDock());
+  const drag = React.useRef<{
     pointerId: number;
-    startX: number;
-    startY: number;
-    pointerX: number;
     pointerY: number;
+    startY: number;
     moved: boolean;
   } | null>(null);
 
-  const size = React.useCallback(() => {
-    const rect = ref.current?.getBoundingClientRect();
-    return {
-      width: rect?.width || (open ? 320 : 56),
-      height: rect?.height || (open ? 430 : 56),
-    };
-  }, [open]);
-
-  const save = React.useCallback((point: Point) => {
+  const save = React.useCallback((next: DockState) => {
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(point));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     } catch {}
   }, []);
 
-  const reclamp = React.useCallback(() => {
-    const currentSize = size();
-    setPosition((current) => {
-      const next = clampPoint(current, currentSize.width, currentSize.height);
-      save(next);
-      return next;
-    });
-  }, [save, size]);
-
   React.useEffect(() => {
     setMounted(true);
+    const initial = readDock();
+    setDock(initial);
+    save(initial);
 
-    const defaultPoint = {
-      x: Math.max(EDGE, window.innerWidth - 56 - 16),
-      y: 112,
+    const reclamp = () => {
+      setDock((current) => {
+        const next = { ...current, y: clampY(current.y, open) };
+        save(next);
+        return next;
+      });
     };
 
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as Point;
-        const initial = clampPoint(
-          parsed,
-          56,
-          56
-        );
-        setPosition(initial);
-      } else {
-        setPosition(defaultPoint);
-      }
-    } catch {
-      setPosition(defaultPoint);
-    }
-
-    const onResize = () => window.requestAnimationFrame(reclamp);
-    window.addEventListener("resize", onResize);
-    window.addEventListener("orientationchange", onResize);
+    window.addEventListener("resize", reclamp);
+    window.addEventListener("orientationchange", reclamp);
     return () => {
-      window.removeEventListener("resize", onResize);
-      window.removeEventListener("orientationchange", onResize);
+      window.removeEventListener("resize", reclamp);
+      window.removeEventListener("orientationchange", reclamp);
     };
-  }, [reclamp]);
+  }, [open, save]);
 
   React.useEffect(() => {
     if (!mounted) return;
-    const frame = window.requestAnimationFrame(reclamp);
-    return () => window.cancelAnimationFrame(frame);
-  }, [open, mounted, reclamp]);
+    setDock((current) => {
+      const next = { ...current, y: clampY(current.y, open) };
+      save(next);
+      return next;
+    });
+  }, [open, mounted, save]);
 
-  const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    const target = event.target as HTMLElement;
-    if (target.closest("a,button")) return;
-
-    dragRef.current = {
+  const beginDrag = (event: React.PointerEvent<HTMLButtonElement | HTMLDivElement>) => {
+    drag.current = {
       pointerId: event.pointerId,
-      startX: position.x,
-      startY: position.y,
-      pointerX: event.clientX,
       pointerY: event.clientY,
+      startY: dock.y,
       moved: false,
     };
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
-  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    const state = dragRef.current;
+  const moveDrag = (event: React.PointerEvent<HTMLButtonElement | HTMLDivElement>) => {
+    const state = drag.current;
     if (!state || state.pointerId !== event.pointerId) return;
-
-    const dx = event.clientX - state.pointerX;
     const dy = event.clientY - state.pointerY;
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) state.moved = true;
-
-    const currentSize = size();
-    setPosition(
-      clampPoint(
-        { x: state.startX + dx, y: state.startY + dy },
-        currentSize.width,
-        currentSize.height
-      )
-    );
+    if (Math.abs(dy) > 3) state.moved = true;
+    setDock((current) => ({ ...current, y: clampY(state.startY + dy, open) }));
   };
 
-  const finishDrag = (event: React.PointerEvent<HTMLDivElement>) => {
-    const state = dragRef.current;
+  const finishDrag = (event: React.PointerEvent<HTMLButtonElement | HTMLDivElement>) => {
+    const state = drag.current;
     if (!state || state.pointerId !== event.pointerId) return;
 
-    const currentSize = size();
-    const next = clampPoint(position, currentSize.width, currentSize.height);
-    setPosition(next);
-    save(next);
+    const side: Side = event.clientX < window.innerWidth / 2 ? "left" : "right";
+    setDock((current) => {
+      const next = { side, y: clampY(current.y, open) };
+      save(next);
+      return next;
+    });
 
     try {
       event.currentTarget.releasePointerCapture(event.pointerId);
     } catch {}
-    dragRef.current = null;
+
+    const moved = state.moved;
+    drag.current = null;
+    if (!moved && !open) setOpen(true);
   };
 
-  const resetPosition = () => {
-    const currentSize = size();
-    const next = clampPoint(
-      {
-        x: window.innerWidth - currentSize.width - 16,
-        y: 112,
-      },
-      currentSize.width,
-      currentSize.height
-    );
-    setPosition(next);
-    save(next);
-  };
+  const sideStyle: React.CSSProperties =
+    dock.side === "left" ? { left: EDGE, top: dock.y } : { right: EDGE, top: dock.y };
 
   if (!mounted) return null;
 
   return (
     <div
-      ref={ref}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={finishDrag}
-      onPointerCancel={finishDrag}
-      onDoubleClick={resetPosition}
-      style={{ left: position.x, top: position.y }}
-      className="fixed z-[55] touch-none select-none lg:hidden"
+      style={sideStyle}
+      className="fixed z-[95] touch-none select-none lg:hidden"
+      data-floating-whats-new-dock={dock.side}
     >
       {open ? (
-        <div className="w-[min(82vw,320px)] overflow-hidden rounded-[24px] border border-red-100 bg-white shadow-2xl shadow-red-950/15">
-          <div className="cursor-grab bg-gradient-to-r from-red-500 to-orange-500 px-4 py-3 text-white active:cursor-grabbing">
+        <div
+          style={{ width: panelWidth(true) }}
+          className="overflow-hidden rounded-[24px] border border-red-100 bg-white shadow-2xl shadow-red-950/15"
+        >
+          <div
+            onPointerDown={beginDrag}
+            onPointerMove={moveDrag}
+            onPointerUp={finishDrag}
+            onPointerCancel={finishDrag}
+            className="touch-none cursor-grab bg-gradient-to-r from-red-500 to-orange-500 px-4 py-3 text-white active:cursor-grabbing"
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Bell className="h-5 w-5" />
                 <div>
                   <div className="text-sm font-black">What&apos;s New</div>
                   <div className="text-[10px] font-medium text-white/80">
-                    Drag the orange header · stays inside screen
+                    Drag header to move · release left or right
                   </div>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setOpen(false)}
+                onPointerDown={(event) => event.stopPropagation()}
                 aria-label="Collapse What's New"
                 className="grid h-9 w-9 place-items-center rounded-full bg-white/15"
               >
@@ -234,41 +194,34 @@ export function FloatingWhatsNew() {
 
           <div className="divide-y divide-slate-100 p-2">
             {updates.map((item) => (
-              <Link
-                key={item.title}
-                href={item.href}
-                className="flex gap-3 rounded-xl p-3 transition hover:bg-slate-50"
-              >
+              <Link key={item.title} href={item.href} className="flex gap-3 rounded-xl p-3 transition hover:bg-slate-50">
                 <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-red-50 text-red-500">
                   <item.icon className="h-5 w-5" />
                 </div>
                 <div>
-                  <div className="text-xs font-black leading-snug text-slate-900">
-                    {item.title}
-                  </div>
-                  <div className="mt-1 text-[11px] leading-snug text-slate-500">
-                    {item.detail}
-                  </div>
+                  <div className="text-xs font-black leading-snug text-slate-900">{item.title}</div>
+                  <div className="mt-1 text-[11px] leading-snug text-slate-500">{item.detail}</div>
                 </div>
               </Link>
             ))}
           </div>
 
           <div className="border-t border-slate-100 p-3">
-            <Link
-              href="/current-affairs/daily"
-              className="inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-slate-50 text-xs font-black text-red-600"
-            >
+            <Link href="/current-affairs/daily" className="inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-slate-50 text-xs font-black text-red-600">
               View All Updates
             </Link>
           </div>
         </div>
       ) : (
         <button
-          onClick={() => setOpen(true)}
-          aria-label="Open What's New"
-          title="What's New · drag around the screen · double-click to reset"
-          className="grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-red-500 to-orange-500 text-white shadow-2xl shadow-red-500/30 ring-4 ring-white"
+          type="button"
+          onPointerDown={beginDrag}
+          onPointerMove={moveDrag}
+          onPointerUp={finishDrag}
+          onPointerCancel={finishDrag}
+          aria-label="Open or move What's New"
+          title="Tap to open. Drag vertically and release on the left or right."
+          className="grid h-14 w-14 touch-none place-items-center rounded-full bg-gradient-to-br from-red-500 to-orange-500 text-white shadow-2xl shadow-red-500/30 ring-4 ring-white"
         >
           <Bell className="h-6 w-6" />
         </button>
