@@ -1,6 +1,5 @@
-import { Suspense } from "react";
-import AdminLoginClient from "./admin-login-client";
+import { redirect } from "next/navigation";
 
-export default function AdminLoginPage() {
-  return <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">Loading admin login...</div>}><AdminLoginClient /></Suspense>;
+export default function AdminLoginRedirectPage() {
+  redirect("/staff/login");
 }

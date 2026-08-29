@@ -5,15 +5,18 @@ import {
   verifyAdminSessionToken,
 } from "@/lib/admin-session";
 
-const LOGIN_PATH = "/admin/login";
-
+const STAFF_LOGIN_PATH = "/staff/login";
 const ADMIN_PUBLIC_PATHS = new Set([
-  LOGIN_PATH,
+  "/admin/login",
   "/admin/login/",
 ]);
 
-function isAdminRoute(pathname: string): boolean {
+function isAdminRoute(pathname: string) {
   return pathname === "/admin" || pathname.startsWith("/admin/");
+}
+
+function isTeacherRoute(pathname: string) {
+  return pathname === "/teacher" || pathname.startsWith("/teacher/");
 }
 
 function withPrivateNoStore(response: NextResponse) {
@@ -25,67 +28,87 @@ function withPrivateNoStore(response: NextResponse) {
   return response;
 }
 
-function redirectToLogin(
+function redirectToStaffLogin(
   request: NextRequest,
-  reason: string
-): NextResponse {
+  reason: string,
+  requestedRole: "admin" | "teacher"
+) {
   const url = request.nextUrl.clone();
-
-  url.pathname = LOGIN_PATH;
+  url.pathname = STAFF_LOGIN_PATH;
   url.search = "";
   url.searchParams.set("redirectedFrom", request.nextUrl.pathname);
   url.searchParams.set("reason", reason);
+  url.searchParams.set("role", requestedRole);
+  return withPrivateNoStore(NextResponse.redirect(url));
+}
 
-  const redirect = NextResponse.redirect(url);
-  redirect.headers.set("x-admin-guard", reason);
-
-  return withPrivateNoStore(redirect);
+function redirectAdminToTeacherManagement(request: NextRequest) {
+  const url = request.nextUrl.clone();
+  url.pathname = "/admin/teachers";
+  url.search = "";
+  return withPrivateNoStore(NextResponse.redirect(url));
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (isAdminRoute(pathname)) {
-    // Keep the dedicated admin flow isolated from any Supabase student
-    // session that may already exist in the same browser.
     if (ADMIN_PUBLIC_PATHS.has(pathname)) {
-      const publicResponse = NextResponse.next();
-      publicResponse.headers.set("x-admin-guard", "public-admin-login");
-      return withPrivateNoStore(publicResponse);
+      return withPrivateNoStore(NextResponse.next());
     }
 
     const token = request.cookies.get(getAdminCookieName())?.value;
-    const adminSession = await verifyAdminSessionToken(token);
+    const dedicatedAdmin = await verifyAdminSessionToken(token);
 
-    if (adminSession) {
+    if (dedicatedAdmin) {
       const response = NextResponse.next();
       response.headers.set("x-admin-guard", "admin-cookie-granted");
       return withPrivateNoStore(response);
     }
 
-    // Existing Supabase administrator sessions remain supported as a
-    // compatibility fallback, but are checked only when no dedicated
-    // administrator cookie is present.
-    const { response, userId, role, configured } =
-      await updateSession(request);
+    const { response, userId, role, configured } = await updateSession(request);
 
-    if (!configured) {
-      return redirectToLogin(request, "no-admin-session");
-    }
-
-    if (!userId) {
-      return redirectToLogin(request, "no-session");
+    if (!configured || !userId) {
+      return redirectToStaffLogin(request, "no-admin-session", "admin");
     }
 
     if (role !== "admin") {
-      return redirectToLogin(request, "forbidden");
+      return redirectToStaffLogin(request, "forbidden", "admin");
     }
 
     response.headers.set("x-admin-guard", "supabase-granted");
     return withPrivateNoStore(response);
   }
 
-  // Normal website/student routes keep the existing Supabase refresh flow.
+  if (isTeacherRoute(pathname)) {
+    // Admins manage/inspect teachers from the CRM rather than impersonating
+    // a teacher portal. This removes the confusing "Welcome, Administrator"
+    // teacher-dashboard state seen in v5.5.7/v5.5.8.
+    const token = request.cookies.get(getAdminCookieName())?.value;
+    const dedicatedAdmin = await verifyAdminSessionToken(token);
+
+    if (dedicatedAdmin) {
+      return redirectAdminToTeacherManagement(request);
+    }
+
+    const { response, userId, role, configured } = await updateSession(request);
+
+    if (!configured || !userId) {
+      return redirectToStaffLogin(request, "no-teacher-session", "teacher");
+    }
+
+    if (role === "admin") {
+      return redirectAdminToTeacherManagement(request);
+    }
+
+    if (role !== "instructor") {
+      return redirectToStaffLogin(request, "teacher-forbidden", "teacher");
+    }
+
+    response.headers.set("x-teacher-guard", "instructor-granted");
+    return withPrivateNoStore(response);
+  }
+
   const { response } = await updateSession(request);
   return response;
 }

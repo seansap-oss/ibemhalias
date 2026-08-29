@@ -1,0 +1,4 @@
+import { createHmac } from "node:crypto";
+import { getZoomConfig } from "@/lib/zoom/config";
+function b64(value:string|Buffer){return Buffer.from(value).toString("base64").replace(/=/g,"").replace(/\+/g,"-").replace(/\//g,"_");}
+export function createZoomMeetingSdkSignature({meetingNumber,role}:{meetingNumber:string;role:0|1}){const c=getZoomConfig();if(!c.sdkClientId||!c.sdkClientSecret)throw Object.assign(new Error("Zoom Meeting SDK credentials are not configured."),{status:503});const now=Math.floor(Date.now()/1000);const iat=now-30;const exp=now+7200;const header={alg:"HS256",typ:"JWT"};const payload={appKey:c.sdkClientId,sdkKey:c.sdkClientId,mn:meetingNumber,role,iat,exp,tokenExp:exp};const h=b64(JSON.stringify(header));const p=b64(JSON.stringify(payload));const unsigned=`${h}.${p}`;const sig=createHmac("sha256",c.sdkClientSecret).update(unsigned).digest();return `${unsigned}.${b64(sig)}`;}

@@ -1,0 +1,5 @@
+import { NextRequest, NextResponse } from "next/server";
+import { requireTeacherForClass, teacherService } from "@/lib/teacher/server";
+import { ensureZoomWebinar } from "@/lib/zoom/api";
+export const dynamic="force-dynamic";export const runtime="nodejs";
+export async function POST(request:NextRequest){try{const body=await request.json();const classId=String(body?.classId||"").trim();if(!classId)return NextResponse.json({ok:false,error:"classId is required."},{status:400});const staff=await requireTeacherForClass(classId);const service=teacherService();const {data:liveClass,error}=await service.from("live_classes").select("*").eq("id",classId).single();if(error)throw error;const webinar=await ensureZoomWebinar(service,liveClass);return NextResponse.json({ok:true,provider:"zoom",classId,webinar:{id:webinar.webinarId,joinUrl:webinar.joinUrl},staff:{fullName:staff.fullName,role:staff.role}});}catch(e:any){return NextResponse.json({ok:false,error:e?.message||"Unable to prepare Live Now webinar."},{status:Number(e?.status||500)});}}

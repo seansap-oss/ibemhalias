@@ -57,3 +57,8 @@ _*-backup-*/
 *.backup-*
 .vercel/
 .env*
+# Ibemhal Local Data Vault - never commit student/staff backup data
+IBEMHAL_DATA/*.db
+IBEMHAL_DATA/*.db-*
+IBEMHAL_DATA/backups/
+IBEMHAL_DATA/exports/

@@ -3,8 +3,8 @@
 import { Radio } from "lucide-react";
 import { LiveKitTeleclassRoom } from "@/components/live-class/providers/livekit/livekit-teleclass-room";
 import { LiveNowDemoRoom } from "@/components/live-class/demo/live-now-demo-room";
+import { ZoomWebinarRoom } from "@/components/live-class/providers/zoom/zoom-webinar-room";
 
-/** V5.3.1 Live Now mode. */
 export function LiveTeleclassRoom({
   classId,
   mode,
@@ -12,6 +12,10 @@ export function LiveTeleclassRoom({
   classId: string;
   mode: "student" | "teacher";
 }) {
+  const provider = String(
+    process.env.NEXT_PUBLIC_LIVE_NOW_PROVIDER || ""
+  ).toLowerCase();
+
   return (
     <div className="relative min-h-screen bg-slate-50">
       {mode === "teacher" ? (
@@ -28,7 +32,10 @@ export function LiveTeleclassRoom({
         </div>
       ) : null}
 
-      {process.env.NEXT_PUBLIC_LIVE_NOW_DEMO_MODE === "true" ? (
+      {provider === "zoom" ? (
+        <ZoomWebinarRoom classId={classId} mode={mode} />
+      ) : process.env.NEXT_PUBLIC_LIVE_NOW_DEMO_MODE === "true" ||
+        provider === "presentation" ? (
         <LiveNowDemoRoom classId={classId} mode={mode} />
       ) : (
         <LiveKitTeleclassRoom classId={classId} mode={mode} />
