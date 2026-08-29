@@ -4,26 +4,50 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Home, LayoutDashboard, CalendarDays, Bot, User } from "lucide-react";
+import {
+  Home,
+  LayoutDashboard,
+  CalendarDays,
+  ClipboardCheck,
+  User,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { hapticSelection } from "@/lib/native";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Home", icon: Home, match: (p: string) => p === "/" },
+  {
+    href: "/",
+    label: "Home",
+    icon: Home,
+    match: (p: string) => p === "/",
+  },
   {
     href: "/dashboard",
     label: "Dashboard",
     icon: LayoutDashboard,
-    match: (p: string) => p === "/dashboard" || p.startsWith("/learn"),
+    match: (p: string) =>
+      p === "/dashboard" || p.startsWith("/learn"),
   },
   {
     href: "/dashboard/calendar",
     label: "Calendar",
     icon: CalendarDays,
-    match: (p: string) => p.startsWith("/dashboard/calendar"),
+    match: (p: string) =>
+      p.startsWith("/dashboard/calendar"),
   },
-  { href: "/ai-tutor", label: "AI Tutor", icon: Bot, match: (p: string) => p.startsWith("/ai-tutor") },
-  { href: "/profile", label: "Profile", icon: User, match: (p: string) => p.startsWith("/profile") },
+  {
+    href: "/dashboard?view=mock",
+    label: "Mock Tests",
+    icon: ClipboardCheck,
+    match: (p: string) =>
+      p.startsWith("/mock-test"),
+  },
+  {
+    href: "/dashboard?view=profile",
+    label: "Profile",
+    icon: User,
+    match: (p: string) => p.startsWith("/profile"),
+  },
 ];
 
 const HIDDEN_PREFIXES = ["/admin", "/offline"];
@@ -31,7 +55,13 @@ const HIDDEN_PREFIXES = ["/admin", "/offline"];
 export function MobileBottomBar() {
   const pathname = usePathname() || "/";
 
-  if (HIDDEN_PREFIXES.some((p) => pathname.startsWith(p))) return null;
+  if (
+    HIDDEN_PREFIXES.some((p) =>
+      pathname.startsWith(p)
+    )
+  ) {
+    return null;
+  }
 
   return (
     <nav
@@ -43,12 +73,18 @@ export function MobileBottomBar() {
         {NAV_ITEMS.map((item) => {
           const active = item.match(pathname);
           const Icon = item.icon;
+
           return (
-            <li key={item.href} className="flex-1">
+            <li
+              key={item.href}
+              className="flex-1"
+            >
               <Link
                 href={item.href}
                 onClick={hapticSelection}
-                aria-current={active ? "page" : undefined}
+                aria-current={
+                  active ? "page" : undefined
+                }
                 className={cn(
                   "relative h-14 w-full flex flex-col items-center justify-center gap-0.5 transition-colors",
                   active
@@ -56,15 +92,27 @@ export function MobileBottomBar() {
                     : "text-muted-foreground active:text-foreground"
                 )}
               >
-                {active && (
+                {active ? (
                   <motion.span
                     layoutId="mobile-nav-indicator"
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 380,
+                      damping: 30,
+                    }}
                     className="absolute top-0 h-0.5 w-8 rounded-full bg-primary"
                   />
-                )}
-                <Icon className={cn("h-[18px] w-[18px] transition-transform", active && "scale-110")} />
-                <span className="text-[10px] font-medium leading-none">{item.label}</span>
+                ) : null}
+
+                <Icon
+                  className={cn(
+                    "h-[18px] w-[18px] transition-transform",
+                    active && "scale-110"
+                  )}
+                />
+                <span className="text-[10px] font-medium leading-none">
+                  {item.label}
+                </span>
               </Link>
             </li>
           );
@@ -76,6 +124,19 @@ export function MobileBottomBar() {
 
 export function MobileBottomBarSpacer() {
   const pathname = usePathname() || "/";
-  if (HIDDEN_PREFIXES.some((p) => pathname.startsWith(p))) return null;
-  return <div aria-hidden className="md:hidden h-14 pb-safe" />;
+
+  if (
+    HIDDEN_PREFIXES.some((p) =>
+      pathname.startsWith(p)
+    )
+  ) {
+    return null;
+  }
+
+  return (
+    <div
+      aria-hidden
+      className="md:hidden h-14 pb-safe"
+    />
+  );
 }

@@ -25,6 +25,21 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { IbemhalLogo } from "@/components/brand/ibemhal-logo";
 import { SITE_VERSION_LABEL } from "@/lib/site-version";
+import { createClient } from "@/lib/supabase/client";
+
+function getSafeAdminDestination(value: string | null) {
+  if (
+    !value ||
+    !value.startsWith("/admin") ||
+    value.startsWith("//") ||
+    value === "/admin/login" ||
+    value.startsWith("/admin/login?")
+  ) {
+    return "/admin/dashboard";
+  }
+
+  return value;
+}
 
 export default function AdminLoginClient() {
   const router = useRouter();
@@ -50,9 +65,11 @@ export default function AdminLoginClient() {
       .then((data) => {
         if (data?.authenticated) {
           router.replace(
-            searchParams.get(
-              "redirectedFrom"
-            ) || "/admin/dashboard"
+            getSafeAdminDestination(
+              searchParams.get(
+                "redirectedFrom"
+              )
+            )
           );
         }
       })
@@ -76,7 +93,7 @@ export default function AdminLoginClient() {
               "application/json",
           },
           body: JSON.stringify({
-            email,
+            identifier: email.trim(),
             password,
           }),
         }
@@ -90,18 +107,23 @@ export default function AdminLoginClient() {
         );
       }
 
-      sessionStorage.setItem(
-        "admin_auth",
-        "true"
-      );
-      sessionStorage.setItem(
-        "admin_email",
-        email
-      );
+      // Administrator and student sessions are intentionally
+      // separated. Only after the admin credentials succeed do we
+      // clear any browser-side Supabase student session.
+      const supabase = createClient();
+      if (supabase) {
+        await supabase.auth
+          .signOut({ scope: "local" })
+          .catch(() => undefined);
+      }
+
+      sessionStorage.removeItem("admin_auth");
+      sessionStorage.removeItem("admin_email");
 
       router.replace(
-        searchParams.get("redirectedFrom") ||
-          "/admin/dashboard"
+        getSafeAdminDestination(
+          searchParams.get("redirectedFrom")
+        )
       );
       router.refresh();
     } catch (err: any) {
@@ -156,22 +178,24 @@ export default function AdminLoginClient() {
 
               <div className="space-y-2">
                 <Label htmlFor="email">
-                  Email
+                  Admin ID / Email
                 </Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="email"
-                    type="email"
+                    type="text"
                     value={email}
                     onChange={(event) =>
                       setEmail(
                         event.target.value
                       )
                     }
-                    placeholder="admin@ibemhal.ias"
+                    placeholder="admin or admin@ibemhal.ias"
                     className="pl-10"
                     autoComplete="username"
+                    autoCapitalize="none"
+                    spellCheck={false}
                     required
                   />
                 </div>

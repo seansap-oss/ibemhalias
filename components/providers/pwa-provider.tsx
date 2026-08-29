@@ -10,14 +10,26 @@ export function PwaProvider() {
 
     const register = () => {
       navigator.serviceWorker
-        .register("/sw.js", { scope: "/" })
+        .register("/sw.js", {
+          scope: "/",
+          updateViaCache: "none",
+        })
+        .then((registration) =>
+          registration.update()
+        )
         .catch(() => undefined);
     };
 
-    if (document.readyState === "complete") register();
-    else window.addEventListener("load", register, { once: true });
+    if (document.readyState === "complete") {
+      register();
+    } else {
+      window.addEventListener("load", register, {
+        once: true,
+      });
+    }
 
-    return () => window.removeEventListener("load", register);
+    return () =>
+      window.removeEventListener("load", register);
   }, []);
 
   return null;

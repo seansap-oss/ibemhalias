@@ -16,6 +16,15 @@ function isAdminRoute(pathname: string): boolean {
   return pathname === "/admin" || pathname.startsWith("/admin/");
 }
 
+function withPrivateNoStore(response: NextResponse) {
+  response.headers.set(
+    "Cache-Control",
+    "private, no-store, no-cache, max-age=0, must-revalidate"
+  );
+  response.headers.set("Pragma", "no-cache");
+  return response;
+}
+
 function redirectToLogin(
   request: NextRequest,
   reason: string
@@ -30,46 +39,54 @@ function redirectToLogin(
   const redirect = NextResponse.redirect(url);
   redirect.headers.set("x-admin-guard", reason);
 
-  return redirect;
+  return withPrivateNoStore(redirect);
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const { response, userId, role, configured } =
-    await updateSession(request);
+  if (isAdminRoute(pathname)) {
+    // Keep the dedicated admin flow isolated from any Supabase student
+    // session that may already exist in the same browser.
+    if (ADMIN_PUBLIC_PATHS.has(pathname)) {
+      const publicResponse = NextResponse.next();
+      publicResponse.headers.set("x-admin-guard", "public-admin-login");
+      return withPrivateNoStore(publicResponse);
+    }
 
-  if (!isAdminRoute(pathname)) {
-    return response;
+    const token = request.cookies.get(getAdminCookieName())?.value;
+    const adminSession = await verifyAdminSessionToken(token);
+
+    if (adminSession) {
+      const response = NextResponse.next();
+      response.headers.set("x-admin-guard", "admin-cookie-granted");
+      return withPrivateNoStore(response);
+    }
+
+    // Existing Supabase administrator sessions remain supported as a
+    // compatibility fallback, but are checked only when no dedicated
+    // administrator cookie is present.
+    const { response, userId, role, configured } =
+      await updateSession(request);
+
+    if (!configured) {
+      return redirectToLogin(request, "no-admin-session");
+    }
+
+    if (!userId) {
+      return redirectToLogin(request, "no-session");
+    }
+
+    if (role !== "admin") {
+      return redirectToLogin(request, "forbidden");
+    }
+
+    response.headers.set("x-admin-guard", "supabase-granted");
+    return withPrivateNoStore(response);
   }
 
-  if (ADMIN_PUBLIC_PATHS.has(pathname)) {
-    return response;
-  }
-
-  // First allow the dedicated Ibemhal admin cookie session.
-  const token = request.cookies.get(getAdminCookieName())?.value;
-  const adminSession = await verifyAdminSessionToken(token);
-
-  if (adminSession) {
-    response.headers.set("x-admin-guard", "admin-cookie-granted");
-    return response;
-  }
-
-  // Existing Supabase admin session remains supported.
-  if (!configured) {
-    return redirectToLogin(request, "no-admin-session");
-  }
-
-  if (!userId) {
-    return redirectToLogin(request, "no-session");
-  }
-
-  if (role !== "admin") {
-    return redirectToLogin(request, "forbidden");
-  }
-
-  response.headers.set("x-admin-guard", "supabase-granted");
+  // Normal website/student routes keep the existing Supabase refresh flow.
+  const { response } = await updateSession(request);
   return response;
 }
 

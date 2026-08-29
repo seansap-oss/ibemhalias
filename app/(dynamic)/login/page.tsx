@@ -123,17 +123,33 @@ function LoginForm() {
       return;
     }
 
+    // A student login must not inherit a dedicated administrator
+    // session from the same browser. Clear only the admin cookie after
+    // the student identity has been verified successfully.
+    await fetch("/api/admin/logout", {
+      method: "POST",
+      cache: "no-store",
+    }).catch(() => undefined);
+
+    sessionStorage.removeItem("admin_auth");
+    sessionStorage.removeItem("admin_email");
+
     await claimDevice();
 
-    const requested = params.get("redirectedFrom");
+    const requested =
+      params.get("redirectedFrom") ||
+      params.get("next");
+
     const destination =
       requested &&
       requested.startsWith("/") &&
-      !requested.startsWith("//")
+      !requested.startsWith("//") &&
+      !requested.startsWith("/admin")
         ? requested
         : "/dashboard";
 
     router.replace(destination);
+    router.refresh();
   };
 
   return (
