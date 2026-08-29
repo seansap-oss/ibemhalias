@@ -598,7 +598,9 @@ export function LiveKitTeleclassRoom({
           );
           return;
         }
-        throw new Error(data.error || "Could not create LiveKit room token.");
+        const tokenError = new Error(data.error || "Could not create LiveKit room token.");
+        Object.assign(tokenError, { status: response.status });
+        throw tokenError;
       }
 
       if (data.provider !== "livekit") {
@@ -950,8 +952,15 @@ export function LiveKitTeleclassRoom({
         message = 'Live Now media server is not reachable. Restart Live Now, then retry.';
       }
 
+      const status = Number((joinError as { status?: number } | null)?.status || 0);
+      const terminalStatus = [400, 401, 402, 403, 404, 409, 422].includes(status);
       const transient =
+        !terminalStatus &&
         /could not establish pc connection|failed to connect|connection.*(closed|lost|timeout|timed out)|ice/i.test(rawMessage);
+
+      if (status === 402) {
+        message = 'Live Now is not enabled for this production deployment. Check the Live Now production configuration.';
+      }
 
       if (message !== "UNAUTHENTICATED") {
         if (transient && autoRetryRef.current < 3) {
@@ -960,6 +969,7 @@ export function LiveKitTeleclassRoom({
           scheduleReconnect(rawMessage);
         } else {
           console.error(joinError);
+          clearRetryTimer();
           setError(message);
           joinStartedRef.current = false;
         }

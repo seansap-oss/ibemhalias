@@ -2,6 +2,7 @@
 
 import { Radio } from "lucide-react";
 import { LiveKitTeleclassRoom } from "@/components/live-class/providers/livekit/livekit-teleclass-room";
+import { LiveNowDemoRoom } from "@/components/live-class/demo/live-now-demo-room";
 
 /** V5.3.1 Live Now mode. */
 export function LiveTeleclassRoom({
@@ -27,7 +28,11 @@ export function LiveTeleclassRoom({
         </div>
       ) : null}
 
-      <LiveKitTeleclassRoom classId={classId} mode={mode} />
+      {process.env.NEXT_PUBLIC_LIVE_NOW_DEMO_MODE === "true" ? (
+        <LiveNowDemoRoom classId={classId} mode={mode} />
+      ) : (
+        <LiveKitTeleclassRoom classId={classId} mode={mode} />
+      )}
     </div>
   );
 }

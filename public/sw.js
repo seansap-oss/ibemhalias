@@ -1,4 +1,4 @@
-const CACHE_VERSION = "ibemhal-v5.5.3-launch-auth-hotfix2";
+const CACHE_VERSION = "ibemhal-v5.5.4-live-now-launch";
 const PRECACHE = `${CACHE_VERSION}-precache`;
 const RUNTIME = `${CACHE_VERSION}-runtime`;
 
@@ -29,15 +29,29 @@ function isPrivatePath(pathname) {
   );
 }
 
+function offlineResponse(message = "Offline") {
+  return new Response(
+    `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ibemhal IAS - Offline</title></head><body><main style="font-family:system-ui;padding:32px;max-width:680px;margin:auto"><h1>Ibemhal IAS</h1><p>${message}</p><p>Please reconnect to the internet and reload this page.</p></main></body></html>`,
+    {
+      status: 503,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "no-store",
+      },
+    }
+  );
+}
+
+async function cachedOfflineOrResponse(message) {
+  const cached = await caches.match("/offline");
+  return cached || offlineResponse(message);
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(PRECACHE)
-      .then((cache) =>
-        cache
-          .addAll(PRECACHE_URLS)
-          .catch(() => undefined)
-      )
+      .then((cache) => cache.addAll(PRECACHE_URLS).catch(() => undefined))
       .then(() => self.skipWaiting())
   );
 });
@@ -49,10 +63,7 @@ self.addEventListener("activate", (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter(
-              (key) =>
-                !key.startsWith(CACHE_VERSION)
-            )
+            .filter((key) => !key.startsWith(CACHE_VERSION))
             .map((key) => caches.delete(key))
         )
       )
@@ -68,7 +79,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  // API/auth calls must always go to the network and must never be cached.
+  // Every API/auth request is network-only and never cached.
   if (url.pathname.startsWith("/api/")) {
     event.respondWith(
       fetch(request, { cache: "no-store" }).catch(
@@ -76,8 +87,7 @@ self.addEventListener("fetch", (event) => {
           new Response(
             JSON.stringify({
               success: false,
-              error:
-                "Offline — this request requires a network connection",
+              error: "Offline — this request requires a network connection",
             }),
             {
               status: 503,
@@ -93,59 +103,46 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (request.mode === "navigate") {
-    // Protected/student/admin pages are network-only. Never reuse a cached
-    // page from another account or an earlier role.
     if (isPrivatePath(url.pathname)) {
       event.respondWith(
-        fetch(request, { cache: "no-store" }).catch(
-          () => caches.match("/offline")
+        fetch(request, { cache: "no-store" }).catch(() =>
+          cachedOfflineOrResponse("This secure page requires a network connection.")
         )
       );
       return;
     }
 
-    // Public navigation remains network-first with a safe runtime fallback.
     event.respondWith(
       fetch(request)
         .then((response) => {
           if (response && response.ok) {
             const copy = response.clone();
-            caches
-              .open(RUNTIME)
-              .then((cache) =>
-                cache.put(request, copy)
-              );
+            caches.open(RUNTIME).then((cache) => cache.put(request, copy)).catch(() => {});
           }
           return response;
         })
-        .catch(() =>
-          caches
-            .match(request)
-            .then(
-              (cached) =>
-                cached || caches.match("/offline")
-            )
-        )
+        .catch(async () => {
+          const cached = await caches.match(request);
+          return cached || cachedOfflineOrResponse("The website is temporarily offline.");
+        })
     );
     return;
   }
 
-  // Public static assets: stale-while-revalidate.
+  // Public static assets: stale-while-revalidate. A failed network request
+  // always resolves to a real Response; respondWith must never receive
+  // undefined (the cause of the previous Chrome TypeError).
   event.respondWith(
     caches.match(request).then((cached) => {
       const network = fetch(request)
         .then((response) => {
           if (response && response.status === 200) {
             const copy = response.clone();
-            caches
-              .open(RUNTIME)
-              .then((cache) =>
-                cache.put(request, copy)
-              );
+            caches.open(RUNTIME).then((cache) => cache.put(request, copy)).catch(() => {});
           }
           return response;
         })
-        .catch(() => cached);
+        .catch(() => cached || Response.error());
 
       return cached || network;
     })

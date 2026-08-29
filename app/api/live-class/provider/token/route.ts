@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSessionClient } from "@/lib/supabase/server-session";
-import { liveService } from "@/lib/live-class/server";
+import { liveService, requireLiveAdmin } from "@/lib/live-class/server";
 import { createLiveKitJoinToken, getLiveKitParticipantCount, liveKitConfigStatus } from "@/lib/live-class/providers/livekit";
 import { getAdminCookieName, verifyAdminSessionToken } from "@/lib/admin-session";
 import { requireLiveNowLicense } from "@/lib/live-now/license";
@@ -62,10 +62,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: "classId is required." }, { status: 400 });
     }
 
-    const license = await requireLiveNowLicense({
-      classId,
-      origin: request.nextUrl.origin,
-    });
 
     const service = liveService();
     const { data: liveClass, error } = await service
@@ -80,11 +76,22 @@ export async function POST(request: NextRequest) {
     let role: "teacher" | "student" = "student";
 
     const adminToken = request.cookies.get(getAdminCookieName())?.value;
-    const admin = await verifyAdminSessionToken(adminToken);
+    const dedicatedAdmin = await verifyAdminSessionToken(adminToken);
 
-    if (admin) {
+    let cmsAdmin: any = null;
+    if (!dedicatedAdmin) {
+      try {
+        cmsAdmin = await requireLiveAdmin();
+      } catch {
+        cmsAdmin = null;
+      }
+    }
+
+    if (dedicatedAdmin || cmsAdmin) {
       role = "teacher";
-      userId = `admin-${admin.email}`;
+      // Do not put an administrator email address into the LiveKit participant
+      // identity. The room already scopes this identity to one class.
+      userId = `teacher-${classId}`;
       displayName = liveClass.faculty_name || "Ibemhal IAS Teacher";
     } else {
       const session = await createSessionClient();
@@ -118,6 +125,13 @@ export async function POST(request: NextRequest) {
       userId = user.id;
       displayName = profile?.full_name || profile?.student_code || profile?.email || "Student";
     }
+
+    // Authenticate first, then check the Ibemhal-owned Live Now entitlement.
+    // This prevents anonymous requests from learning deployment/license state.
+    const license = await requireLiveNowLicense({
+      classId,
+      origin: request.nextUrl.origin,
+    });
 
     const config = liveKitConfigStatus();
     if (!config.configured) {
