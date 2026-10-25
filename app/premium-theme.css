@@ -249,6 +249,40 @@
 }
 
 /* Home live-class promo adopts the same visual language without touching logic. */
+:root[data-site-theme="premium"] .home-highlights {
+  background:
+    radial-gradient(circle at 86% 18%, rgba(196, 143, 58, .11), transparent 22%),
+    #022922 !important;
+}
+:root[data-site-theme="premium"] .home-highlights > div > div:first-child > div:first-child > div:first-child {
+  border-color: rgba(216, 169, 85, .42) !important;
+  background: rgba(0, 0, 0, .12) !important;
+  color: var(--ibp-gold-soft) !important;
+}
+:root[data-site-theme="premium"] .home-highlights h2 {
+  color: #fff4df !important;
+}
+:root[data-site-theme="premium"] .home-highlights h2 + p {
+  color: #d9c9ad !important;
+}
+:root[data-site-theme="premium"] .home-highlights a[href="/mentorship"] {
+  border: 1px solid rgba(216, 169, 85, .7) !important;
+  background: #073b32 !important;
+  color: var(--ibp-gold-soft) !important;
+  box-shadow: none !important;
+}
+:root[data-site-theme="premium"] .home-highlights a[href="/courses"],
+:root[data-site-theme="premium"] .home-highlights a[href="/current-affairs/daily"],
+:root[data-site-theme="premium"] .home-highlights a[href="/resources"],
+:root[data-site-theme="premium"] .home-highlights a[href="/mock-test"] {
+  border-color: rgba(216, 169, 85, .36) !important;
+  background: linear-gradient(145deg, #fff9ec, #f3e2bd) !important;
+}
+:root[data-site-theme="premium"] .home-highlights > div > div:last-child {
+  border-color: rgba(216, 169, 85, .58) !important;
+  background: #fbf1dd !important;
+}
+
 :root[data-site-theme="premium"] .live-class-promo {
   background: #022922;
 }
