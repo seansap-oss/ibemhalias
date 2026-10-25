@@ -1,9 +1,8 @@
-const CACHE_VERSION = "ibemhal-v5.5.4-live-now-launch";
+const CACHE_VERSION = "ibemhal-v5.6.0-premium-ui";
 const PRECACHE = `${CACHE_VERSION}-precache`;
 const RUNTIME = `${CACHE_VERSION}-runtime`;
 
 const PRECACHE_URLS = [
-  "/",
   "/offline",
   "/manifest.webmanifest",
   "/icons/icon-192.png",
@@ -60,14 +59,20 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) =>
-        Promise.all(
-          keys
-            .filter((key) => !key.startsWith(CACHE_VERSION))
-            .map((key) => caches.delete(key))
-        )
-      )
-      .then(() => self.clients.claim())
+      .then(async (keys) => {
+        const legacyKeys = keys.filter((key) => !key.startsWith(CACHE_VERSION));
+        await Promise.all(legacyKeys.map((key) => caches.delete(key)));
+        await self.clients.claim();
+
+        // A legacy worker may currently be displaying a cached page shell.
+        // Reload those windows once after the new worker has removed old caches.
+        if (legacyKeys.length > 0) {
+          const windows = await self.clients.matchAll({ type: "window" });
+          await Promise.all(
+            windows.map((client) => client.navigate(client.url).catch(() => undefined))
+          );
+        }
+      })
   );
 });
 
@@ -113,7 +118,7 @@ self.addEventListener("fetch", (event) => {
     }
 
     event.respondWith(
-      fetch(request)
+      fetch(request, { cache: "no-store" })
         .then((response) => {
           if (response && response.ok) {
             const copy = response.clone();
