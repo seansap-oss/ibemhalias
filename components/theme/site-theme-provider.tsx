@@ -11,7 +11,7 @@ type SiteThemeContextValue = {
 };
 
 const SiteThemeContext = React.createContext<SiteThemeContextValue>({
-  theme: "premium",
+  theme: "classic",
   ready: false,
   refresh: async () => {},
 });
@@ -20,7 +20,7 @@ const CACHE_KEY = "ibemhal-site-theme-v1";
 const EVENT_NAME = "ibemhal-site-theme-changed";
 
 function normalizeTheme(value: unknown): SiteTheme {
-  return value === "classic" ? "classic" : "premium";
+  return value === "premium" ? "premium" : "classic";
 }
 
 function applyTheme(theme: SiteTheme) {
@@ -30,19 +30,19 @@ function applyTheme(theme: SiteTheme) {
 }
 
 export function SiteThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = React.useState<SiteTheme>("premium");
+  const [theme, setTheme] = React.useState<SiteTheme>("classic");
   const [ready, setReady] = React.useState(false);
 
   const refresh = React.useCallback(async () => {
     try {
       const response = await fetch("/api/site-theme", { cache: "no-store" });
-      const payload = response.ok ? await response.json() : { theme: "premium" };
+      const payload = response.ok ? await response.json() : { theme: "classic" };
       const next = normalizeTheme(payload?.theme);
       setTheme(next);
       applyTheme(next);
       try { window.localStorage.setItem(CACHE_KEY, next); } catch {}
     } catch {
-      // Keep the last known value; Premium is the approved v5.6 fallback.
+      // Keep the last known value; Classic is the approved public fallback.
     } finally {
       setReady(true);
     }
@@ -54,7 +54,7 @@ export function SiteThemeProvider({ children }: { children: React.ReactNode }) {
       setTheme(cached);
       applyTheme(cached);
     } catch {
-      applyTheme("premium");
+      applyTheme("classic");
     }
 
     void refresh();

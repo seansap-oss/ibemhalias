@@ -43,6 +43,7 @@ type TeacherRecord = {
   permissions: Record<string, boolean>;
   notes: any[];
   activity: any[];
+  storage_settings?: Record<string, any>;
 };
 
 const permissionLabels: Record<string, string> = {
@@ -97,7 +98,7 @@ export function TeacherManagement() {
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [tab, setTab] = React.useState<
-    "profile" | "assignments" | "permissions" | "notes" | "activity"
+    "profile" | "assignments" | "permissions" | "workspace" | "notes" | "activity"
   >("profile");
   const [loading, setLoading] = React.useState(true);
   const [busy, setBusy] = React.useState(false);
@@ -114,6 +115,7 @@ export function TeacherManagement() {
   const [editCourses, setEditCourses] = React.useState<string[]>([]);
   const [editPermissions, setEditPermissions] =
     React.useState<Record<string, boolean>>({});
+  const [editStorage, setEditStorage] = React.useState<Record<string, any>>({});
 
   const selected =
     teachers.find((teacher) => teacher.id === selectedId) || teachers[0] || null;
@@ -161,6 +163,7 @@ export function TeacherManagement() {
     });
     setEditCourses(selected.course_ids || []);
     setEditPermissions(selected.permissions || {});
+    setEditStorage(selected.storage_settings || {});
   }, [selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = teachers.filter((teacher) => {
@@ -523,6 +526,7 @@ export function TeacherManagement() {
                     ["profile", "Profile", UserRound],
                     ["assignments", "Assignments", BookOpen],
                     ["permissions", "Permissions", ShieldCheck],
+                    ["workspace", "Workspace & Drive", DatabaseBackup],
                     ["notes", "Notes", NotebookPen],
                     ["activity", "Activity Log", Activity],
                   ].map(([value, label, Icon]: any) => (
@@ -587,6 +591,22 @@ export function TeacherManagement() {
                         teacherId: selected.id,
                         action: "update_permissions",
                         permissions: editPermissions,
+                      })
+                    }
+                  />
+                ) : null}
+
+                {tab === "workspace" ? (
+                  <WorkspaceTab
+                    storage={editStorage}
+                    setStorage={setEditStorage}
+                    busy={busy}
+                    disabled={migrationRequired}
+                    onSave={() =>
+                      void patch({
+                        teacherId: selected.id,
+                        action: "update_storage",
+                        storage: editStorage,
                       })
                     }
                   />
@@ -844,6 +864,38 @@ function AssignmentTab({
         <Save className="h-4 w-4" />
         Save Course Assignments
       </button>
+    </div>
+  );
+}
+
+function WorkspaceTab({ storage, setStorage, busy, disabled, onSave }: any) {
+  return (
+    <div className="space-y-5">
+      <div>
+        <h3 className="font-black">Teacher Workspace &amp; Backup</h3>
+        <p className="mt-1 max-w-2xl text-[11px] leading-5 text-slate-500">
+          Assign the folder this teacher will use when the institute connects Google Drive. Every upload remains recorded in the Ibemhal workspace and Local Data Vault queue.
+        </p>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="text-[10px] font-black uppercase tracking-[.08em] text-slate-500">
+          Google Drive folder name
+          <input value={storage.google_drive_folder_name || ""} onChange={(event) => setStorage({ ...storage, google_drive_folder_name: event.target.value })} placeholder="e.g. Dr N Sharma — Study Materials" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-semibold normal-case tracking-normal outline-none focus:border-[#3155c6]" />
+        </label>
+        <label className="text-[10px] font-black uppercase tracking-[.08em] text-slate-500">
+          Google Drive folder link
+          <input value={storage.google_drive_folder_url || ""} onChange={(event) => setStorage({ ...storage, google_drive_folder_url: event.target.value })} placeholder="https://drive.google.com/..." className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-semibold normal-case tracking-normal outline-none focus:border-[#3155c6]" />
+        </label>
+      </div>
+      <label className="block text-[10px] font-black uppercase tracking-[.08em] text-slate-500">
+        Local backup label
+        <input value={storage.local_backup_label || ""} onChange={(event) => setStorage({ ...storage, local_backup_label: event.target.value })} placeholder="IBEMHAL_DATA / teacher-materials" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-semibold normal-case tracking-normal outline-none focus:border-[#3155c6]" />
+      </label>
+      <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-700">
+        <input type="checkbox" checked={Boolean(storage.drive_sync_enabled)} onChange={(event) => setStorage({ ...storage, drive_sync_enabled: event.target.checked })} className="mt-0.5 h-4 w-4" />
+        <span><strong className="block font-black">Enable Google Drive mirror</strong><span className="mt-1 block text-[10px] leading-5 text-slate-500">Turn this on only after the institute&apos;s Drive credentials are connected on the server. Teachers never receive those credentials.</span></span>
+      </label>
+      <button type="button" disabled={busy || disabled} onClick={onSave} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#3155c6] px-5 text-xs font-black text-white disabled:opacity-40"><Save className="h-4 w-4" />Save Workspace Settings</button>
     </div>
   );
 }

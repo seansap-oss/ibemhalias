@@ -57,10 +57,11 @@ async function readDirectory(service: any) {
   let permissions: any[] = [];
   let notes: any[] = [];
   let activity: any[] = [];
+  let storageSettings: any[] = [];
   let migrationRequired = false;
 
   if (teacherIds.length) {
-    const [detailResult, permissionResult, noteResult, activityResult] =
+    const [detailResult, permissionResult, noteResult, activityResult, storageResult] =
       await Promise.all([
         service.from("teacher_profiles").select("*").in("teacher_id", teacherIds),
         service
@@ -77,6 +78,10 @@ async function readDirectory(service: any) {
           .select("*")
           .in("teacher_id", teacherIds)
           .order("created_at", { ascending: false }),
+        service
+          .from("teacher_storage_settings")
+          .select("*")
+          .in("teacher_id", teacherIds),
       ]);
 
     const errors = [
@@ -84,6 +89,7 @@ async function readDirectory(service: any) {
       permissionResult.error,
       noteResult.error,
       activityResult.error,
+      storageResult.error,
     ].filter(Boolean);
 
     if (errors.some(isMissingTeacherCrmTable)) {
@@ -95,6 +101,7 @@ async function readDirectory(service: any) {
       permissions = permissionResult.data || [];
       notes = noteResult.data || [];
       activity = activityResult.data || [];
+      storageSettings = storageResult.data || [];
     }
   }
 
@@ -103,6 +110,9 @@ async function readDirectory(service: any) {
   );
   const permissionMap = new Map(
     permissions.map((row: any) => [String(row.teacher_id), row])
+  );
+  const storageMap = new Map(
+    storageSettings.map((row: any) => [String(row.teacher_id), row])
   );
 
   return {
@@ -127,6 +137,13 @@ async function readDirectory(service: any) {
         activity: activity
           .filter((item: any) => String(item.teacher_id) === id)
           .slice(0, 50),
+        storage_settings: storageMap.get(id) || {
+          teacher_id: id,
+          google_drive_folder_url: "",
+          google_drive_folder_name: "",
+          local_backup_label: "IBEMHAL_DATA / teacher-materials",
+          drive_sync_enabled: false,
+        },
       };
     }),
     courses: courses || [],
@@ -401,6 +418,25 @@ export async function PATCH(request: NextRequest) {
         permissions,
         admin
       );
+    } else if (action === "update_storage") {
+      const storage = body?.storage || {};
+      const { error } = await service.from("teacher_storage_settings").upsert(
+        {
+          teacher_id: teacherId,
+          google_drive_folder_url:
+            String(storage.google_drive_folder_url || "").trim() || null,
+          google_drive_folder_name:
+            String(storage.google_drive_folder_name || "").trim() || null,
+          local_backup_label:
+            String(storage.local_backup_label || "").trim() ||
+            "IBEMHAL_DATA / teacher-materials",
+          drive_sync_enabled: Boolean(storage.drive_sync_enabled),
+          updated_by: actorId(admin),
+        },
+        { onConflict: "teacher_id" }
+      );
+      if (error) throw error;
+      await audit(service, teacherId, "workspace_storage_updated", {}, admin);
     } else if (action === "add_note") {
       const note = String(body?.note || "").trim();
       if (!note) {

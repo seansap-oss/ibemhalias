@@ -8,9 +8,9 @@ type SiteTheme = "classic" | "premium";
 const SETTINGS_PATH = "site-settings/website-theme";
 
 export async function GET() {
-  // Premium is the approved v5.6 public presentation. An explicit CMS
-  // selection can still switch the website back to Classic.
-  let theme: SiteTheme = "premium";
+  // Classic is the approved public starting presentation. Premium remains
+  // available as an administrator-selected alternative.
+  let theme: SiteTheme = "classic";
   try {
     const supabase = createCmsServiceClient();
     const { data, error } = await supabase

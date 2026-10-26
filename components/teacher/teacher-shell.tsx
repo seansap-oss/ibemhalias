@@ -74,7 +74,7 @@ export function TeacherShell({
         setPermissions(data?.permissions || {});
       })
       .catch(() => {
-        router.replace("/staff/login?role=teacher");
+        router.replace("/admin/login?role=teacher");
       });
   }, [router]);
 
@@ -88,7 +88,7 @@ export function TeacherShell({
       await supabase.auth.signOut().catch(() => undefined);
     }
     await fetch("/api/admin/logout", { method: "POST" }).catch(() => undefined);
-    router.replace("/staff/login?role=teacher");
+    router.replace("/admin/login?role=teacher");
     router.refresh();
   };
 

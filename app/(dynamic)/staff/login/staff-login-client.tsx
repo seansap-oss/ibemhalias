@@ -167,10 +167,10 @@ export default function StaffLoginClient() {
           </div>
 
           <h1 className="mt-4 text-center text-2xl font-black text-slate-950">
-            Staff Login
+            Staff &amp; Administration
           </h1>
           <p className="mt-2 text-center text-sm leading-6 text-slate-500">
-            Administrators and teachers sign in with their own account.
+            One sign-in for Administrators and teachers. Your role opens the right workspace automatically.
           </p>
 
           <form onSubmit={submit} className="mt-6 space-y-4">
