@@ -90,11 +90,15 @@ export async function GET(request: NextRequest) {
       assignmentMap.has(liveClass.id)
   );
 
+  const selectedProvider = String(
+    process.env.NEXT_PUBLIC_LIVE_NOW_PROVIDER || "livekit"
+  ).toLowerCase();
+
   const enriched = visible.map((liveClass: AnyRow) => ({
     ...liveClass,
-    // V5.3.1: Live Now uses LiveKit only in the current UI.
-    // Existing 100ms code remains in the codebase as a hidden future fallback.
-    provider: "livekit",
+    // Keep the response aligned with the active classroom renderer. This is
+    // important for Zoom Webinar scheduling and downstream reminders.
+    provider: selectedProvider === "zoom" ? "zoom" : "livekit",
     provider_room_id:
       String(liveClass.provider || "").toLowerCase() === "livekit" &&
       String(liveClass.provider_room_id || "").trim()
