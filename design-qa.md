@@ -37,4 +37,28 @@
 
 - Add a post-Drive-connection job that mirrors `ready_to_sync` materials and updates the file-level Drive status.
 
-final result: blocked
+## Zoom webinar classroom update — 12 November 2026
+
+**Source visual truth**
+
+- Approved concept: the white-and-navy student webinar view shown in this chat, with the lecture canvas, attendance state, Raise Hand and Q&A controls.
+
+**Implemented surfaces**
+
+- Student Zoom room: embedded Zoom client with Ibemhal Q&A, hand raise and LMS attendance heartbeat.
+- Teacher Zoom room: a moderated Teaching Desk for questions and raised hands, plus a backup host link.
+- Data safeguards: class-assignment checks occur server-side; direct Data API access to questions and hand raises is explicitly denied.
+
+**Verification**
+
+- `npm.cmd run build` passes on 12 November 2026; only unrelated pre-existing lint warnings remain.
+- Production release `dpl_Cj34wrnK8v3xfeeVemTHgH13njiT` is Ready and the public homepage was browser-verified in Classic white.
+- The protected Zoom room cannot be rendered end-to-end until an assigned student/teacher account and Zoom Webinar credentials are configured. No substitute screenshot is claimed.
+
+**Remaining acceptance check**
+
+1. Add the licensed Zoom host and production credentials.
+2. Create one assigned teacher and student test account.
+3. Start a webinar, raise a hand, submit a question, answer it as teacher, and confirm attendance watch time.
+
+final result: blocked — awaiting licensed Zoom credentials and an authenticated rehearsal.
