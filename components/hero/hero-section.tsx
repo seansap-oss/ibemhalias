@@ -10,6 +10,7 @@ import { PortalFloatingControls } from "@/components/portal/portal-floating-cont
 import { HeroCmsDeck } from "@/components/cms/hero-cms-deck";
 import { useSiteTheme } from "@/components/theme/site-theme-provider";
 import { PremiumHome } from "@/components/premium/premium-home";
+import { LatestHeroUpdates } from "./latest-hero-updates";
 
 const stories = [
   {
@@ -172,6 +173,7 @@ export function HeroSection() {
 
           <div className="min-w-0 flex-1">
             <HeroCmsDeck fallback={<FallbackHero />} />
+            <LatestHeroUpdates />
 
             <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[

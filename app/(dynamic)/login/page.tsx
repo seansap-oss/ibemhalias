@@ -130,6 +130,10 @@ function LoginForm() {
       method: "POST",
       cache: "no-store",
     }).catch(() => undefined);
+    await fetch("/api/owner/logout", {
+      method: "POST",
+      cache: "no-store",
+    }).catch(() => undefined);
 
     sessionStorage.removeItem("admin_auth");
     sessionStorage.removeItem("admin_email");

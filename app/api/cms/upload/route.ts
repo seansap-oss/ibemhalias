@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { createCmsServiceClient } from "@/lib/supabase/cms-server";
-import { requireCmsAdmin } from "@/lib/supabase/server-session";
+import { canManageCourses } from "@/lib/course-admin";
 
 const BUCKET = "cms-content";
 const MAX_FILE_BYTES = 200 * 1024 * 1024;
@@ -35,7 +35,7 @@ function safeName(name: string) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireCmsAdmin();
+    if (!(await canManageCourses())) return NextResponse.json({ error: "Admin access required" }, { status: 403 });
 
     const formData = await request.formData();
     const file = formData.get("file");

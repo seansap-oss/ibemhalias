@@ -1,0 +1,5 @@
+import {hasOwnerSession} from "@/lib/super-admin";
+import {createSessionClient} from "@/lib/supabase/server-session";
+import {createCmsServiceClient} from "@/lib/supabase/cms-server";
+import {cookies} from "next/headers";
+export async function canViewDirector(){if(await hasOwnerSession())return true;const session=await createSessionClient();const {data:{user}}=await session.auth.getUser();if(!user)return false;const db=createCmsServiceClient();const {data}=await db.from("profiles").select("role").eq("id",user.id).single();if(data?.role!=="director")return false;const id=(await cookies()).get("avit_activity_session")?.value;if(!id)return false;const [{data:activity},{data:settings}]=await Promise.all([db.from("activity_sessions").select("user_id,last_seen_at,logged_out_at").eq("id",id).maybeSingle(),db.from("director_settings").select("admin_idle_minutes").eq("id",true).single()]);return activity?.user_id===user.id&&!activity.logged_out_at&&Date.now()-new Date(activity.last_seen_at).getTime()<(settings?.admin_idle_minutes||10)*60000}

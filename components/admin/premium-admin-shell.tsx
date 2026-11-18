@@ -29,13 +29,13 @@ import {
   Upload,
   UserRound,
   Users,
+  Wallet,
   Wifi,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SITE_CONTACT, SITE_WHATSAPP_HREF } from "@/lib/site-contact";
 import { IbemhalLogo } from "@/components/brand/ibemhal-logo";
-import { SITE_VERSION_LABEL } from "@/lib/site-version";
 
 type ViewMode = "horizontal" | "vertical" | "floating";
 type NavItem = { href: string; label: string; icon: React.ComponentType<{ className?: string }>; code?: string };
@@ -50,6 +50,9 @@ const horizontalNav: NavItem[] = [
   { href: "/admin/community-chat", label: "Group Chat", icon: MessageCircle },
   { href: "/admin/live-classes/students", label: "Students", icon: Users },
   { href: "/admin/teachers", label: "Teachers", icon: Users },
+  { href: "/admin/finance", label: "Finance & Fees", icon: Wallet },
+  { href: "/admin/finance/payments", label: "Course Payments", icon: Wallet },
+  { href: "/admin/finance/platform-fees", label: "Platform Fees", icon: Wallet },
   { href: "/admin/integrations/zoom", label: "Zoom Integration", icon: Radio },
   { href: "/admin/data-vault", label: "Data Vault", icon: Files },
   { href: "/admin/mentorship", label: "Bookings", icon: CalendarDays },
@@ -80,6 +83,10 @@ const clientNavGroups: NavGroup[] = [
   {
     label: "STUDENT SECTION",
     items: [{ href: "/admin/student-space", label: "Student Space", icon: GraduationCap, code: "D5" }],
+  },
+  {
+    label: "FINANCE & FEES",
+    items: [{ href: "/admin/finance", label: "Finance & Fees", icon: Wallet }, { href: "/admin/finance/payments", label: "Course Payments", icon: Wallet }, { href: "/admin/finance/platform-fees", label: "Platform Fees", icon: Wallet }],
   },
   {
     label: "LIVE CLASSES",
@@ -320,7 +327,7 @@ export function PremiumAdminShell({ children }: { children: React.ReactNode }) {
           />
 
           <div className="ml-auto hidden items-center gap-5 xl:flex">
-            <span className="text-[10px] font-black text-slate-400">{SITE_VERSION_LABEL}</span>
+            <span className="text-[10px] font-black text-slate-400">Admin Finance & Fees · Version 5.8.0</span>
             <a href={`mailto:${SITE_CONTACT.helpdeskEmail}`} className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 hover:text-[#123f9a]">
               <Mail className="h-4 w-4" />
               {SITE_CONTACT.helpdeskEmail}
@@ -478,7 +485,3 @@ export function PremiumAdminShell({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-
-
-
-

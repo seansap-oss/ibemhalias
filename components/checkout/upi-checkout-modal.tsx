@@ -71,6 +71,9 @@ export function UpiCheckoutModal({
 
   const [confirming, setConfirming] = React.useState(false);
   const [enrolled, setEnrolled] = React.useState(false);
+  const [orderId, setOrderId] = React.useState("");
+  const [upiUtr, setUpiUtr] = React.useState("");
+  const [centreVpa, setCentreVpa] = React.useState("");
 
   const basePrice = course ? course.discountedPrice ?? course.price : 0;
   const finalPrice = validation?.valid ? validation.finalPrice : basePrice;
@@ -80,6 +83,7 @@ export function UpiCheckoutModal({
     const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
     setIsMobile(/android|iphone|ipad|ipod|mobile/i.test(ua));
   }, []);
+  React.useEffect(() => { if(open) fetch("/api/checkout/payment-settings",{cache:"no-store"}).then(r=>r.json()).then(j=>setCentreVpa(j.vpa||"")).catch(()=>setCentreVpa("")); },[open]);
 
   React.useEffect(() => {
     if (open) {
@@ -87,6 +91,8 @@ export function UpiCheckoutModal({
       setValidation(null);
       setPromo("");
       setEnrolled(false);
+      setOrderId("");
+      setUpiUtr("");
       setAccountError("");
     }
   }, [open]);
@@ -94,8 +100,8 @@ export function UpiCheckoutModal({
   if (!course) return null;
 
   const note = `Ibemhal IAS - ${course.title}`.slice(0, 50);
-  const upiLink = buildUpiLink({ amount: finalPrice, note, transactionRef: txnRef });
-  const appLinks = buildAppLinks(finalPrice, note, txnRef);
+  const upiLink = buildUpiLink({ amount: finalPrice, note, transactionRef: txnRef, vpa: centreVpa });
+  const appLinks = buildAppLinks(finalPrice, note, txnRef, centreVpa);
 
   const whatsappUrl = `https://wa.me/${UPI_CONFIG.whatsapp}?text=${encodeURIComponent(
     `Hello Ibemhal IAS! I want to enrol in "${course.title}" (${formatInr(finalPrice)}). ` +
@@ -109,7 +115,7 @@ export function UpiCheckoutModal({
     setAccountError("");
 
     const supabase = createClient();
-    if (supabase) {
+    if (supabase && details.password.trim()) {
       const { error } = await supabase.auth.signUp({
         email: details.email.trim().toLowerCase(),
         password: details.password,
@@ -167,29 +173,15 @@ export function UpiCheckoutModal({
 
   /* ---------------- Step 4 — confirm ---------------- */
   const confirmPayment = async () => {
+    if (upiUtr.trim().length < 6) { setAccountError("Enter the UPI transaction ID from your payment app."); return; }
     setConfirming(true);
-    const supabase = createClient();
-
-    if (supabase) {
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData.user) {
-        await supabase.rpc("redeem_enrollment", {
-          p_course_id: course.id,
-          p_code: validation?.valid ? validation.code ?? null : null,
-          p_via: "upi_auto",
-          p_reference: txnRef,
-        });
-      }
-    }
-
-    hapticSuccess();
-    setEnrolled(true);
-    setConfirming(false);
-
-    setTimeout(() => {
-      onClose();
-      router.push("/dashboard");
-    }, 2000);
+    try {
+      const response = await fetch("/api/checkout/orders", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({courseId:course.id,name:details.name,email:details.email,phone:details.phone,promoCode:validation?.valid?validation.code:null,paymentReference:upiUtr.trim()})});
+      const result = await response.json();
+      if(!response.ok) throw new Error(result.error||"Unable to record your payment");
+      setOrderId(result.order.id);hapticSuccess();setEnrolled(true);
+    } catch(e) { setAccountError(e instanceof Error?e.message:"Unable to record payment"); }
+    finally {setConfirming(false);}
   };
 
   const steps = [
@@ -316,11 +308,10 @@ export function UpiCheckoutModal({
                       <Input
                         id="ck-pw"
                         type="password"
-                        required
                         minLength={6}
                         value={details.password}
                         onChange={(e) => setDetails({ ...details, password: e.target.value })}
-                        placeholder="min 6 characters"
+                        placeholder="Optional — create a student account now"
                       />
                     </div>
                     <Button type="submit" className="w-full" disabled={accountBusy}>
@@ -403,8 +394,8 @@ export function UpiCheckoutModal({
                       <Button variant="outline" onClick={() => setStep(1)} className="flex-1">
                         <ArrowLeft className="mr-2 h-4 w-4" />Back
                       </Button>
-                      <Button onClick={() => setStep(3)} className="flex-1">
-                        Pay {formatInr(finalPrice)}
+                      <Button onClick={() => setStep(3)} disabled={!centreVpa} className="flex-1">
+                        {centreVpa ? `Pay ${formatInr(finalPrice)}` : "Payment setup pending"}
                       </Button>
                     </div>
                   </motion.div>
@@ -457,7 +448,7 @@ export function UpiCheckoutModal({
                           <QrCode value={upiLink} size={220} logoText="II" />
                         </div>
                         <div className="flex items-center gap-2 text-xs">
-                          <code className="rounded bg-muted px-2 py-1 font-mono">{UPI_CONFIG.vpa}</code>
+                          <code className="rounded bg-muted px-2 py-1 font-mono">{centreVpa}</code>
                           <button
                             onClick={() => navigator.clipboard?.writeText(UPI_CONFIG.vpa)}
                             className="p-1 rounded hover:bg-muted"
@@ -506,22 +497,24 @@ export function UpiCheckoutModal({
                           <CheckCircle2 className="h-9 w-9 text-white" />
                         </motion.div>
                         <div>
-                          <h3 className="text-lg font-bold">Enrollment confirmed!</h3>
+                          <h3 className="text-lg font-bold">Payment submitted for review</h3>
                           <p className="text-sm text-muted-foreground mt-1">
-                            Welcome to {course.title}. Redirecting to your dashboard…
+                            Your coaching centre admin will verify payment before course access is activated.
                           </p>
                         </div>
-                        <Loader2 className="h-4 w-4 animate-spin mx-auto text-muted-foreground" />
+                        <Button onClick={onClose} variant="outline" className="w-full">Close</Button>
+                        {orderId ? <a className="block text-sm font-semibold text-blue-700 underline" target="_blank" rel="noopener noreferrer" href={`/api/checkout/receipt?id=${encodeURIComponent(orderId)}&email=${encodeURIComponent(details.email.trim().toLowerCase())}`}>Keep this receipt-status link</a> : null}
                       </>
                     ) : (
                       <>
+                        {accountError ? <p role="alert" className="rounded-lg bg-red-50 p-2 text-xs text-red-700">{accountError}</p> : null}
                         <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
                           <ShieldCheck className="h-8 w-8 text-primary" />
                         </div>
                         <div>
                           <h3 className="text-base font-bold">Confirm your payment</h3>
                           <p className="text-sm text-muted-foreground mt-1">
-                            Confirm you sent {formatInr(finalPrice)} to {UPI_CONFIG.vpa}
+                            Confirm you sent {formatInr(finalPrice)} to {centreVpa}
                           </p>
                         </div>
                         <div className="rounded-lg bg-muted/50 p-3 text-left space-y-1 text-xs">
@@ -538,11 +531,12 @@ export function UpiCheckoutModal({
                             <span className="font-mono">{txnRef}</span>
                           </div>
                         </div>
+                        <label className="block text-left text-xs font-bold">UPI transaction ID from your payment app<Input value={upiUtr} onChange={e=>setUpiUtr(e.target.value)} placeholder="Enter UTR / transaction ID" className="mt-2" required /></label>
                         <Button onClick={confirmPayment} className="w-full h-11" disabled={confirming}>
                           {confirming ? (
                             <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Confirming…</>
                           ) : (
-                            "Confirm & Activate Course"
+                            "Submit payment for verification"
                           )}
                         </Button>
                         <Button variant="ghost" onClick={() => setStep(3)} className="w-full h-9 text-xs">

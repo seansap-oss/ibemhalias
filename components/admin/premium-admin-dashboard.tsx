@@ -95,6 +95,7 @@ function StatCard({
 const quickActions = [
   { href: "/admin/live-classes/students", label: "Add Student", icon: UserPlus, tone: "text-blue-600" },
   { href: "/admin/content", label: "Upload Material", icon: Upload, tone: "text-green-600" },
+  { href: "/admin/courses/new", label: "Create Course", icon: BookOpen, tone: "text-indigo-600" },
   { href: "/admin/mock-test", label: "Create Mock Test", icon: TestTube2, tone: "text-violet-600" },
   { href: "/admin/live-classes/schedule", label: "Schedule Live Class", icon: Video, tone: "text-orange-600" },
   { href: "/admin/notifications", label: "Send Notification", icon: Bell, tone: "text-rose-600" },
@@ -155,7 +156,7 @@ export function PremiumAdminDashboard() {
     {
       label: "Total Courses",
       value: data.courses.length,
-      sub: loading ? "Loading current catalogue…" : "Published course catalogue",
+      sub: loading ? "Loading current catalogue…" : "Saved course records",
       icon: BookOpen,
       tone: "bg-green-50 text-green-600",
     },
@@ -221,6 +222,11 @@ export function PremiumAdminDashboard() {
             </Link>
           ))}
         </div>
+      </Panel>
+
+      <Panel className="p-4">
+        <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-black text-[#174699]">Recent Courses</h2><Link href="/admin/courses" className="text-[11px] font-black text-[#174699] hover:underline">Manage all →</Link></div>
+        <div className="grid gap-2 md:grid-cols-3">{data.courses.slice(0, 3).map((course) => <Link key={course.id} href={`/admin/courses/${course.id}/edit`} className="rounded-xl border p-3 text-xs hover:bg-slate-50"><b className="block text-slate-900">{course.title}</b><span className="mt-1 block text-slate-500">{course.is_published ? "Published" : "Draft"} · ₹{Number(course.price_inr || 0).toLocaleString("en-IN")}</span></Link>)}{!data.courses.length && <p className="text-xs text-slate-500">No saved courses yet. Create one, then publish it to show it on the public site.</p>}</div>
       </Panel>
 
       <div className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]">

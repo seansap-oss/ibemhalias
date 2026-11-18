@@ -161,9 +161,10 @@ export function buildUpiLink(params: {
   amount: number;
   note?: string;
   transactionRef?: string;
+  vpa?: string;
 }): string {
   const q = new URLSearchParams({
-    pa: UPI_CONFIG.vpa,
+    pa: params.vpa || UPI_CONFIG.vpa,
     pn: UPI_CONFIG.payeeName,
     am: params.amount.toFixed(2),
     cu: "INR",
@@ -174,8 +175,8 @@ export function buildUpiLink(params: {
 }
 
 /** App-specific deep links for the three dominant Indian UPI apps. */
-export function buildAppLinks(amount: number, note: string, ref: string) {
-  const base = buildUpiLink({ amount, note, transactionRef: ref }).replace("upi://pay?", "");
+export function buildAppLinks(amount: number, note: string, ref: string, vpa?: string) {
+  const base = buildUpiLink({ amount, note, transactionRef: ref, vpa }).replace("upi://pay?", "");
   return {
     gpay: `tez://upi/pay?${base}`,
     phonepe: `phonepe://pay?${base}`,

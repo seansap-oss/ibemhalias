@@ -60,6 +60,8 @@ export default function StaffLoginClient() {
       const adminData = await adminResponse.json().catch(() => ({}));
 
       if (adminResponse.ok && adminData?.authenticated) {
+        // Keep staff activity separate from a previous owner session in this browser.
+        await fetch("/api/owner/logout", { method: "POST" });
         const supabase = createClient();
         if (supabase) {
           await supabase.auth
@@ -118,7 +120,12 @@ export default function StaffLoginClient() {
 
       const role = String(profile?.role || "").toLowerCase();
 
+      if (["instructor", "admin", "director"].includes(role)) {
+        await fetch("/api/owner/logout", { method: "POST" });
+      }
+
       if (role === "instructor") {
+        await fetch("/api/activity/session", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({action:"start"}) });
         router.replace(
           destination("instructor", searchParams.get("redirectedFrom"))
         );
@@ -127,7 +134,15 @@ export default function StaffLoginClient() {
       }
 
       if (role === "admin") {
+        await fetch("/api/activity/session", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({action:"start"}) });
         router.replace("/admin/dashboard");
+        router.refresh();
+        return;
+      }
+
+      if (role === "director") {
+        await fetch("/api/activity/session", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({action:"start"}) });
+        router.replace("/director/dashboard");
         router.refresh();
         return;
       }

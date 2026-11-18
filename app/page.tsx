@@ -3,6 +3,7 @@ import { HeroSection } from "@/components/hero/hero-section";
 import { Footer } from "@/components/landing/footer";
 import { LiveClassPromo } from "@/components/live-class/live-class-promo";
 import { HomeHighlights } from "@/components/landing/home-highlights";
+import { CoursesSection } from "@/components/landing/courses-section";
 
 export default function HomePage() {
   return (
@@ -10,6 +11,7 @@ export default function HomePage() {
       <Navbar />
       <HeroSection />
       <HomeHighlights />
+      <CoursesSection />
       <LiveClassPromo />
       <Footer />
     </main>

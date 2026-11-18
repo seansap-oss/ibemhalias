@@ -1,5 +1,6 @@
 import { PortalPageShell } from "@/components/portal/portal-page-shell";
 import { CategoryCard } from "@/components/portal/page-components";
+import { CoursesSection } from "@/components/landing/courses-section";
 
 export default function ResourcesPage() {
   return (
@@ -8,6 +9,7 @@ export default function ResourcesPage() {
       title="FREE RESOURCES"
       description="Choose the required exam category."
     >
+      <CoursesSection />
       <div className="grid gap-5 lg:grid-cols-[1fr_1.618fr]">
         <CategoryCard
           href="/resources/civil-service"

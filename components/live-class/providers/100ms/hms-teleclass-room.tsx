@@ -1868,9 +1868,7 @@ function ResourcesPanel({
           <button
             key={resource.id}
             type="button"
-            onClick={() =>
-              setSelectedId(resource.id)
-            }
+            onClick={() => { setSelectedId(resource.id); void fetch("/api/activity/assets", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sourceType: "live", assetId: resource.id, action: "open" }) }); }}
             className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left ${
               selected?.id === resource.id
                 ? "border-blue-300 bg-blue-50"
@@ -1891,9 +1889,7 @@ function ResourcesPanel({
                 href={resource.url}
                 target="_blank"
                 rel="noreferrer"
-                onClick={(event) =>
-                  event.stopPropagation()
-                }
+                onClick={(event) => { event.stopPropagation(); void fetch("/api/activity/assets", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sourceType: "live", assetId: resource.id, action: "download_requested" }) }); }}
                 aria-label="Download resource"
               >
                 <Download className="h-4 w-4 text-[#174699]" />

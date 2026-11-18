@@ -28,7 +28,7 @@ async function signedUrl(client: any, storagePath: string | null) {
 function premiumAllowed(item: AnyRow, profile: AnyRow, flags: Record<string, boolean>, enrolledCourseIds: Set<string>) {
   if (item.access_level !== "premium") return true;
   if (profile.tier === "all-access") return true;
-  if (item.course_id && !enrolledCourseIds.has(item.course_id)) return false;
+  if (item.course_id) return enrolledCourseIds.has(item.course_id);
   const key = String(item.access_key || "general_premium");
   if (key === "general_premium") {
     return ["premium", "foundation", "prelims", "mains", "optional"].includes(String(profile.tier || "free"));
@@ -44,6 +44,29 @@ export async function GET() {
     if (!user) return NextResponse.json({ ok: false, error: "UNAUTHENTICATED" }, { status: 401 });
 
     const service = createCmsServiceClient();
+
+    // Attach paid guest purchases only after Supabase confirms ownership of
+    // the checkout email. Never grant access from a typed email alone.
+    if (user.email && user.email_confirmed_at) {
+      const { data: guestOrders } = await service.from("course_purchase_orders")
+        .select("id,course_id,amount_paise,payment_reference")
+        .eq("buyer_email", user.email.toLowerCase()).eq("status", "paid")
+        .is("buyer_user_id", null);
+      for (const order of guestOrders || []) {
+        const { data: items, error: itemError } = await service.from("course_purchase_order_items").select("course_id,amount_paise").eq("order_id", order.id);
+        if (itemError || !items?.length) continue;
+        let granted = true;
+        for (const item of items) {
+          const { error: grantError } = await service.from("enrollments").upsert({
+            user_id: user.id, course_id: item.course_id, payment_status: "paid",
+            amount_paid: item.amount_paise / 100, enrolled_via: "admin_manual",
+            upi_reference: order.payment_reference,
+          }, { onConflict: "user_id,course_id" });
+          if (grantError) granted = false;
+        }
+        if (granted) await service.from("course_purchase_orders").update({ buyer_user_id: user.id }).eq("id", order.id).is("buyer_user_id", null);
+      }
+    }
 
     const [{ data: profile, error: profileError }, { data: enrollments, error: enrollmentError }, { data: prefs }] = await Promise.all([
       service.from("profiles").select("id,email,full_name,phone,student_code,tier,avatar_url,created_at").eq("id", user.id).single(),
@@ -62,7 +85,7 @@ export async function GET() {
         ? service.from("courses").select("id,title,slug,description,thumbnail_url,category,level,is_published").in("id", courseIds).order("title")
         : Promise.resolve({ data: [], error: null }),
       service.from("live_class_assignments").select("live_class_id,status").eq("student_id", user.id).eq("status", "active"),
-      service.from("cms_content").select("id,section_path,title,description,media_type,mime_type,file_name,file_size,storage_path,external_url,thumbnail_path,date_label,month_label,sort_order,is_published,access_level,access_key,course_id,created_at,updated_at").eq("is_published", true).order("created_at", { ascending: false }).limit(250),
+      service.from("cms_content").select("id,asset_number,section_path,title,description,media_type,mime_type,file_name,file_size,storage_path,external_url,thumbnail_path,date_label,month_label,sort_order,is_published,access_level,access_key,course_id,created_at,updated_at").eq("is_published", true).order("created_at", { ascending: false }).limit(250),
       service.from("student_material_progress").select("content_id,progress_percent,completed,bookmarked,last_opened_at,study_seconds,updated_at").eq("user_id", user.id),
     ]);
 

@@ -5,11 +5,11 @@ import {
   Phone,
 } from "lucide-react";
 import { branchLocations } from "@/components/portal/nav-items";
+import { OwnerEntry } from "@/components/admin/owner-entry";
 import {
   SITE_CONTACT,
   SITE_WHATSAPP_HREF,
 } from "@/lib/site-contact";
-import { SITE_VERSION_LABEL } from "@/lib/site-version";
 
 export function Footer() {
   return (
@@ -113,7 +113,7 @@ export function Footer() {
 
               <div className="mt-6 border-t border-white/10 pt-5">
                 <p className="text-xs leading-relaxed text-blue-200">
-                  Created and designed by{" "}
+                  Created and designed by <OwnerEntry />{" "}
                   <a
                     href="https://www.avitsolutions.tech/"
                     target="_blank"
@@ -125,20 +125,17 @@ export function Footer() {
                   .
                 </p>
 
-                <p className="mt-2 text-[10px] font-bold text-blue-300">
-                  {SITE_VERSION_LABEL}
-                </p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Separate full-width white copyright/version bar */}
+      {/* Separate full-width white copyright bar */}
       <div className="border-t border-slate-200 bg-white">
         <div className="mx-auto max-w-[1500px] px-4 py-5 text-center sm:px-6 lg:px-8">
           <p className="text-xs font-medium leading-relaxed text-slate-700 sm:text-sm">
-            © 2026 Ibemhal IAS. All rights reserved.
+            <OwnerEntry /> 2026 Ibemhal IAS. All rights reserved.
             <span className="mx-2 text-slate-300">·</span>
 
             Created and designed by{" "}
@@ -152,11 +149,6 @@ export function Footer() {
             </a>
             .
 
-            <span className="mx-2 text-slate-300">·</span>
-
-            <span className="font-semibold text-slate-600">
-              {SITE_VERSION_LABEL}
-            </span>
           </p>
         </div>
       </div>

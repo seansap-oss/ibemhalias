@@ -34,12 +34,12 @@ async function viewerAccess(): Promise<ViewerAccess> {
 
     const service = createCmsServiceClient();
     const [{ data: profile }, { data: prefs }, { data: enrollments }] = await Promise.all([
-      service.from("profiles").select("tier").eq("id", user.id).maybeSingle(),
+      service.from("profiles").select("tier,role").eq("id", user.id).maybeSingle(),
       service.from("student_access_preferences").select("material_flags").eq("student_id", user.id).maybeSingle(),
-      service.from("enrollments").select("course_id").eq("user_id", user.id),
+      service.from("enrollments").select("course_id").eq("user_id", user.id).eq("payment_status", "paid"),
     ]);
     return {
-      isAdmin: false,
+      isAdmin: ["admin", "director", "instructor"].includes(profile?.role || ""),
       authenticated: true,
       tier: String(profile?.tier || "free"),
       flags: prefs?.material_flags && typeof prefs.material_flags === "object" ? prefs.material_flags : {},
@@ -53,7 +53,7 @@ async function viewerAccess(): Promise<ViewerAccess> {
 function allowed(item: any, viewer: ViewerAccess) {
   if (item.access_level !== "premium") return true;
   if (viewer.isAdmin || viewer.tier === "all-access") return true;
-  if (item.course_id && !viewer.courseIds.has(item.course_id)) return false;
+  if (item.course_id) return viewer.courseIds.has(item.course_id);
   const key = String(item.access_key || "general_premium");
   if (key === "general_premium") return ["premium", "foundation", "prelims", "mains", "optional"].includes(viewer.tier);
   return viewer.flags[key] === true;
@@ -83,7 +83,9 @@ export async function GET(request: NextRequest) {
     const sectionPath = request.nextUrl.searchParams.get("section");
     if (!sectionPath) return NextResponse.json({ error: "section is required" }, { status: 400 });
     const service = createCmsServiceClient();
-    const { data, error } = await service.from("cms_content").select("*").eq("section_path", sectionPath).eq("is_published", true).order("sort_order", { ascending: true }).order("created_at", { ascending: false });
+    let query = service.from("cms_content").select("*").eq("section_path", sectionPath).eq("is_published", true);
+    query = sectionPath.startsWith("/resources") ? query.order("created_at", { ascending: false }) : query.order("sort_order", { ascending: true }).order("created_at", { ascending: false });
+    const { data, error } = await query;
     if (error) throw error;
     const viewer = await viewerAccess();
     return NextResponse.json({ items: await attachSignedUrls(data || [], viewer) });

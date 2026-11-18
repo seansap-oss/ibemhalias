@@ -1,0 +1,6 @@
+import {NextRequest,NextResponse} from "next/server";
+import {randomBytes} from "node:crypto";
+import {hasOwnerSession} from "@/lib/super-admin";
+import {createCmsServiceClient} from "@/lib/supabase/cms-server";
+export const runtime="nodejs";
+export async function POST(request:NextRequest){if(!(await hasOwnerSession()))return NextResponse.json({error:"Owner access required"},{status:403});try{const b=await request.json();const email=String(b.email||"").trim().toLowerCase(),name=String(b.name||"").trim(),role=b.role==="admin"?"admin":"director";if(!/^\S+@\S+\.\S+$/.test(email)||name.length<2)return NextResponse.json({error:"Staff name and email required"},{status:400});const password=randomBytes(12).toString("base64url");const db=createCmsServiceClient();const {data,error}=await db.auth.admin.createUser({email,password,email_confirm:true,app_metadata:{role,password_change_required:true},user_metadata:{full_name:name}});if(error||!data.user)throw error||new Error("Unable to create staff account");const {error:profileError}=await db.from("profiles").upsert({id:data.user.id,email,full_name:name,role},{onConflict:"id"});if(profileError)throw profileError;return NextResponse.json({ok:true,email,temporaryPassword:password});}catch(e){return NextResponse.json({error:e instanceof Error?e.message:"Unable to create staff account"},{status:500})}}

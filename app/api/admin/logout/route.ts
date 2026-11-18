@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { getAdminCookieName } from "@/lib/admin-session";
+import { createCmsServiceClient } from "@/lib/supabase/cms-server";
+import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
 export async function POST() {
+  const activityId = (await cookies()).get("avit_activity_session")?.value;
+  if (activityId) await createCmsServiceClient().from("activity_sessions").update({ logged_out_at: new Date().toISOString() }).eq("id", activityId).is("logged_out_at", null);
   const response = NextResponse.json({
     ok: true,
     authenticated: false,
@@ -19,6 +23,7 @@ export async function POST() {
     maxAge: 0,
     expires: new Date(0),
   });
+  response.cookies.delete("avit_activity_session");
 
   response.headers.set(
     "Cache-Control",

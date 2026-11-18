@@ -1178,6 +1178,7 @@ export function LiveKitTeleclassRoom({
 
   async function presentStoredPdf(resource: any) {
     if (!resource?.url || !isTeacher || !lkRoom) return;
+    void fetch('/api/activity/assets', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ sourceType: 'live', assetId: resource.id, action: 'open' }) });
     try {
       if (lkRoom.localParticipant.isScreenShareEnabled) {
         try { await lkRoom.localParticipant.setScreenShareEnabled(false); } catch {}
@@ -2021,7 +2022,7 @@ export function LiveKitTeleclassRoom({
                         </div>
                         <div className="lk-file-actions">
                           {resource.url ? (
-                            <a href={resource.url} target="_blank" rel="noreferrer" title="Open file"><Download size={14} /><span>Open</span></a>
+                            <a href={resource.url} onClick={() => void fetch('/api/activity/assets', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ sourceType: 'live', assetId: resource.id, action: 'download_requested' }) })} target="_blank" rel="noreferrer" title="Open file"><Download size={14} /><span>Open</span></a>
                           ) : null}
                           {isTeacher && resource.url ? (
                             <button type="button" onClick={() => void presentStoredResource(resource)} title="Put this file on the live stage">

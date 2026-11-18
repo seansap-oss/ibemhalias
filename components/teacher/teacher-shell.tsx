@@ -74,7 +74,7 @@ export function TeacherShell({
         setPermissions(data?.permissions || {});
       })
       .catch(() => {
-        router.replace("/admin/login?role=teacher");
+        router.replace("/teacher/login");
       });
   }, [router]);
 
@@ -83,12 +83,13 @@ export function TeacherShell({
   }
 
   const logout = async () => {
+    await fetch("/api/activity/session", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "logout" }) }).catch(() => undefined);
     const supabase = createClient();
     if (supabase) {
       await supabase.auth.signOut().catch(() => undefined);
     }
     await fetch("/api/admin/logout", { method: "POST" }).catch(() => undefined);
-    router.replace("/admin/login?role=teacher");
+    router.replace("/teacher/login");
     router.refresh();
   };
 

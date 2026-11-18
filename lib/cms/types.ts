@@ -19,6 +19,7 @@ export type CmsAccessKey =
 
 export type CmsContentItem = {
   id: string;
+  asset_number?: string | null;
   section_path: string;
   title: string;
   description: string | null;

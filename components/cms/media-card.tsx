@@ -25,6 +25,7 @@ export function MediaCard({
 }) {
   const [readingPdf, setReadingPdf] = React.useState(false);
   const [readingDocument, setReadingDocument] = React.useState(false);
+  const record = (action: string) => { void fetch("/api/activity/assets", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ assetId: item.id, action }) }); };
 
   const url = item.media_url || item.external_url || "";
   const embedUrl =
@@ -102,6 +103,7 @@ export function MediaCard({
             <video
               src={url}
               controls
+              onPlay={() => record("play")}
               playsInline
               preload="metadata"
               className="h-full w-full object-contain object-center"
@@ -111,7 +113,7 @@ export function MediaCard({
 
         {item.media_type === "youtube" && embedUrl && (
           <div className={hero ? "h-full w-full bg-black" : "aspect-video bg-black"}>
-            <iframe
+            <iframe onLoad={() => record("open")}
               src={embedUrl}
               title={item.title}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -123,7 +125,7 @@ export function MediaCard({
 
         {item.media_type === "pdf" && (
           <button
-            onClick={() => setReadingPdf(true)}
+            onClick={() => { record("open"); setReadingPdf(true); }}
             className={[
               "flex w-full flex-col items-center justify-center bg-gradient-to-br from-red-50 via-white to-slate-50 text-center",
               hero ? "h-full p-8" : "aspect-[16/10] p-6",
@@ -152,7 +154,7 @@ export function MediaCard({
                 <div className="text-xs text-slate-500">{formatFileSize(item.file_size)}</div>
               </div>
             </div>
-            {url && <audio src={url} controls className="mt-4 w-full" preload="metadata" />}
+            {url && <audio src={url} controls onPlay={() => record("play")} className="mt-4 w-full" preload="metadata" />}
           </div>
         )}
 
@@ -169,7 +171,7 @@ export function MediaCard({
             <div className="mt-1 text-xs text-slate-500">{formatFileSize(item.file_size)}</div>
             {url && (
               <button
-                onClick={() => setReadingDocument(true)}
+                onClick={() => { record("open"); setReadingDocument(true); }}
                 className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-xs font-black text-white"
               >
                 <FileText className="h-4 w-4" />
@@ -189,6 +191,7 @@ export function MediaCard({
             {url && (
               <a
                 href={url}
+                onClick={() => record("download_requested")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-xs font-black text-white"

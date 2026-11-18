@@ -46,7 +46,7 @@ export async function GET() {
       teacherFilter
         ? service
             .from("teacher_workspace_materials")
-            .select("id,course_id,title,material_type,file_name,mime_type,file_size,storage_path,local_backup_status,google_drive_status,created_at")
+            .select("id,asset_number,course_id,title,material_type,file_name,mime_type,file_size,storage_path,local_backup_status,google_drive_status,created_at")
             .eq("teacher_id", teacherFilter)
             .order("created_at", { ascending: false })
             .limit(100)
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
         local_backup_status: "queued",
         google_drive_status: driveStatus,
       })
-      .select("id,course_id,title,material_type,file_name,mime_type,file_size,storage_path,local_backup_status,google_drive_status,created_at")
+      .select("id,asset_number,course_id,title,material_type,file_name,mime_type,file_size,storage_path,local_backup_status,google_drive_status,created_at")
       .single();
 
     if (insertError) {
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
     await service.from("teacher_activity_log").insert({
       teacher_id: staff.id,
       action: "workspace_material_uploaded",
-      details: { materialId: data.id, title: data.title, courseId: courseId || null },
+      details: { materialId: data.id, assetNumber: data.asset_number, title: data.title, courseId: courseId || null },
     });
 
     return NextResponse.json({ ok: true, material: data });

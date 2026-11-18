@@ -9,6 +9,7 @@ import {
   secureCompare,
 } from "@/lib/admin-session";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/supabase/config";
+import { createCmsServiceClient } from "@/lib/supabase/cms-server";
 
 export const dynamic = "force-dynamic";
 
@@ -182,6 +183,7 @@ export async function POST(request: NextRequest) {
     }
 
     const token = await createAdminSessionToken(identity);
+    const { data: activity } = await createCmsServiceClient().from("activity_sessions").insert({ identity, role: "admin", country_code: request.headers.get("x-vercel-ip-country"), region_code: request.headers.get("x-vercel-ip-country-region") }).select("id").single();
 
     const response = NextResponse.json({
       ok: true,
@@ -205,6 +207,7 @@ export async function POST(request: NextRequest) {
       path: "/",
       maxAge: 8 * 60 * 60,
     });
+    if (activity?.id) response.cookies.set("avit_activity_session", activity.id, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 8 * 60 * 60 });
 
     return noStore(response);
   } catch (error: any) {

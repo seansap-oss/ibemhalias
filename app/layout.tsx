@@ -8,6 +8,7 @@ import { SiteThemeProvider } from "@/components/theme/site-theme-provider";
 import { MobileBottomBar, MobileBottomBarSpacer } from "@/components/navigation/mobile-bottom-bar";
 import { DeviceGuard } from "@/components/security/device-guard";
 import { ScreenCaptureShield } from "@/components/security/screen-capture-shield";
+import { ActivityTracker } from "@/components/providers/activity-tracker";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -65,6 +66,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <DeviceGuard>
             <ScreenCaptureShield>
               {children}
+              <ActivityTracker />
               <MobileBottomBarSpacer />
               <MobileBottomBar />
             </ScreenCaptureShield>

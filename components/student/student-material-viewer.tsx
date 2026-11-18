@@ -28,6 +28,7 @@ export function StudentMaterialViewer({
   onComplete: () => void;
 }) {
   const url = material.media_url || material.external_url || "";
+  const record = (action: string) => { void fetch("/api/activity/assets", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ assetId: material.id, action }) }); };
   const youtube =
     material.media_type === "youtube" && material.external_url
       ? getYouTubeEmbedUrl(material.external_url)
@@ -69,19 +70,19 @@ export function StudentMaterialViewer({
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-black">{material.title}</div>
           <div className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-blue-200">
-            {material.media_type} · {material.access_level === "premium" ? "Premium" : "Free"}
+            {material.asset_number} · {material.media_type} · {material.access_level === "premium" ? "Premium" : "Free"}
           </div>
         </div>
-        <button onClick={onComplete} className="hidden min-h-10 items-center gap-2 rounded-xl bg-green-600 px-3 text-xs font-black text-white sm:inline-flex">
+        <button onClick={() => { record("complete"); onComplete(); }} className="hidden min-h-10 items-center gap-2 rounded-xl bg-green-600 px-3 text-xs font-black text-white sm:inline-flex">
           <CheckCircle2 className="h-4 w-4" /> Mark Complete
         </button>
         {url ? (
-          <a href={url} target="_blank" rel="noopener noreferrer" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10" title="Open original">
+          <a href={url} onClick={() => record("external_open")} target="_blank" rel="noopener noreferrer" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10" title="Open original">
             <ExternalLink className="h-5 w-5" />
           </a>
         ) : null}
         {url ? (
-          <a href={url} download className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10" title="Download">
+          <a href={url} onClick={() => record("download_requested")} download className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10" title="Download">
             <Download className="h-5 w-5" />
           </a>
         ) : null}
@@ -94,7 +95,7 @@ export function StudentMaterialViewer({
 
         {material.media_type === "video" && url ? (
           <div className="grid h-full place-items-center p-3">
-            <video src={url} controls playsInline autoPlay preload="metadata" className="max-h-full w-full max-w-6xl rounded-xl bg-black" />
+            <video src={url} controls playsInline autoPlay onPlay={() => record("play")} preload="metadata" className="max-h-full w-full max-w-6xl rounded-xl bg-black" />
           </div>
         ) : null}
 

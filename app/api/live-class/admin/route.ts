@@ -56,7 +56,7 @@ async function students(client: any) {
   const [{ data: profiles, error }, { data: enrollments }, { data: courses }, { data: assignments }, { data: classes }] = await Promise.all([
     client.from("profiles").select("id,email,full_name,phone,student_code,whatsapp_opt_in,tier,created_at").eq("role", "student").order("created_at", { ascending: false }),
     client.from("enrollments").select("user_id,course_id,payment_status").eq("payment_status", "paid"),
-    client.from("courses").select("id,title"),
+    client.from("courses").select("id,title,is_published,price_inr"),
     client.from("live_class_assignments").select("student_id,live_class_id,status").eq("status", "active"),
     client.from("live_classes").select("id,title,topic,starts_at,status"),
   ]);
