@@ -57,11 +57,8 @@ export async function requireCmsAdmin() {
     throw new Error("UNAUTHENTICATED");
   }
 
-  const role = String(
-    user.app_metadata?.role ||
-      user.user_metadata?.role ||
-      ""
-  ).toLowerCase();
+  // User metadata is editable by the account holder and must not grant CMS access.
+  const role = String(user.app_metadata?.role || "").toLowerCase();
 
   const adminEmails = String(
     process.env.CMS_ADMIN_EMAILS || ""

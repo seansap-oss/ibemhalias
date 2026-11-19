@@ -27,8 +27,8 @@ async function signedUrl(client: any, storagePath: string | null) {
 
 function premiumAllowed(item: AnyRow, profile: AnyRow, flags: Record<string, boolean>, enrolledCourseIds: Set<string>) {
   if (item.access_level !== "premium") return true;
-  if (profile.tier === "all-access") return true;
   if (item.course_id) return enrolledCourseIds.has(item.course_id);
+  if (profile.tier === "all-access") return true;
   const key = String(item.access_key || "general_premium");
   if (key === "general_premium") {
     return ["premium", "foundation", "prelims", "mains", "optional"].includes(String(profile.tier || "free"));

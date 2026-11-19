@@ -52,8 +52,9 @@ async function viewerAccess(): Promise<ViewerAccess> {
 
 function allowed(item: any, viewer: ViewerAccess) {
   if (item.access_level !== "premium") return true;
-  if (viewer.isAdmin || viewer.tier === "all-access") return true;
+  if (viewer.isAdmin) return true;
   if (item.course_id) return viewer.courseIds.has(item.course_id);
+  if (viewer.tier === "all-access") return true;
   const key = String(item.access_key || "general_premium");
   if (key === "general_premium") return ["premium", "foundation", "prelims", "mains", "optional"].includes(viewer.tier);
   return viewer.flags[key] === true;
@@ -88,7 +89,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query;
     if (error) throw error;
     const viewer = await viewerAccess();
-    return NextResponse.json({ items: await attachSignedUrls(data || [], viewer) });
+    return NextResponse.json({ items: await attachSignedUrls(data || [], viewer) }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error: any) {
     return NextResponse.json(errorPayload(error), { status: 500 });
   }

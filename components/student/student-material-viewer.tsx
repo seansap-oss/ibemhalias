@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { getYouTubeEmbedUrl } from "@/lib/cms/media";
+import { getGoogleDrivePreviewUrl } from "@/lib/cms/google-drive";
 import { SITE_CONTACT } from "@/lib/site-contact";
 
 type Material = Record<string, any>;
@@ -28,6 +29,7 @@ export function StudentMaterialViewer({
   onComplete: () => void;
 }) {
   const url = material.media_url || material.external_url || "";
+  const drivePreview = material.media_type === "video" ? getGoogleDrivePreviewUrl(url) : null;
   const record = (action: string) => { void fetch("/api/activity/assets", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ assetId: material.id, action }) }); };
   const youtube =
     material.media_type === "youtube" && material.external_url
@@ -76,12 +78,12 @@ export function StudentMaterialViewer({
         <button onClick={() => { record("complete"); onComplete(); }} className="hidden min-h-10 items-center gap-2 rounded-xl bg-green-600 px-3 text-xs font-black text-white sm:inline-flex">
           <CheckCircle2 className="h-4 w-4" /> Mark Complete
         </button>
-        {url ? (
+        {url && !drivePreview ? (
           <a href={url} onClick={() => record("external_open")} target="_blank" rel="noopener noreferrer" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10" title="Open original">
             <ExternalLink className="h-5 w-5" />
           </a>
         ) : null}
-        {url ? (
+        {url && !drivePreview ? (
           <a href={url} onClick={() => record("download_requested")} download className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10" title="Download">
             <Download className="h-5 w-5" />
           </a>
@@ -93,7 +95,11 @@ export function StudentMaterialViewer({
           <iframe title={material.title} src={`${url}#toolbar=1&navpanes=0&view=FitH`} className="h-full w-full border-0 bg-white" />
         ) : null}
 
-        {material.media_type === "video" && url ? (
+        {drivePreview ? (
+          <div className="grid h-full place-items-center p-3">
+            <iframe src={drivePreview} title={material.title} allow="autoplay; fullscreen" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" className="aspect-video w-full max-w-6xl rounded-xl border-0 bg-black" />
+          </div>
+        ) : material.media_type === "video" && url ? (
           <div className="grid h-full place-items-center p-3">
             <video src={url} controls playsInline autoPlay onPlay={() => record("play")} preload="metadata" className="max-h-full w-full max-w-6xl rounded-xl bg-black" />
           </div>
