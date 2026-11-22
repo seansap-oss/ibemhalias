@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { createCmsServiceClient } from "@/lib/supabase/cms-server";
 import {
   getAdminCookieName,
   verifyAdminSessionToken,
@@ -55,6 +56,15 @@ export async function requireCmsAdmin() {
 
   if (!user) {
     throw new Error("UNAUTHENTICATED");
+  }
+
+  if (user.app_metadata?.paused === true) {
+    throw new Error("FORBIDDEN");
+  }
+
+  const { data: current, error: statusError } = await createCmsServiceClient().auth.admin.getUserById(user.id);
+  if (statusError || !current.user || current.user.app_metadata?.paused === true) {
+    throw new Error("FORBIDDEN");
   }
 
   // User metadata is editable by the account holder and must not grant CMS access.

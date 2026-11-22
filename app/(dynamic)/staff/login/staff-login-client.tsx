@@ -107,6 +107,11 @@ export default function StaffLoginClient() {
         throw new Error("Invalid staff email or password.");
       }
 
+      if (data.user.app_metadata?.paused === true) {
+        await supabase.auth.signOut().catch(() => undefined);
+        throw new Error("This staff account is paused. Contact the site owner.");
+      }
+
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role,full_name")
@@ -141,7 +146,8 @@ export default function StaffLoginClient() {
       }
 
       if (role === "director") {
-        await fetch("/api/activity/session", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({action:"start"}) });
+        const activityResponse = await fetch("/api/activity/session", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({action:"start"}) });
+        if (!activityResponse.ok) throw new Error("Unable to start the director session. Please try signing in again.");
         router.replace("/director/dashboard");
         router.refresh();
         return;

@@ -11,6 +11,10 @@ export async function canManageCourses() {
   const session = await createSessionClient();
   const { data: { user } } = await session.auth.getUser();
   if (!user) return false;
-  const { data } = await createCmsServiceClient().from("profiles").select("role").eq("id", user.id).maybeSingle();
+  if (user.app_metadata?.paused === true) return false;
+  const service = createCmsServiceClient();
+  const { data: current, error: statusError } = await service.auth.admin.getUserById(user.id);
+  if (statusError || !current.user || current.user.app_metadata?.paused === true) return false;
+  const { data } = await service.from("profiles").select("role").eq("id", user.id).maybeSingle();
   return data?.role === "admin";
 }
