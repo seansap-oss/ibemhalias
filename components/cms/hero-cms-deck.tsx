@@ -31,13 +31,13 @@ export function HeroCmsDeck({
     setActive((value) => (value + 1) % items.length);
 
   return (
-    <div className="relative aspect-[9/16] overflow-hidden rounded-[28px] bg-slate-950 shadow-2xl shadow-blue-950/15 sm:aspect-[16/10] lg:aspect-[16/9]">
+    <div className="relative aspect-[9/16] overflow-hidden rounded-[28px] border border-slate-200/80 bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 shadow-xl shadow-blue-950/10 sm:aspect-[16/10] lg:aspect-[16/9]">
       <MediaCard item={current} hero />
 
       <button
         onClick={previous}
         aria-label="Previous hero item"
-        className="absolute left-4 top-1/2 z-30 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white text-[#14256f] shadow-lg"
+        className="absolute left-4 top-1/2 z-30 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-slate-200/80 bg-white/95 text-[#14256f] shadow-md backdrop-blur transition hover:scale-105 hover:bg-white"
       >
         <ArrowLeft className="h-5 w-5" />
       </button>
@@ -45,12 +45,12 @@ export function HeroCmsDeck({
       <button
         onClick={next}
         aria-label="Next hero item"
-        className="absolute right-4 top-1/2 z-30 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white text-[#14256f] shadow-lg"
+        className="absolute right-4 top-1/2 z-30 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-slate-200/80 bg-white/95 text-[#14256f] shadow-md backdrop-blur transition hover:scale-105 hover:bg-white"
       >
         <ArrowRight className="h-5 w-5" />
       </button>
 
-      <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 gap-2 rounded-full bg-black/20 px-3 py-2 backdrop-blur">
+      <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 gap-2 rounded-full border border-slate-200/60 bg-slate-900/25 px-3 py-2 backdrop-blur-md">
         {items.map((item, index) => (
           <button
             key={item.id}

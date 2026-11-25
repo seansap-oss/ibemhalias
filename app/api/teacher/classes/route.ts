@@ -5,6 +5,7 @@ import {
   requireTeacherPermission,
   teacherService,
 } from "@/lib/teacher/server";
+import { parseZoomClassMode, saveZoomClassMode } from "@/lib/zoom/class-mode";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -50,7 +51,8 @@ export async function POST(request: NextRequest) {
     const courseId = String(body?.courseId || "").trim();
     const startsAt = String(body?.startsAt || "").trim();
     const endsAt = String(body?.endsAt || "").trim();
-    const capacity = Math.max(1, Math.min(1000, Number(body?.capacity || 500)));
+    const zoomMode = parseZoomClassMode(body?.zoomMode || "webinar");
+    const capacity = Number(body?.capacity ?? (zoomMode === "meeting" ? 50 : 500));
 
     if (!title || !topic || !courseId || !startsAt) {
       return NextResponse.json(
@@ -61,6 +63,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    if (!zoomMode) return NextResponse.json({ ok: false, error: "Choose a Zoom meeting or webinar." }, { status: 400 });
+    if (!Number.isInteger(capacity) || capacity < 1 || capacity > (zoomMode === "meeting" ? 100 : 500)) return NextResponse.json({ ok: false, error: "Capacity exceeds the selected Zoom format." }, { status: 400 });
 
     const allowedCourseIds = await getTeacherCourseIds(staff);
     if (!allowedCourseIds.includes(courseId)) {
@@ -76,10 +80,11 @@ export async function POST(request: NextRequest) {
         ? "zoom"
         : "livekit";
 
-    const startIso = new Date(startsAt).toISOString();
-    const endIso = endsAt
-      ? new Date(endsAt).toISOString()
-      : new Date(new Date(startsAt).getTime() + 60 * 60 * 1000).toISOString();
+    const startTime = new Date(startsAt).getTime();
+    const endTime = endsAt ? new Date(endsAt).getTime() : startTime + 60 * 60 * 1000;
+    if (!Number.isFinite(startTime) || !Number.isFinite(endTime) || endTime <= startTime) return NextResponse.json({ ok: false, error: "Choose a valid start and end time." }, { status: 400 });
+    const startIso = new Date(startTime).toISOString();
+    const endIso = new Date(endTime).toISOString();
 
     const { data: liveClass, error } = await service
       .from("live_classes")
@@ -98,6 +103,9 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) throw error;
+
+    try { await saveZoomClassMode(service, liveClass.id, zoomMode); }
+    catch (modeError) { await service.from("live_classes").delete().eq("id", liveClass.id); throw modeError; }
 
     const { error: mappingError } = await service
       .from("live_class_course_access")

@@ -6,7 +6,7 @@ import {
   verifyAdminSessionToken,
 } from "@/lib/admin-session";
 
-const STAFF_LOGIN_PATH = "/staff/login";
+const STAFF_LOGIN_PATH = "/login";
 const ADMIN_PUBLIC_PATHS = new Set([
   "/admin/login",
   "/admin/login/",

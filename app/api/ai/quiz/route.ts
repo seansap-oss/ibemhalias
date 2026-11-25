@@ -1,11 +1,65 @@
 import { NextRequest, NextResponse } from "next/server";
-import { extractPdfText } from "@/lib/ai/pdf";
+import { extractPdfTextAsync } from "@/lib/ai/pdf";
 import { fetchYoutubeTranscript } from "@/lib/ai/youtube";
 import { runWithFallback, extractJson } from "@/lib/ai/router";
 import { SYSTEM_PROMPTS, buildUserPrompt } from "@/lib/ai/agents";
 import { offlineQuiz } from "@/lib/ai/offline-fallback";
 
 export const maxDuration = 60;
+
+async function generateQuizFromScannedPdf(
+  buffer: ArrayBuffer,
+  count: number,
+  topic: string
+) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+
+  // Gemini inlineData supports up to ~20MB; guard against huge files.
+  if (buffer.byteLength > 15 * 1024 * 1024) return null;
+
+  const base64 = Buffer.from(buffer).toString("base64");
+  const prompt = buildUserPrompt("generate_quiz", {
+    count,
+    sourceType: "pdf",
+    topic,
+    sourceText:
+      "Read the attached PDF document directly (including scanned pages or existing MCQs) and generate the requested JSON quiz.",
+  });
+
+  const res = await fetch(
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPTS.generate_quiz }] },
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { inlineData: { mimeType: "application/pdf", data: base64 } },
+              { text: prompt },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.2,
+          responseMimeType: "application/json",
+        },
+      }),
+    }
+  );
+
+  if (!res.ok) return null;
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) return null;
+  return extractJson(text);
+}
 
 export async function POST(request: NextRequest) {
   const started = Date.now();
@@ -34,18 +88,33 @@ export async function POST(request: NextRequest) {
       }
 
       const buffer = await file.arrayBuffer();
-      const parsed = extractPdfText(buffer);
+      const parsed = await extractPdfTextAsync(buffer);
       sourceText = parsed.text;
       sourceType = "pdf";
       if (topic === "General Studies") topic = file.name.replace(/\.pdf$/i, "");
 
-      if (!sourceText || sourceText.split(/\s+/).length < 40) {
+      if (!sourceText || sourceText.split(/\s+/).length < 20) {
+        const multimodalQuiz = await generateQuizFromScannedPdf(buffer, count, topic).catch(
+          () => null
+        );
+        if (multimodalQuiz) {
+          return NextResponse.json({
+            success: true,
+            sourceType: "pdf",
+            topic,
+            quiz: multimodalQuiz,
+            servedBy: "gemini-2.5-flash (multimodal-pdf)",
+            degraded: false,
+            latencyMs: Date.now() - started,
+          });
+        }
+
         return NextResponse.json(
           {
             success: false,
             error: "Could not extract readable text from this PDF",
             detail:
-              "The PDF appears to be scanned or image-based. Run it through OCR first, or paste the text directly.",
+              "The PDF appears to be scanned or image-based and multimodal OCR was unavailable. Try pasting the text/MCQs directly in the Text / MCQ tab.",
             pages: parsed.pages,
             extractionMethod: parsed.method,
           },

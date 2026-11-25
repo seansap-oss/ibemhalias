@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { adminError, liveService, normalizeIndianWhatsAppPhone, randomPassword, requireLiveAdmin, safeOrigin } from "@/lib/live-class/server";
 import { sendWhatsAppTemplate, whatsappStatus } from "@/lib/live-class/whatsapp";
+import { getZoomClassMode, parseZoomClassMode, saveZoomClassMode } from "@/lib/zoom/class-mode";
 
 export const dynamic = "force-dynamic";
 
@@ -40,16 +41,18 @@ async function overview(client: any) {
 }
 
 async function schedule(client: any) {
-  const [{ data: classes }, { data: rooms }, { data: courses }, { data: mappings }, { data: assignments }] = await Promise.all([
+  const [{ data: classes }, { data: rooms }, { data: courses }, { data: mappings }, { data: assignments }, { data: zoomModes }] = await Promise.all([
     client.from("live_classes").select("*").order("starts_at", { ascending: true }),
     client.from("live_class_rooms").select("*").eq("is_active", true).order("capacity"),
     client.from("courses").select("id,title,slug,is_published").eq("is_published", true).order("title"),
     client.from("live_class_course_access").select("live_class_id,course_id"),
     client.from("live_class_assignments").select("live_class_id,status").eq("status", "active"),
+    client.from("live_class_settings").select("key,value").like("key", "zoom_mode:%"),
   ]);
   const counts = new Map<string, number>();
   for (const a of assignments || []) counts.set(a.live_class_id, (counts.get(a.live_class_id) || 0) + 1);
-  return { classes: (classes || []).map((x: AnyRow) => ({ ...x, assigned_count: counts.get(x.id) || 0 })), rooms: rooms || [], courses: courses || [], mappings: mappings || [] };
+  const modes = new Map((zoomModes || []).map((row: AnyRow) => [String(row.key).slice(10), row.value]));
+  return { classes: (classes || []).map((x: AnyRow) => ({ ...x, zoom_mode: modes.get(x.id) || "webinar", assigned_count: counts.get(x.id) || 0 })), rooms: rooms || [], courses: courses || [], mappings: mappings || [] };
 }
 
 async function students(client: any) {
@@ -146,7 +149,7 @@ async function classDetail(client: any, classId: string) {
     client.from("live_class_attendance").select("*").eq("live_class_id", classId),
   ]);
   if (error) throw error;
-  return { liveClass, rooms: rooms || [], courses: courses || [], mappings: mappings || [], assignments: assignments || [], students: profiles || [], resources: resources || [], attendance: attendanceRows || [] };
+  return { liveClass: { ...liveClass, zoom_mode: await getZoomClassMode(client, classId) }, rooms: rooms || [], courses: courses || [], mappings: mappings || [], assignments: assignments || [], students: profiles || [], resources: resources || [], attendance: attendanceRows || [] };
 }
 
 export async function GET(request: NextRequest) {
@@ -221,20 +224,29 @@ export async function POST(request: NextRequest) {
     const client = liveService();
 
     if (action === "create_class") {
+      const zoomMode = parseZoomClassMode(body.zoomMode || "webinar");
+      if (!zoomMode) throw Object.assign(new Error("Choose a Zoom meeting or webinar."), { status: 400 });
+      const capacity = Number(body.capacity ?? (zoomMode === "meeting" ? 50 : 500));
+      const startsAt = new Date(body.startsAt);
+      const endsAt = new Date(body.endsAt);
+      if (!Number.isFinite(startsAt.getTime()) || !Number.isFinite(endsAt.getTime()) || endsAt <= startsAt) throw Object.assign(new Error("Choose a valid start and end time."), { status: 400 });
+      if (!Number.isInteger(capacity) || capacity < 1 || capacity > (zoomMode === "meeting" ? 100 : 500)) throw Object.assign(new Error(zoomMode === "meeting" ? "Meeting capacity must be 1–100; a free Zoom host supports at most 100." : "Webinar capacity must be 1–500 for the planned Webinar 500 licence."), { status: 400 });
       const payload = {
         title: String(body.title || "").trim(),
         topic: String(body.topic || "").trim(),
         faculty_name: String(body.facultyName || "").trim(),
-        starts_at: body.startsAt,
-        ends_at: body.endsAt || null,
+        starts_at: startsAt.toISOString(),
+        ends_at: endsAt.toISOString(),
         status: body.status || "scheduled",
-        capacity: Number(body.capacity || 500),
+        capacity,
         room_id: body.roomId || null,
         timezone: "Asia/Kolkata",
       };
       if (!payload.title || !payload.topic || !payload.faculty_name || !payload.starts_at) throw Object.assign(new Error("Title, topic, faculty and start time are required."), { status: 400 });
       const { data, error } = await client.from("live_classes").insert(payload).select("*").single();
       if (error) throw error;
+      try { await saveZoomClassMode(client, data.id, zoomMode); }
+      catch (modeError) { await client.from("live_classes").delete().eq("id", data.id); throw modeError; }
       const courseIds = Array.isArray(body.courseIds) ? body.courseIds.filter(Boolean) : [];
       if (courseIds.length) {
         const { error: mapError } = await client.from("live_class_course_access").insert(courseIds.map((courseId: string) => ({ live_class_id: data.id, course_id: courseId })));
@@ -247,6 +259,13 @@ export async function POST(request: NextRequest) {
     if (action === "update_class") {
       const classId = String(body.classId || "");
       if (!classId) throw Object.assign(new Error("classId required"), { status: 400 });
+      if (body.zoomMode !== undefined) {
+        const zoomMode = parseZoomClassMode(body.zoomMode);
+        if (!zoomMode) throw Object.assign(new Error("Choose a Zoom meeting or webinar."), { status: 400 });
+        const { data: provisioned } = await client.from("live_class_settings").select("key").eq("key", `zoom_class:${classId}`).maybeSingle();
+        if (provisioned) throw Object.assign(new Error("This class already has a Zoom room. Create a new class to change meeting type."), { status: 409 });
+        await saveZoomClassMode(client, classId, zoomMode);
+      }
       const allowed: AnyRow = {};
       for (const [key, source] of [["title", "title"], ["topic", "topic"], ["faculty_name", "facultyName"], ["starts_at", "startsAt"], ["ends_at", "endsAt"], ["status", "status"], ["room_id", "roomId"], ["recording_url", "recordingUrl"], ["join_url", "joinUrl"]] as any[]) {
         if (body[source] !== undefined) allowed[key] = body[source] || null;

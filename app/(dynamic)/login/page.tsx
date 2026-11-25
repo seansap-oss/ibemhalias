@@ -49,6 +49,39 @@ const REASONS: Record<
   },
 };
 
+function resolveSafeRedirect(
+  role: "student" | "instructor" | "admin" | "director",
+  requested: string | null
+) {
+  if (requested && requested.startsWith("/") && !requested.startsWith("//")) {
+    if (
+      role === "admin" &&
+      (requested.startsWith("/admin") || requested.startsWith("/teacher"))
+    ) {
+      return requested.startsWith("/teacher") ? "/admin/teachers" : requested;
+    }
+    if (role === "instructor" && requested.startsWith("/teacher")) {
+      return requested;
+    }
+    if (role === "director" && requested.startsWith("/director")) {
+      return requested;
+    }
+    if (
+      role === "student" &&
+      !requested.startsWith("/admin") &&
+      !requested.startsWith("/teacher") &&
+      !requested.startsWith("/director")
+    ) {
+      return requested;
+    }
+  }
+
+  if (role === "admin") return "/admin/dashboard";
+  if (role === "instructor") return "/teacher/dashboard";
+  if (role === "director") return "/director/dashboard";
+  return "/dashboard";
+}
+
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
@@ -73,87 +106,137 @@ function LoginForm() {
     setBusy(true);
     setError("");
 
-    const supabase = createClient();
-    if (!supabase) {
-      setError(
-        "Authentication is not configured yet. Please contact the institute."
-      );
-      setBusy(false);
-      return;
-    }
-
-    const { error: signInError } =
-      await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
-      });
-
-    if (signInError) {
-      setError(signInError.message);
-      setBusy(false);
-      return;
-    }
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      await supabase.auth.signOut();
-      setError("Unable to verify this student account.");
-      setBusy(false);
-      return;
-    }
-
-    const { data: profile, error: profileError } =
-      await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .maybeSingle();
-
-    const role = String(profile?.role || "").toLowerCase();
-
-    if (profileError || role !== "student") {
-      await supabase.auth.signOut();
-      setError(
-        "This login is not a student account. Please use the Admin Login for administrator access."
-      );
-      setBusy(false);
-      return;
-    }
-
-    // A student login must not inherit a dedicated administrator
-    // session from the same browser. Clear only the admin cookie after
-    // the student identity has been verified successfully.
-    await fetch("/api/admin/logout", {
-      method: "POST",
-      cache: "no-store",
-    }).catch(() => undefined);
-    await fetch("/api/owner/logout", {
-      method: "POST",
-      cache: "no-store",
-    }).catch(() => undefined);
-
-    sessionStorage.removeItem("admin_auth");
-    sessionStorage.removeItem("admin_email");
-
-    await claimDevice();
-
+    const identifier = email.trim().toLowerCase();
     const requested =
       params.get("redirectedFrom") ||
       params.get("next");
 
-    const destination =
-      requested &&
-      requested.startsWith("/") &&
-      !requested.startsWith("//") &&
-      !requested.startsWith("/admin")
-        ? requested
-        : "/dashboard";
+    try {
+      // 1. Check dedicated admin session first (supports both admin username and email).
+      const adminResponse = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier, password }),
+      });
+      const adminData = await adminResponse.json().catch(() => ({}));
 
-    router.replace(destination);
-    router.refresh();
+      if (adminResponse.ok && adminData?.authenticated) {
+        await fetch("/api/owner/logout", {
+          method: "POST",
+          cache: "no-store",
+        }).catch(() => undefined);
+        const supabase = createClient();
+        if (supabase) {
+          await supabase.auth
+            .signOut({ scope: "local" })
+            .catch(() => undefined);
+        }
+
+        router.replace(resolveSafeRedirect("admin", requested));
+        router.refresh();
+        return;
+      }
+
+      if (adminResponse.status !== 401) {
+        throw new Error(adminData?.error || "Unable to sign in.");
+      }
+
+      if (!identifier.includes("@")) {
+        throw new Error(
+          "Please enter a valid email address or administrator username."
+        );
+      }
+
+      // 2. Clear any stale dedicated admin cookie before Supabase sign-in.
+      await fetch("/api/admin/logout", {
+        method: "POST",
+        cache: "no-store",
+      }).catch(() => undefined);
+
+      const supabase = createClient();
+      if (!supabase) {
+        throw new Error(
+          "Authentication is not configured yet. Please contact the institute."
+        );
+      }
+
+      const { data: authData, error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email: identifier,
+          password,
+        });
+
+      if (signInError || !authData.user) {
+        throw new Error(signInError?.message || "Invalid email or password.");
+      }
+
+      if (authData.user.app_metadata?.paused === true) {
+        await supabase.auth.signOut().catch(() => undefined);
+        throw new Error(
+          "This account is currently paused. Please contact the institute."
+        );
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", authData.user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        await supabase.auth.signOut().catch(() => undefined);
+        throw new Error("Unable to verify this account.");
+      }
+
+      const role = String(profile?.role || "").toLowerCase();
+
+      if (role === "student") {
+        await fetch("/api/owner/logout", {
+          method: "POST",
+          cache: "no-store",
+        }).catch(() => undefined);
+        sessionStorage.removeItem("admin_auth");
+        sessionStorage.removeItem("admin_email");
+
+        await claimDevice();
+        router.replace(resolveSafeRedirect("student", requested));
+        router.refresh();
+        return;
+      }
+
+      if (role === "instructor" || role === "admin" || role === "director") {
+        await fetch("/api/owner/logout", {
+          method: "POST",
+          cache: "no-store",
+        }).catch(() => undefined);
+        const activityResponse = await fetch("/api/activity/session", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: "start" }),
+        });
+        if (role === "director" && !activityResponse.ok) {
+          throw new Error(
+            "Unable to start the director session. Please try signing in again."
+          );
+        }
+        router.replace(
+          resolveSafeRedirect(
+            role as "instructor" | "admin" | "director",
+            requested
+          )
+        );
+        router.refresh();
+        return;
+      }
+
+      await supabase.auth.signOut().catch(() => undefined);
+      throw new Error(
+        "This account does not have portal access. Please contact the institute."
+      );
+    } catch (reasonErr: any) {
+      setError(reasonErr?.message || "Unable to sign in.");
+      setBusy(false);
+    }
   };
 
   return (
@@ -187,12 +270,10 @@ function LoginForm() {
       <Card>
         <CardContent className="p-6">
           <h1 className="text-lg font-bold">
-            Student sign in
+            Portal Sign In
           </h1>
           <p className="mt-1 text-xs text-muted-foreground">
-            Access your assigned courses, live
-            classes, study materials and group
-            chat.
+            Sign in with your Student, Teacher, Admin, or Director account.
           </p>
 
           <form
@@ -208,19 +289,20 @@ function LoginForm() {
 
             <div className="space-y-1.5">
               <Label htmlFor="lg-email">
-                Email
+                Email or Username
               </Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="lg-email"
-                  type="email"
+                  type="text"
+                  autoComplete="username"
                   required
                   value={email}
                   onChange={(event) =>
                     setEmail(event.target.value)
                   }
-                  placeholder="you@example.com"
+                  placeholder="you@example.com or admin"
                   className="pl-10"
                 />
               </div>

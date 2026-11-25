@@ -44,6 +44,47 @@ function extractTextFromContentStream(content: string): string {
   return out.join(" ");
 }
 
+export async function extractPdfTextAsync(buffer: ArrayBuffer): Promise<{
+  text: string;
+  pages: number;
+  method: "pdfjs" | "flate" | "raw" | "none";
+}> {
+  try {
+    const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    const loadingTask = pdfjs.getDocument({
+      data: new Uint8Array(buffer),
+      useWorkerFetch: false,
+      useSystemFonts: true,
+    });
+    const doc = await loadingTask.promise;
+    const pageTexts: string[] = [];
+
+    for (let pageNum = 1; pageNum <= doc.numPages; pageNum++) {
+      const page = await doc.getPage(pageNum);
+      const content = await page.getTextContent();
+      const strings = (content.items as Array<{ str?: string }>)
+        .map((item) => item.str || "")
+        .filter(Boolean);
+      if (strings.length) {
+        pageTexts.push(strings.join(" "));
+      }
+    }
+
+    const combined = pageTexts.join("\n").replace(/\s+/g, " ").trim();
+    if (combined.length > 0) {
+      return {
+        text: combined.slice(0, 60_000),
+        pages: doc.numPages || 1,
+        method: "pdfjs",
+      };
+    }
+  } catch {
+    // Fall back to lightweight stream parser below.
+  }
+
+  return extractPdfText(buffer);
+}
+
 export function extractPdfText(buffer: ArrayBuffer): {
   text: string;
   pages: number;

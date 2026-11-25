@@ -13,7 +13,7 @@ export function PortalSidebar() {
   return (
     <aside
       className={[
-        "portal-sidebar hidden lg:flex shrink-0 flex-col rounded-[28px] bg-gradient-to-b from-[#111f70] via-[#132d80] to-[#0b225f] text-white shadow-2xl shadow-blue-950/10 transition-all duration-300",
+        "portal-sidebar hidden lg:flex shrink-0 flex-col rounded-[28px] border border-blue-900/20 bg-gradient-to-b from-[#162364] via-[#132263] to-[#0d194b] text-white shadow-xl shadow-blue-950/15 transition-all duration-300",
         expanded ? "w-[270px]" : "w-[86px]",
       ].join(" ")}
     >
@@ -44,11 +44,11 @@ export function PortalSidebar() {
               href={item.href}
               title={!expanded ? item.label : undefined}
               className={[
-                "flex min-h-14 items-center rounded-2xl border transition",
-                expanded ? "gap-3 px-4" : "justify-center px-2",
+                "flex min-h-12 items-center rounded-2xl border transition",
+                expanded ? "gap-3 px-4 py-2.5" : "justify-center px-2",
                 active
-                  ? "border-white/25 bg-white text-[#12236e] shadow-lg"
-                  : "border-white/5 bg-white/10 text-white hover:bg-white/15",
+                  ? "border-white/25 bg-white/18 text-white shadow-md backdrop-blur-sm"
+                  : "border-transparent bg-transparent text-blue-100/90 hover:border-white/10 hover:bg-white/10 hover:text-white",
               ].join(" ")}
             >
               <item.icon className="h-5 w-5 shrink-0" />

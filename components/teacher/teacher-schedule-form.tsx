@@ -21,7 +21,8 @@ export function TeacherScheduleForm({
     courseId: courses[0]?.id || "",
     startsAt: "",
     endsAt: "",
-    capacity: 500,
+    capacity: 50,
+    zoomMode: "meeting",
   });
 
   const submit = async (event: React.FormEvent) => {
@@ -146,11 +147,26 @@ export function TeacherScheduleForm({
         </label>
 
         <label className="text-xs font-black text-slate-600">
+          Zoom format
+          <select
+            value={form.zoomMode}
+            onChange={(event) => {
+              const zoomMode = event.target.value;
+              setForm({ ...form, zoomMode, capacity: zoomMode === "meeting" ? 50 : 500 });
+            }}
+            className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+          >
+            <option value="meeting">Meeting · small class</option>
+            <option value="webinar">Webinar · large audience</option>
+          </select>
+        </label>
+
+        <label className="text-xs font-black text-slate-600">
           Capacity
           <input
             type="number"
             min={1}
-            max={1000}
+            max={form.zoomMode === "meeting" ? 100 : 500}
             value={form.capacity}
             onChange={(event) =>
               setForm({ ...form, capacity: Number(event.target.value) })

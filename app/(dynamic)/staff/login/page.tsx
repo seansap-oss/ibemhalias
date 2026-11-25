@@ -1,5 +1,5 @@
-import StaffLoginClient from "./staff-login-client";
+import { redirect } from "next/navigation";
 
 export default function StaffLoginPage() {
-  return <StaffLoginClient />;
+  redirect("/login");
 }

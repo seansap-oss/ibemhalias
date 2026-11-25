@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">Ibemhal IAS payment and owner billing concept</title>
+  <desc id="desc">Student payment flows through a licensed provider to the institute and the website builder, with a separate monthly software invoice and an owner dashboard.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="#64748b"/></marker>
+    <style>text{font-family:Arial,Helvetica,sans-serif;fill:#152044}.title{font-size:34px;font-weight:700}.sub{font-size:17px;fill:#64748b}.section{font-size:23px;font-weight:700}.label{font-size:19px;font-weight:700}.small{font-size:15px;fill:#64748b}.amount{font-size:31px;font-weight:700}.pill{font-size:14px;font-weight:700}.line{stroke:#94a3b8;stroke-width:3;fill:none;marker-end:url(#arrow)}.card{fill:#fff;stroke:#dbe3f0;stroke-width:2}</style>
+  </defs>
+  <rect width="1440" height="900" fill="#f5f7fc"/>
+  <text x="60" y="74" class="title">How a course sale would pay both parties</text>
+  <text x="60" y="105" class="sub">Proposed gateway integration for Ibemhal IAS and AViT-Solutions</text>
+  <rect x="60" y="144" width="810" height="510" rx="24" class="card"/>
+  <text x="92" y="190" class="section">Per-sale payment flow</text>
+  <rect x="92" y="228" width="215" height="126" rx="18" fill="#eef2ff" stroke="#b9c4ff"/>
+  <text x="112" y="265" class="label">Student or guest</text>
+  <text x="112" y="309" class="amount">₹10,000</text>
+  <text x="112" y="334" class="small">Course checkout</text>
+  <path d="M308 290H362" class="line"/>
+  <rect x="365" y="228" width="221" height="126" rx="18" fill="#eef2ff" stroke="#b9c4ff"/>
+  <text x="384" y="263" class="label">Licensed payment</text>
+  <text x="384" y="288" class="label">partner</text>
+  <text x="384" y="331" class="small">Verifies payment and splits</text>
+  <path d="M586 269H626V251H665" class="line"/>
+  <path d="M586 313H626V403H665" class="line"/>
+  <rect x="665" y="207" width="173" height="104" rx="18" fill="#e7f8f4" stroke="#9cddce"/>
+  <text x="684" y="244" class="label">Institute</text>
+  <text x="684" y="287" class="amount" fill="#0b806b">₹9,800</text>
+  <rect x="665" y="358" width="173" height="104" rx="18" fill="#f3edff" stroke="#d3b8ff"/>
+  <text x="684" y="395" class="label">AViT-Solutions</text>
+  <text x="684" y="438" class="amount" fill="#6d43b3">₹200</text>
+  <rect x="92" y="502" width="746" height="119" rx="17" fill="#f8fafc" stroke="#dbe3f0"/>
+  <text x="113" y="538" class="label">2% of the sale, including GST</text>
+  <text x="113" y="568" class="small">Example assumes ₹10,000 sale. Provider processing costs and refunds need agreed rules.</text>
+  <text x="113" y="592" class="small">A plain UPI QR cannot perform this automatic split.</text>
+  <rect x="900" y="144" width="480" height="510" rx="24" class="card"/>
+  <text x="932" y="190" class="section">Super Admin · Owner payments</text>
+  <text x="932" y="221" class="small">Concept for the private owner dashboard</text>
+  <rect x="932" y="248" width="416" height="82" rx="14" fill="#eef2ff"/>
+  <text x="951" y="279" class="small">Platform fee on each completed sale</text>
+  <text x="951" y="311" class="amount">2.00% <tspan class="small">including GST</tspan></text>
+  <rect x="932" y="345" width="416" height="82" rx="14" fill="#f8fafc" stroke="#dbe3f0"/>
+  <text x="951" y="375" class="small">Verified builder payout account</text>
+  <text x="951" y="407" class="label">Bank •••• 4821  ·  Change request</text>
+  <text x="932" y="471" class="label">Settlement ledger</text>
+  <path d="M932 488H1348M932 542H1348" stroke="#dbe3f0" stroke-width="2"/>
+  <text x="934" y="523" class="small">Order CRS-1042     ₹200 fee     Settled</text>
+  <text x="934" y="575" class="small">Order CRS-1043     ₹160 fee     Pending</text>
+  <rect x="60" y="684" width="1320" height="153" rx="24" class="card"/>
+  <text x="92" y="728" class="section">Separate monthly software subscription</text>
+  <text x="92" y="760" class="small">AI question ingestion, MCQ creation, course tools and support can be billed on a monthly invoice.</text>
+  <text x="92" y="786" class="small">The owner sets the agreed plan and price. This is separate from the 2% transaction fee.</text>
+  <rect x="1115" y="718" width="218" height="71" rx="18" fill="#eef2ff"/>
+  <text x="1135" y="748" class="pill">MONTHLY INVOICE</text>
+  <text x="1135" y="774" class="small">Plan price agreed later</text>
+  <text x="60" y="874" class="small">Planning mockup · No live split settlement is configured yet.</text>
+</svg>

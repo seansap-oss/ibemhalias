@@ -80,21 +80,14 @@ export function Navbar() {
           <div className="ml-auto flex items-center gap-2 xl:ml-5">
             <Link
               href="/login"
-              className="hidden min-h-11 items-center gap-2 rounded-xl bg-[#14256f] px-4 text-sm font-black text-white shadow-md sm:inline-flex"
+              className="hidden min-h-11 items-center gap-2 rounded-xl bg-[#14256f] px-5 text-sm font-black text-white shadow-md shadow-blue-950/15 transition hover:bg-[#1d348f] sm:inline-flex"
             >
               <UserRound className="h-4 w-4" />
-              Student Login
-            </Link>
-            <Link
-              href="/admin/login"
-              className="hidden min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-[#14256f] shadow-sm md:inline-flex"
-            >
-              <ShieldCheck className="h-4 w-4" />
-              Admin Login
+              Portal Login
             </Link>
             <Link
               href="/login"
-              aria-label="Student login"
+              aria-label="Portal login"
               className="grid h-11 w-11 place-items-center rounded-xl bg-[#14256f] text-white sm:hidden"
             >
               <UserRound className="h-5 w-5" />
@@ -148,20 +141,14 @@ export function Navbar() {
                 ))}
               </nav>
 
-              <div className="mt-auto grid grid-cols-2 gap-2 pt-5">
+              <div className="mt-auto pt-5">
                 <Link
                   href="/login"
                   onClick={() => setMenuOpen(false)}
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white text-xs font-black text-[#14256f]"
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-white text-sm font-black text-[#14256f] shadow-lg"
                 >
-                  Student Login
-                </Link>
-                <Link
-                  href="/admin/login"
-                  onClick={() => setMenuOpen(false)}
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/30 text-xs font-black text-white"
-                >
-                  Admin Login
+                  <UserRound className="h-4 w-4" />
+                  Portal Login
                 </Link>
               </div>
             </motion.aside>

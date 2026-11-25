@@ -56,7 +56,7 @@ const horizontalNav: NavItem[] = [
   { href: "/admin/integrations/zoom", label: "Zoom Integration", icon: Radio },
   { href: "/admin/data-vault", label: "Data Vault", icon: Files },
   { href: "/admin/mentorship", label: "Bookings", icon: CalendarDays },
-  { href: "/admin/ingest", label: "AI Ingestion", icon: Sparkles },
+  { href: "/admin/ingest", label: "Exam Maker", icon: Sparkles },
   { href: "/admin/ai-health", label: "AI Health", icon: Activity },
   { href: "/admin/network-check", label: "Network Check", icon: Wifi },
   { href: "/admin/notifications", label: "Notifications", icon: Bell },
@@ -120,7 +120,7 @@ const clientNavGroups: NavGroup[] = [
     label: "EXISTING SYSTEM TOOLS",
     items: [
       { href: "/admin/content", label: "Website Content", icon: Files },
-      { href: "/admin/ingest", label: "AI Ingestion", icon: Sparkles },
+      { href: "/admin/ingest", label: "Exam Maker", icon: Sparkles },
       { href: "/admin/ai-health", label: "AI Health", icon: Activity },
       { href: "/admin/network-check", label: "Network Check", icon: Wifi },
     ],
@@ -260,7 +260,7 @@ export function PremiumAdminShell({ children }: { children: React.ReactNode }) {
       })
       .catch(() => {
         if (!cancelled) {
-          router.replace(`/admin/login?redirectedFrom=${encodeURIComponent(pathname)}`);
+          router.replace(`/login?redirectedFrom=${encodeURIComponent(pathname)}`);
         }
       })
       .finally(() => {
@@ -290,7 +290,7 @@ export function PremiumAdminShell({ children }: { children: React.ReactNode }) {
     } finally {
       sessionStorage.removeItem("admin_auth");
       sessionStorage.removeItem("admin_email");
-      router.replace("/admin/login");
+      router.replace("/login");
       router.refresh();
     }
   };
@@ -327,7 +327,7 @@ export function PremiumAdminShell({ children }: { children: React.ReactNode }) {
           />
 
           <div className="ml-auto hidden items-center gap-5 xl:flex">
-            <span className="text-[10px] font-black text-slate-400">Admin Finance & Fees · Version 5.8.0</span>
+            <span className="text-[10px] font-black text-slate-400">Admin Finance & Fees · Version 5.9.0</span>
             <a href={`mailto:${SITE_CONTACT.helpdeskEmail}`} className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 hover:text-[#123f9a]">
               <Mail className="h-4 w-4" />
               {SITE_CONTACT.helpdeskEmail}

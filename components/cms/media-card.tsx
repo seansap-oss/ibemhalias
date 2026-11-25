@@ -34,7 +34,7 @@ export function MediaCard({
       : null;
 
   const cardClass = hero
-    ? "h-full w-full overflow-hidden rounded-[28px] bg-slate-950"
+    ? "h-full w-full overflow-hidden rounded-[28px] bg-transparent"
     : "relative overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm";
 
   if (item.locked) {
@@ -89,7 +89,7 @@ export function MediaCard({
         ) : null}
 
         {item.media_type === "image" && url && (
-          <div className={hero ? "h-full w-full bg-slate-950" : "aspect-[16/10] bg-slate-50"}>
+          <div className={hero ? "h-full w-full bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100" : "aspect-[16/10] bg-slate-50"}>
             <img
               src={url}
               alt={item.title}

@@ -99,9 +99,12 @@ export async function GET(request: NextRequest) {
     // Keep the response aligned with the active classroom renderer. This is
     // important for Zoom Webinar scheduling and downstream reminders.
     provider: selectedProvider === "zoom" ? "zoom" : "livekit",
-    provider_room_id:
-      String(liveClass.provider || "").toLowerCase() === "livekit" &&
-      String(liveClass.provider_room_id || "").trim()
+    // Students receive a short-lived SDK signature from the guarded Zoom route.
+    // The standalone Zoom link is reserved for the teacher's backup controls.
+    join_url: selectedProvider === "zoom" ? null : liveClass.join_url,
+    provider_room_id: selectedProvider === "zoom"
+      ? null
+      : String(liveClass.provider || "").toLowerCase() === "livekit" && String(liveClass.provider_room_id || "").trim()
         ? String(liveClass.provider_room_id).trim()
         : `ibemhal-${liveClass.id}`,
     access: assignmentMap.get(liveClass.id),

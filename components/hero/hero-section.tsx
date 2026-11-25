@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, PanInfo } from "framer-motion";
-import { ArrowLeft, ArrowRight, ExternalLink, Play } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Building2, ExternalLink, FileText, GraduationCap, Laptop, Play, Target } from "lucide-react";
 import { PortalSidebar } from "@/components/portal/portal-sidebar";
 import { WhatsNew } from "@/components/portal/whats-new";
 import { PortalFloatingControls } from "@/components/portal/portal-floating-controls";
@@ -165,30 +165,49 @@ export function HeroSection() {
   if (theme === "premium") return <PremiumHome />;
 
   return (
-    <section className="bg-[radial-gradient(circle_at_top,_#eef3ff_0,_#ffffff_40%,_#ffffff_100%)] pt-24">
-      <div className="mx-auto max-w-[1500px] px-4 pb-12 sm:px-6 lg:px-8">
-        <div className="flex items-start gap-4">
-          <PortalSidebar />
-          <WhatsNew />
-
-          <div className="min-w-0 flex-1">
-            <HeroCmsDeck fallback={<FallbackHero />} />
-            <LatestHeroUpdates />
-
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {[
-                ["500+", "Selections"],
-                ["10,000+", "Aspirants"],
-                ["100+", "Courses"],
-                ["4.9/5", "Student Rating"],
-              ].map(([value, label]) => (
-                <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm">
-                  <div className="text-xl font-black text-[#14256f]">{value}</div>
-                  <div className="mt-1 text-xs font-semibold text-slate-500">{label}</div>
-                </div>
-              ))}
-            </div>
+    <section className="bg-[#faf8f4] pt-[76px] text-[#19235f]">
+      <div className="mx-auto grid max-w-[1500px] overflow-hidden lg:min-h-[520px] lg:grid-cols-[47%_53%]">
+        <div className="relative z-10 flex flex-col justify-center px-6 py-16 sm:px-10 lg:px-12 lg:py-20">
+          <p className="text-xs font-bold uppercase tracking-[.18em] text-[#bd6d1d]">Civil services, made accessible</p>
+          <h1 className="mt-7 max-w-[660px] font-serif text-[clamp(3.4rem,5.2vw,6rem)] leading-[.98] tracking-[-.045em]">Prepare with purpose.<br />Go further.</h1>
+          <p className="mt-7 max-w-lg text-lg leading-relaxed text-slate-700">Focused courses, live teaching and practical resources for your next exam.</p>
+          <div className="mt-9 flex flex-wrap gap-3">
+            <Link href="/courses" className="inline-flex min-h-12 items-center gap-3 rounded-md bg-[#19235f] px-6 font-semibold text-white transition hover:bg-[#303d83]">Explore courses <ArrowRight className="h-4 w-4" /></Link>
+            <Link href="/resources" className="inline-flex min-h-12 items-center rounded-md border border-[#19235f] px-6 font-semibold transition hover:bg-white">See free resources</Link>
           </div>
+        </div>
+        <div className="relative min-h-[340px] overflow-hidden lg:min-h-[520px]">
+          <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1600&q=85" alt="Students studying together" className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute bottom-6 right-6 border-l-[3px] border-amber-600 bg-white px-4 py-3 text-sm font-semibold shadow-lg">Built for serious preparation</div>
+        </div>
+      </div>
+
+      <div className="border-y border-[#e5e0d7] bg-white">
+        <div className="mx-auto grid max-w-[1500px] divide-y divide-[#e5e0d7] px-6 sm:grid-cols-3 sm:divide-x sm:divide-y-0 lg:px-12">
+          {[
+            { icon: GraduationCap, title: "Expert-led lessons", detail: "Learn from experienced faculty who understand the exam." },
+            { icon: Target, title: "Practice that builds confidence", detail: "Topic-wise tests, past papers and applied learning." },
+            { icon: Laptop, title: "Study from anywhere", detail: "Access your courses and resources on any device." },
+          ].map(({ icon: Icon, title, detail }) => <div key={title} className="flex items-center gap-4 py-5 sm:px-5 first:pl-0"><Icon className="h-8 w-8 shrink-0 stroke-[1.5]" /><div><p className="font-bold">{title}</p><p className="mt-1 text-xs leading-5 text-slate-600">{detail}</p></div></div>)}
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-[1500px] px-6 py-14 lg:px-12">
+        <div className="flex items-end justify-between gap-4"><h2 className="font-serif text-4xl tracking-tight sm:text-5xl">Find your path</h2><Link href="/courses" className="hidden items-center gap-2 text-sm font-semibold text-[#a85e16] sm:inline-flex">View all courses <ArrowRight className="h-4 w-4" /></Link></div>
+        <div className="mt-7 grid gap-4 md:grid-cols-3">
+          {[
+            { icon: Building2, title: "UPSC & Civil Services", detail: "UPSC CSE  ·  IAS  ·  IPS  ·  IFS", body: "Explore courses for civil services preparation.", href: "/courses" },
+            { icon: BookOpen, title: "Banking Exams", detail: "IBPS  ·  SBI  ·  RRB  ·  NABARD", body: "Focused preparation for major banking exams.", href: "/courses" },
+            { icon: FileText, title: "SSC & State Exams", detail: "SSC CGL  ·  CHSL  ·  STATE PSC", body: "Build a steady path for SSC and state exams.", href: "/courses" },
+          ].map(({ icon: Icon, title, detail, body, href }) => <Link key={title} href={href} className="group flex min-h-48 items-center gap-5 rounded-md border border-[#d8d3ca] bg-[#fdfbf8] p-6 transition hover:border-[#19235f] hover:bg-white"><Icon className="h-16 w-16 shrink-0 stroke-[1.1] text-[#19235f]" /><div><h3 className="border-l-[3px] border-[#c37a26] pl-3 font-serif text-xl font-bold">{title}</h3><p className="mt-3 text-[11px] font-bold uppercase tracking-wide">{detail}</p><p className="mt-3 text-sm leading-5 text-slate-600">{body}</p></div><ArrowRight className="ml-auto h-5 w-5 shrink-0 self-end transition group-hover:translate-x-1" /></Link>)}
+        </div>
+        <div className="mt-12"><h2 className="font-serif text-4xl tracking-tight">New from Ibemhal</h2><LatestHeroUpdates /></div>
+      </div>
+
+      <div className="border-t border-[#e5e0d7] bg-white py-14">
+        <div className="mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-8">
+          <h2 className="mb-6 font-serif text-3xl">Explore the full learning portal</h2>
+          <div className="flex items-start gap-4"><PortalSidebar /><WhatsNew /><div className="min-w-0 flex-1"><HeroCmsDeck fallback={<FallbackHero />} /></div></div>
         </div>
       </div>
 

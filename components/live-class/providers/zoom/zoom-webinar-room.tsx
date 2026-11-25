@@ -25,6 +25,20 @@ export function ZoomWebinarRoom({ classId, mode }: { classId: string; mode: "stu
     const heartbeat = window.setInterval(() => { if (joined) void record("heartbeat"); }, 45000);
     return () => { window.removeEventListener("message", receive); window.clearInterval(heartbeat); if (joined) void record("leave"); };
   }, [classId, joined, mode]);
+  React.useEffect(() => {
+    if (mode !== "teacher") return;
+    const receive = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin || event.data?.type !== "ibemhal-zoom-session" || event.data?.event !== "joined") return;
+      setJoined(true);
+      void fetch("/api/zoom/class-state", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ classId, action: "started" }),
+      }).catch(() => undefined);
+    };
+    window.addEventListener("message", receive);
+    return () => window.removeEventListener("message", receive);
+  }, [classId, mode]);
   if (preparing) return <div className="grid min-h-[72vh] place-items-center bg-slate-50 text-[#14256f]"><div className="text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin"/><div className="mt-4 text-lg font-black">Preparing your webinar…</div></div></div>;
   if (error) return <div className="grid min-h-[72vh] place-items-center bg-slate-50 p-6"><div className="max-w-lg rounded-3xl border border-amber-200 bg-white p-6 text-center shadow-sm"><Radio className="mx-auto h-7 w-7 text-amber-600"/><div className="mt-4 text-lg font-black text-slate-900">Live Now needs setup</div><div className="mt-2 text-sm text-slate-500">{error}</div><div className="mt-4 rounded-2xl bg-slate-50 p-3 text-xs text-slate-500">Administrator: check Admin → Zoom Integration.</div></div></div>;
   const src = `/live-now-zoom.html?classId=${encodeURIComponent(classId)}&mode=${encodeURIComponent(mode)}`;

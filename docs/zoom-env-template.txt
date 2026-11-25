@@ -1,0 +1,9 @@
+# Copy these names into .env.local. Keep the credentials in .env.local only.
+# Enable the provider after all six account values are filled in.
+NEXT_PUBLIC_LIVE_NOW_PROVIDER=zoom
+ZOOM_ACCOUNT_ID=
+ZOOM_API_CLIENT_ID=
+ZOOM_API_CLIENT_SECRET=
+ZOOM_MEETING_SDK_CLIENT_ID=
+ZOOM_MEETING_SDK_CLIENT_SECRET=
+ZOOM_HOST_EMAIL=

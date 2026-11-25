@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { AssetActivityReport } from "@/components/admin/asset-activity-report";
+import { createClient } from "@/lib/supabase/client";
 
 type Role = "student" | "instructor" | "admin" | "director" | "owner";
 type Session = { identity: string; role: Role; logged_in_at: string; last_seen_at: string; logged_out_at: string | null; active_seconds: number; country_code: string | null; region_code: string | null };
@@ -74,11 +75,18 @@ export function DirectorDashboard({ scope = "director" }: { scope?: "director" |
   const sales = (data?.sales || []).reduce((sum, row) => sum + row.amount_paise, 0);
   const interest = courseInterest(data?.events || []);
 
+  async function signOut() {
+    await fetch("/api/activity/session", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "logout" }) }).catch(() => undefined);
+    const client = createClient();
+    if (client) await client.auth.signOut().catch(() => undefined);
+    window.location.assign("/staff/login");
+  }
+
   return <main className="min-h-screen bg-[#f5f7fb] p-4 text-slate-900 sm:p-6">
     <div className="mx-auto max-w-7xl space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div><p className="text-xs font-black uppercase tracking-widest text-blue-700">{scope === "owner" ? "Private Super Admin view" : "Private director view"}</p><h1 className="mt-2 text-3xl font-black">{scope === "owner" ? "Platform Activity" : "Director Dashboard"}</h1><p className="mt-1 text-sm text-slate-500">Activity, teaching, enrolments and payments.</p></div>
-        <div className="flex items-center gap-3 text-xs text-slate-500"><span>{updated ? `Updated ${updated.toLocaleTimeString("en-IN")}` : "Loading…"}</span><button onClick={() => void load()} className="rounded-lg border bg-white px-3 py-2 font-bold text-blue-800">Refresh now</button></div>
+        <div className="flex items-center gap-3 text-xs text-slate-500"><span>{updated ? `Updated ${updated.toLocaleTimeString("en-IN")}` : "Loading…"}</span><button onClick={() => void load()} className="rounded-lg border bg-white px-3 py-2 font-bold text-blue-800">Refresh now</button>{scope === "director" && <button onClick={() => void signOut()} className="rounded-lg border bg-white px-3 py-2 font-bold text-slate-700">Sign out</button>}</div>
       </header>
       {error && <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">{error}</p>}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
