@@ -21,6 +21,7 @@ function parseMetadata(raw: string | null): {
   year: number;
   examCategory: string;
   cardType: "poster" | "topper";
+  spotlightRank: "rank_1" | "rank_2" | "rank_3" | "group_latest" | "none";
   subtitle: string;
   rankBadge?: string;
   highlights: string[];
@@ -28,10 +29,12 @@ function parseMetadata(raw: string | null): {
 } {
   try {
     const parsed = JSON.parse(raw || "{}");
+    const validRanks = new Set(["rank_1", "rank_2", "rank_3", "group_latest", "none"]);
     return {
       year: Number(parsed.year) || 2026,
       examCategory: String(parsed.examCategory || "UPSC CSE"),
       cardType: parsed.cardType === "topper" ? "topper" : "poster",
+      spotlightRank: validRanks.has(parsed.spotlightRank) ? parsed.spotlightRank : "none",
       subtitle: String(parsed.subtitle || ""),
       rankBadge: parsed.rankBadge ? String(parsed.rankBadge) : undefined,
       highlights: Array.isArray(parsed.highlights) ? parsed.highlights : [],
@@ -42,6 +45,7 @@ function parseMetadata(raw: string | null): {
       year: 2026,
       examCategory: "UPSC CSE",
       cardType: "poster",
+      spotlightRank: "none",
       subtitle: "",
       highlights: [],
       story: String(raw || ""),
@@ -72,6 +76,7 @@ export async function GET() {
         year: meta.year,
         examCategory: meta.examCategory,
         cardType: meta.cardType,
+        spotlightRank: meta.spotlightRank,
         title: row.title || "Achiever",
         subtitle: meta.subtitle,
         rankBadge: meta.rankBadge,
@@ -148,6 +153,7 @@ export async function POST(req: NextRequest) {
     const year = Number(body.year || 2026);
     const examCategory = String(body.examCategory || "UPSC CSE").trim();
     const cardType = body.cardType === "topper" ? "topper" : "poster";
+    const spotlightRank = String(body.spotlightRank || "none");
     const subtitle = String(body.subtitle || "").trim();
     const rankBadge = String(body.rankBadge || "").trim();
     const story = String(body.story || "").trim();
@@ -174,6 +180,7 @@ export async function POST(req: NextRequest) {
           year,
           examCategory,
           cardType,
+          spotlightRank,
           subtitle,
           rankBadge,
           highlights,
@@ -234,6 +241,7 @@ export async function PATCH(req: NextRequest) {
           year: Number(body.year || 2026),
           examCategory: String(body.examCategory || "UPSC CSE").trim(),
           cardType: body.cardType === "topper" ? "topper" : "poster",
+          spotlightRank: String(body.spotlightRank || "none"),
           subtitle: String(body.subtitle || "").trim(),
           rankBadge: String(body.rankBadge || "").trim(),
           highlights,

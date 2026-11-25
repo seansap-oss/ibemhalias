@@ -1,10 +1,13 @@
 export type ExamCategory = string;
 
+export type SpotlightRank = "rank_1" | "rank_2" | "rank_3" | "group_latest" | "none";
+
 export interface AchieverItem {
   id: string;
   year: number;
   examCategory: ExamCategory;
   cardType?: "poster" | "topper";
+  spotlightRank?: SpotlightRank;
   title: string;
   subtitle: string;
   rankBadge?: string;

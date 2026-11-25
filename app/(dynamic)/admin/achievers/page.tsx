@@ -20,6 +20,7 @@ import {
   DEFAULT_EXAMS,
   GALLERY_YEARS,
   type AchieverItem,
+  type SpotlightRank,
 } from "@/lib/gallery/achievers-data";
 
 export default function AdminAchieversPage() {
@@ -33,6 +34,7 @@ export default function AdminAchieversPage() {
 
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [cardType, setCardType] = React.useState<"topper" | "poster">("topper");
+  const [spotlightRank, setSpotlightRank] = React.useState<SpotlightRank>("none");
   const [title, setTitle] = React.useState("");
   const [year, setYear] = React.useState<number>(2026);
   const [examCategory, setExamCategory] = React.useState<string>("UPSC CSE");
@@ -115,6 +117,7 @@ export default function AdminAchieversPage() {
   const resetForm = () => {
     setEditingId(null);
     setCardType("topper");
+    setSpotlightRank("none");
     setTitle("");
     setYear(2026);
     setRankBadge("");
@@ -127,6 +130,7 @@ export default function AdminAchieversPage() {
   const startEdit = (item: AchieverItem) => {
     setEditingId(item.id);
     setCardType(item.cardType === "topper" ? "topper" : "poster");
+    setSpotlightRank(item.spotlightRank || "none");
     setTitle(item.title);
     setYear(item.year);
     setExamCategory(item.examCategory);
@@ -151,6 +155,7 @@ export default function AdminAchieversPage() {
         body: JSON.stringify({
           ...(editingId ? { id: editingId } : {}),
           cardType,
+          spotlightRank,
           title,
           year,
           examCategory,
@@ -428,8 +433,24 @@ export default function AdminAchieversPage() {
           </div>
         </div>
 
-        {/* Rank & Subtitle */}
-        <div className="grid gap-4 sm:grid-cols-2">
+        {/* Rank, Spotlight & Subtitle */}
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <label className="block text-xs font-bold text-slate-700">
+              5s Celebration Spotlight
+            </label>
+            <select
+              value={spotlightRank}
+              onChange={(e) => setSpotlightRank(e.target.value as SpotlightRank)}
+              className="mt-1 w-full rounded-xl border border-amber-300 bg-amber-50/40 px-3 py-2 text-sm font-semibold text-slate-900"
+            >
+              <option value="none">None (Gallery Only)</option>
+              <option value="rank_1">Winner #1 (Gold Crown)</option>
+              <option value="rank_2">Winner #2</option>
+              <option value="rank_3">Winner #3</option>
+              <option value="group_latest">Latest Group Celebration Photo</option>
+            </select>
+          </div>
           <div>
             <label className="block text-xs font-bold text-slate-700">
               Rank / Post Badge
@@ -448,7 +469,7 @@ export default function AdminAchieversPage() {
             <input
               value={subtitle}
               onChange={(e) => setSubtitle(e.target.value)}
-              placeholder="e.g., GS Foundation + Interview Guidance · Imphal West"
+              placeholder="e.g., GS Foundation + Interview Guidance"
               className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
             />
           </div>
