@@ -8,11 +8,13 @@ import {
   BookOpen,
   Building2,
   CalendarDays,
+  ChevronDown,
   ChevronRight,
   FileQuestion,
   GraduationCap,
   LogOut,
   Mail,
+  MapPin,
   Menu,
   Newspaper,
   ShieldCheck,
@@ -95,12 +97,34 @@ export function Navbar() {
 
   return (
     <>
-      <header className="site-navbar fixed inset-x-0 top-0 z-50 border-b border-slate-200/75 bg-white/95 backdrop-blur-xl">
-        <nav className="mx-auto flex h-[76px] max-w-[1500px] items-center gap-3 px-4 sm:px-6 lg:px-8">
+      <header className="site-navbar fixed inset-x-0 top-0 z-50 border-b border-[#e5dfd4] bg-[#faf8f4]/95 backdrop-blur-xl">
+        {/* Top Utility Bar */}
+        <div className="bg-[#14256f] text-[11px] font-semibold text-blue-100">
+          <div className="mx-auto flex h-8 max-w-[1400px] items-center justify-between px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-1.5">
+              <MapPin className="h-3 w-3 text-[#f3d18b]" />
+              <span>Imphal, Manipur · Keishampat · Chingmeirong · Thangmeiband</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <a
+                href={`mailto:${SITE_CONTACT.helpdeskEmail}`}
+                className="hidden items-center gap-1 hover:text-white sm:inline-flex"
+              >
+                <Mail className="h-3 w-3 text-[#f3d18b]" />
+                {SITE_CONTACT.helpdeskEmail}
+              </a>
+              <Link href="/#contact" className="font-bold text-white hover:underline">
+                Contact
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <nav className="mx-auto flex h-[72px] max-w-[1400px] items-center gap-4 px-4 sm:px-6 lg:px-8">
           <button
             onClick={() => setMenuOpen(true)}
             aria-label="Open navigation"
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-[#14256f] shadow-sm lg:hidden"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-[#14256f] shadow-sm lg:hidden"
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -114,17 +138,87 @@ export function Navbar() {
             <IbemhalLogo
               href="/"
               priority
-              imageClassName="h-[52px] w-auto sm:h-[58px]"
+              imageClassName="h-[48px] w-auto sm:h-[54px]"
               className="pointer-events-none"
             />
           </div>
 
-          <div className="ml-auto hidden items-center gap-2 xl:flex">
-            <Mail className="h-4 w-4 text-amber-500" />
-            <a href={`mailto:${SITE_CONTACT.helpdeskEmail}`} className="text-sm font-semibold text-slate-700 transition hover:text-[#14256f]">{SITE_CONTACT.helpdeskEmail}</a>
+          {/* Unified Public Menu */}
+          <div className="hidden flex-1 items-center justify-center gap-1 lg:flex">
+            <div className="group relative">
+              <Link
+                href="/courses"
+                className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-white hover:text-[#14256f]"
+              >
+                Courses <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+              </Link>
+              <div className="invisible absolute left-0 top-full w-56 pt-1 opacity-0 transition group-hover:visible group-hover:opacity-100">
+                <div className="rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+                  <Link href="/courses" className="block rounded-lg px-3 py-2 text-xs font-bold text-slate-800 hover:bg-slate-50">
+                    All Programmes
+                  </Link>
+                  <Link href="/courses?family=UPSC" className="block rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+                    UPSC &amp; Civil Services
+                  </Link>
+                  <Link href="/courses?family=Banking" className="block rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+                    Banking Exams
+                  </Link>
+                  <Link href="/courses?family=SSC" className="block rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+                    SSC &amp; State Exams
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            <Link
+              href="/mock-test"
+              className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-white hover:text-[#14256f]"
+            >
+              Test Series
+            </Link>
+            <Link
+              href="/current-affairs/daily"
+              className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-white hover:text-[#14256f]"
+            >
+              Current Affairs
+            </Link>
+            <Link
+              href="/resources"
+              className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-white hover:text-[#14256f]"
+            >
+              Free Resources
+            </Link>
+            <Link
+              href="/mentorship"
+              className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-white hover:text-[#14256f]"
+            >
+              Mentorship
+            </Link>
+
+            <div className="group relative">
+              <Link
+                href="/about"
+                className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-white hover:text-[#14256f]"
+              >
+                About <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+              </Link>
+              <div className="invisible absolute left-0 top-full w-52 pt-1 opacity-0 transition group-hover:visible group-hover:opacity-100">
+                <div className="rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+                  <Link href="/about" className="block rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                    About Ibemhal IAS
+                  </Link>
+                  <Link href="/achievers" className="block rounded-lg px-3 py-2 text-xs font-bold text-amber-800 hover:bg-amber-50">
+                    Hall of Fame / Alumni
+                  </Link>
+                  <Link href="/locations" className="block rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                    Our 3 Centres
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="ml-auto flex items-center gap-2 xl:ml-5">
+          <div className="ml-auto flex items-center gap-2 lg:ml-0">
             {session?.authenticated ? (
               <div className="flex items-center gap-2">
                 <Link
