@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
+  Award,
   Bell,
   BookOpen,
   CalendarDays,
@@ -57,6 +58,7 @@ const horizontalNav: NavItem[] = [
   { href: "/admin/data-vault", label: "Data Vault", icon: Files },
   { href: "/admin/mentorship", label: "Bookings", icon: CalendarDays },
   { href: "/admin/ingest", label: "Exam Maker", icon: Sparkles },
+  { href: "/admin/achievers", label: "Hall of Fame", icon: Award },
   { href: "/admin/ai-health", label: "AI Health", icon: Activity },
   { href: "/admin/network-check", label: "Network Check", icon: Wifi },
   { href: "/admin/notifications", label: "Notifications", icon: Bell },
@@ -121,6 +123,7 @@ const clientNavGroups: NavGroup[] = [
     items: [
       { href: "/admin/content", label: "Website Content", icon: Files },
       { href: "/admin/ingest", label: "Exam Maker", icon: Sparkles },
+  { href: "/admin/achievers", label: "Hall of Fame", icon: Award },
       { href: "/admin/ai-health", label: "AI Health", icon: Activity },
       { href: "/admin/network-check", label: "Network Check", icon: Wifi },
     ],

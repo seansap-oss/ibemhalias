@@ -6,11 +6,13 @@ import {
   LibraryBig,
   Newspaper,
   Sparkles,
+  Trophy,
   UserRound,
 } from "lucide-react";
 
 export const portalNavItems = [
   { href: "/about", label: "About Us", icon: Home },
+  { href: "/achievers", label: "Hall of Fame / Gallery", icon: Trophy },
   { href: "/resources", label: "Free Resources", icon: LibraryBig },
   { href: "/current-affairs/daily", label: "Daily Current Affairs", icon: Newspaper },
   { href: "/current-affairs/monthly", label: "Monthly Current Affairs", icon: CalendarDays },
