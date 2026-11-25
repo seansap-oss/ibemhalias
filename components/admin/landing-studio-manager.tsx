@@ -46,6 +46,7 @@ export function LandingStudioManager() {
   const [heroType, setHeroType] = React.useState<"image" | "video" | "youtube">("image");
   const [heroTitle, setHeroTitle] = React.useState("");
   const [heroUrl, setHeroUrl] = React.useState("");
+  const [heroStoragePath, setHeroStoragePath] = React.useState<string | null>(null);
 
   // Popup state
   const [popupItems, setPopupItems] = React.useState<any[]>([]);
@@ -55,7 +56,7 @@ export function LandingStudioManager() {
   const [popupMessage, setPopupMessage] = React.useState("");
   const [popupCtaText, setPopupCtaText] = React.useState("Explore Courses");
   const [popupCtaHref, setPopupCtaHref] = React.useState("/courses");
-  const [popupImage, setPopupImage] = React.useState("");
+  const [popupImageStoragePath, setPopupImageStoragePath] = React.useState<string | null>(null);
 
   // Archive state
   const [archiveItems, setArchiveItems] = React.useState<any[]>([]);
@@ -64,6 +65,7 @@ export function LandingStudioManager() {
   const [archMonth, setArchMonth] = React.useState("November");
   const [archCategory, setArchCategory] = React.useState("Current Affairs");
   const [archUrl, setArchUrl] = React.useState("");
+  const [archStoragePath, setArchStoragePath] = React.useState<string | null>(null);
 
   const loadAll = React.useCallback(async () => {
     const [h, p, a] = await Promise.all([
@@ -89,7 +91,7 @@ export function LandingStudioManager() {
   const uploadFileToStorage = async (
     file: File | null,
     sectionPath: string,
-    onDone: (url: string) => void
+    onDone: (storagePath: string, fileName: string) => void
   ) => {
     if (!file) return;
     setBusy(true);
@@ -103,10 +105,8 @@ export function LandingStudioManager() {
       if (!res.ok || !data?.storage_path) {
         throw new Error(data?.error || "Upload failed");
       }
-      const base = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-      const publicUrl = `${base}/storage/v1/object/public/cms-content/${data.storage_path}`;
-      onDone(publicUrl);
-      setMsg(`Uploaded ${file.name} successfully!`);
+      onDone(data.storage_path, file.name);
+      setMsg(`Uploaded ${file.name} — now click Save/Add below.`);
     } catch (e: any) {
       setErr(e?.message || "Upload failed");
     } finally {
@@ -124,11 +124,12 @@ export function LandingStudioManager() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          section: "hero",
-          title: heroTitle || "Ibemhal IAS Hero Media",
+          section_path: "hero",
+          title: heroTitle.trim() || "Ibemhal IAS Hero Media",
           media_type: heroType,
-          media_url: heroType !== "youtube" ? heroUrl : null,
-          external_url: heroType === "youtube" ? heroUrl : null,
+          storage_path: heroType !== "youtube" ? heroStoragePath : null,
+          external_url:
+            heroType === "youtube" || !heroStoragePath ? heroUrl.trim() : null,
           access_level: "free",
           is_published: true,
         }),
@@ -137,6 +138,7 @@ export function LandingStudioManager() {
       if (!res.ok) throw new Error(d?.error || "Failed to add hero slide");
       setHeroTitle("");
       setHeroUrl("");
+      setHeroStoragePath(null);
       setMsg("Added to Homepage Hero Carousel!");
       await loadAll();
     } catch (e: any) {
@@ -152,9 +154,8 @@ export function LandingStudioManager() {
     setErr("");
     setMsg("");
     try {
-      // Remove previous popup items so only the latest active popup shows
       for (const old of popupItems) {
-        await fetch(`/api/cms/content?id=${encodeURIComponent(old.id)}`, {
+        await fetch(`/api/cms/content/${encodeURIComponent(old.id)}`, {
           method: "DELETE",
         }).catch(() => undefined);
       }
@@ -163,8 +164,8 @@ export function LandingStudioManager() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          section: "landing_popup",
-          title: popupTitle || "Special Announcement",
+          section_path: "landing_popup",
+          title: popupTitle.trim() || "Special Announcement",
           description: JSON.stringify({
             enabled: popupEnabled,
             badgeText: popupBadge,
@@ -172,8 +173,8 @@ export function LandingStudioManager() {
             ctaText: popupCtaText,
             ctaHref: popupCtaHref,
           }),
-          media_type: popupImage ? "image" : "text",
-          media_url: popupImage || null,
+          media_type: popupImageStoragePath ? "image" : "file",
+          storage_path: popupImageStoragePath,
           access_level: "free",
           is_published: true,
         }),
@@ -199,15 +200,16 @@ export function LandingStudioManager() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          section: "digital_archive",
-          title: archTitle,
+          section_path: "digital_archive",
+          title: archTitle.trim(),
           description: JSON.stringify({
             year: archYear,
             month: archMonth,
             category: archCategory,
           }),
           media_type: "pdf",
-          media_url: archUrl,
+          storage_path: archStoragePath,
+          external_url: !archStoragePath ? archUrl.trim() : null,
           access_level: "free",
           is_published: true,
         }),
@@ -216,6 +218,7 @@ export function LandingStudioManager() {
       if (!res.ok) throw new Error(d?.error || "Failed to add archived PDF");
       setArchTitle("");
       setArchUrl("");
+      setArchStoragePath(null);
       setMsg(`Archived PDF for ${archMonth} ${archYear}!`);
       await loadAll();
     } catch (e: any) {
@@ -226,7 +229,7 @@ export function LandingStudioManager() {
   };
 
   const deleteCmsItem = async (id: string) => {
-    await fetch(`/api/cms/content?id=${encodeURIComponent(id)}`, {
+    await fetch(`/api/cms/content/${encodeURIComponent(id)}`, {
       method: "DELETE",
     });
     await loadAll();
@@ -360,7 +363,10 @@ export function LandingStudioManager() {
                       void uploadFileToStorage(
                         e.target.files?.[0] ?? null,
                         "hero",
-                        setHeroUrl
+                        (storagePath, fileName) => {
+                          setHeroStoragePath(storagePath);
+                          setHeroUrl(fileName);
+                        }
                       )
                     }
                   />
@@ -505,7 +511,7 @@ export function LandingStudioManager() {
               </label>
               <label className="mt-1 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[#14256f]/50 bg-blue-50/50 px-3 py-2 text-xs font-bold text-[#14256f]">
                 <Upload className="h-3.5 w-3.5" />
-                {popupImage ? "Image Uploaded ✓" : "Upload Image"}
+                {popupImageStoragePath ? "Image Uploaded ✓" : "Upload Image"}
                 <input
                   type="file"
                   accept="image/*"
@@ -514,7 +520,7 @@ export function LandingStudioManager() {
                     void uploadFileToStorage(
                       e.target.files?.[0] ?? null,
                       "landing-popup",
-                      setPopupImage
+                      (storagePath) => setPopupImageStoragePath(storagePath)
                     )
                   }
                 />
@@ -636,7 +642,10 @@ export function LandingStudioManager() {
                     void uploadFileToStorage(
                       e.target.files?.[0] ?? null,
                       "digital-archive",
-                      setArchUrl
+                      (storagePath, fileName) => {
+                        setArchStoragePath(storagePath);
+                        setArchUrl(fileName);
+                      }
                     )
                   }
                 />
