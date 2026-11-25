@@ -149,6 +149,18 @@ export default function AdminIngestPage() {
         <p className="text-muted-foreground">
           Upload a PDF, paste MCQs/notes, or ingest a YouTube lecture — then publish directly to the Online Exam Conductor.
         </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-blue-200 bg-blue-50/70 px-3.5 py-2.5 text-xs text-slate-700">
+          <span className="font-bold text-[#14256f]">Where do your MCQs go?</span>
+          <span>1. Generate MCQs below → 2. Click <b>Save &amp; Publish Exam</b> → 3. View &amp; manage them in</span>
+          <Link href="/admin/mock-test" className="font-bold text-[#14256f] underline">
+            Mock Tests &amp; Exam Conductor
+          </Link>
+          <span>and on your</span>
+          <Link href="/admin/dashboard" className="font-bold text-[#14256f] underline">
+            Admin Dashboard
+          </Link>
+          <span>.</span>
+        </div>
       </div>
 
       <Tabs defaultValue="pdf">
@@ -313,7 +325,11 @@ function ResultPanel({
         {result.wordCount && <Badge variant="outline">{result.wordCount.toLocaleString()} words</Badge>}
         {result.segmentCount && <Badge variant="outline">{result.segmentCount} caption cues</Badge>}
         {result.servedBy && <Badge variant="secondary">{result.servedBy}</Badge>}
-        {result.degraded && <Badge variant="warning">Offline engine</Badge>}
+        {result.degraded && (
+          <Badge variant="warning">
+            Offline fallback (add AI API key in Vercel/env for full AI)
+          </Badge>
+        )}
       </div>
 
       {result.title && <p className="font-semibold">{result.title}</p>}
