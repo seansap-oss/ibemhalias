@@ -8,23 +8,22 @@ import {
   Expand,
   Search,
   Sparkles,
+  Star,
   Trophy,
   X,
 } from "lucide-react";
 import {
-  EXAM_CATEGORIES,
+  DEFAULT_EXAMS,
   GALLERY_YEARS,
   SEED_ACHIEVERS,
   type AchieverItem,
-  type ExamCategory,
 } from "@/lib/gallery/achievers-data";
 
 export function AchieversGalleryClient() {
   const [items, setItems] = React.useState<AchieverItem[]>(SEED_ACHIEVERS);
+  const [exams, setExams] = React.useState<string[]>(DEFAULT_EXAMS);
   const [selectedYear, setSelectedYear] = React.useState<number | "ALL">("ALL");
-  const [selectedExam, setSelectedExam] = React.useState<"All Exams" | ExamCategory>(
-    "All Exams"
-  );
+  const [selectedExam, setSelectedExam] = React.useState<string>("All Exams");
   const [query, setQuery] = React.useState("");
   const [activeItem, setActiveItem] = React.useState<AchieverItem | null>(null);
 
@@ -33,8 +32,12 @@ export function AchieversGalleryClient() {
     fetch("/api/achievers", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (!cancelled && Array.isArray(data?.items) && data.items.length) {
+        if (cancelled) return;
+        if (Array.isArray(data?.items) && data.items.length) {
           setItems(data.items);
+        }
+        if (Array.isArray(data?.exams) && data.exams.length) {
+          setExams(data.exams);
         }
       })
       .catch(() => undefined);
@@ -142,7 +145,7 @@ export function AchieversGalleryClient() {
 
           <div className="mt-3 flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap gap-1.5">
-              {EXAM_CATEGORIES.map((cat) => (
+              {["All Exams", ...exams].map((cat) => (
                 <button
                   key={cat}
                   type="button"
@@ -222,11 +225,17 @@ export function AchieversGalleryClient() {
                 </div>
               ) : (
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                  {yearItems.map((item) => (
+                  {yearItems.map((item) => {
+                    const isTopper = item.cardType === "topper";
+                    return (
                     <article
                       key={item.id}
                       onClick={() => setActiveItem(item)}
-                      className="group cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-[#14256f]/40 hover:shadow-xl"
+                      className={`group cursor-pointer overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl ${
+                        isTopper
+                          ? "border-amber-300 ring-1 ring-amber-200/70 hover:border-amber-400"
+                          : "border-slate-200 hover:border-[#14256f]/40"
+                      }`}
                     >
                       <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
                         <img
@@ -234,8 +243,15 @@ export function AchieversGalleryClient() {
                           alt={item.title}
                           className="h-full w-full object-cover object-top transition duration-300 group-hover:scale-[1.03]"
                         />
-                        <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-[#14256f]/90 px-2.5 py-1 text-[10px] font-black text-white backdrop-blur">
-                          {item.year}
+                        <div className="absolute left-3 top-3 flex items-center gap-1.5">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[#14256f]/90 px-2.5 py-1 text-[10px] font-black text-white backdrop-blur">
+                            {item.year}
+                          </span>
+                          {isTopper && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-black text-slate-950 shadow">
+                              <Star className="h-3 w-3" /> Top of Class
+                            </span>
+                          )}
                         </div>
                         <div className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-white/90 text-[#14256f] opacity-0 shadow transition group-hover:opacity-100">
                           <Expand className="h-4 w-4" />
@@ -256,18 +272,23 @@ export function AchieversGalleryClient() {
                         <h3 className="mt-2.5 text-sm font-black leading-snug text-slate-950">
                           {item.title}
                         </h3>
-                        {item.subtitle && (
+                        {isTopper && item.story ? (
+                          <p className="mt-1 line-clamp-2 text-xs italic text-slate-600">
+                            &ldquo;{item.story}&rdquo;
+                          </p>
+                        ) : item.subtitle ? (
                           <p className="mt-1 line-clamp-2 text-xs text-slate-600">
                             {item.subtitle}
                           </p>
-                        )}
+                        ) : null}
                         <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-xs font-bold text-[#14256f]">
-                          <span>View Poster &amp; Candidates</span>
+                          <span>{isTopper ? "View Story" : "View Poster & Candidates"}</span>
                           <ChevronRight className="h-4 w-4 transition group-hover:translate-x-1" />
                         </div>
                       </div>
                     </article>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </section>

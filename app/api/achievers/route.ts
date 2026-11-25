@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getMockTestAdminClient } from "@/lib/mock-test/server";
 import {
+  DEFAULT_EXAMS,
   SEED_ACHIEVERS,
   type AchieverItem,
-  type ExamCategory,
 } from "@/lib/gallery/achievers-data";
 
 export const dynamic = "force-dynamic";
 
 const GALLERY_SECTION = "achievers_gallery";
+const EXAMS_SECTION = "achievers_exams";
 
 async function adminAllowed() {
   const store = await cookies();
@@ -18,7 +19,8 @@ async function adminAllowed() {
 
 function parseMetadata(raw: string | null): {
   year: number;
-  examCategory: ExamCategory;
+  examCategory: string;
+  cardType: "poster" | "topper";
   subtitle: string;
   rankBadge?: string;
   highlights: string[];
@@ -28,7 +30,8 @@ function parseMetadata(raw: string | null): {
     const parsed = JSON.parse(raw || "{}");
     return {
       year: Number(parsed.year) || 2026,
-      examCategory: parsed.examCategory || "UPSC CSE",
+      examCategory: String(parsed.examCategory || "UPSC CSE"),
+      cardType: parsed.cardType === "topper" ? "topper" : "poster",
       subtitle: String(parsed.subtitle || ""),
       rankBadge: parsed.rankBadge ? String(parsed.rankBadge) : undefined,
       highlights: Array.isArray(parsed.highlights) ? parsed.highlights : [],
@@ -38,6 +41,7 @@ function parseMetadata(raw: string | null): {
     return {
       year: 2026,
       examCategory: "UPSC CSE",
+      cardType: "poster",
       subtitle: "",
       highlights: [],
       story: String(raw || ""),
@@ -48,18 +52,26 @@ function parseMetadata(raw: string | null): {
 export async function GET() {
   try {
     const supabase = getMockTestAdminClient();
-    const { data } = await supabase
-      .from("cms_content")
-      .select("id,title,description,media_url,external_url,created_at")
-      .eq("section", GALLERY_SECTION)
-      .order("created_at", { ascending: false });
+    const [{ data: galleryRows }, { data: examRows }] = await Promise.all([
+      supabase
+        .from("cms_content")
+        .select("id,title,description,media_url,external_url,created_at")
+        .eq("section", GALLERY_SECTION)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("cms_content")
+        .select("id,title")
+        .eq("section", EXAMS_SECTION)
+        .order("created_at", { ascending: true }),
+    ]);
 
-    const customItems: AchieverItem[] = (data ?? []).map((row) => {
+    const customItems: AchieverItem[] = (galleryRows ?? []).map((row) => {
       const meta = parseMetadata(row.description);
       return {
         id: row.id,
         year: meta.year,
         examCategory: meta.examCategory,
+        cardType: meta.cardType,
         title: row.title || "Achiever",
         subtitle: meta.subtitle,
         rankBadge: meta.rankBadge,
@@ -74,9 +86,25 @@ export async function GET() {
       (a, b) => b.year - a.year
     );
 
-    return NextResponse.json({ ok: true, items });
+    const customExams = (examRows ?? [])
+      .map((r) => String(r.title || "").trim())
+      .filter(Boolean);
+
+    const exams = Array.from(
+      new Set([
+        ...DEFAULT_EXAMS,
+        ...customExams,
+        ...items.map((i) => i.examCategory).filter(Boolean),
+      ])
+    );
+
+    return NextResponse.json({ ok: true, items, exams });
   } catch {
-    return NextResponse.json({ ok: true, items: SEED_ACHIEVERS });
+    return NextResponse.json({
+      ok: true,
+      items: SEED_ACHIEVERS,
+      exams: DEFAULT_EXAMS,
+    });
   }
 }
 
@@ -87,10 +115,39 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
+    const supabase = getMockTestAdminClient();
+
+    if (body.action === "add_exam") {
+      const examName = String(body.examName || "").trim();
+      if (!examName) {
+        return NextResponse.json(
+          { error: "Exam name is required." },
+          { status: 400 }
+        );
+      }
+      const { data, error } = await supabase
+        .from("cms_content")
+        .insert({
+          section: EXAMS_SECTION,
+          title: examName,
+          media_type: "text",
+          access_level: "free",
+          is_published: true,
+        })
+        .select("id,title")
+        .single();
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+      return NextResponse.json({ ok: true, exam: data }, { status: 201 });
+    }
+
     const title = String(body.title || "").trim();
     const imageUrl = String(body.imageUrl || "").trim();
     const year = Number(body.year || 2026);
-    const examCategory = (body.examCategory || "UPSC CSE") as ExamCategory;
+    const examCategory = String(body.examCategory || "UPSC CSE").trim();
+    const cardType = body.cardType === "topper" ? "topper" : "poster";
     const subtitle = String(body.subtitle || "").trim();
     const rankBadge = String(body.rankBadge || "").trim();
     const story = String(body.story || "").trim();
@@ -103,12 +160,11 @@ export async function POST(req: NextRequest) {
 
     if (!title || !imageUrl) {
       return NextResponse.json(
-        { error: "Title/Name and Image URL are required." },
+        { error: "Title/Name and Photo are required." },
         { status: 400 }
       );
     }
 
-    const supabase = getMockTestAdminClient();
     const { data, error } = await supabase
       .from("cms_content")
       .insert({
@@ -117,6 +173,7 @@ export async function POST(req: NextRequest) {
         description: JSON.stringify({
           year,
           examCategory,
+          cardType,
           subtitle,
           rankBadge,
           highlights,
@@ -138,6 +195,62 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Unable to save achiever." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  if (!(await adminAllowed())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = await req.json();
+    const id = String(body.id || "").trim();
+    const title = String(body.title || "").trim();
+    const imageUrl = String(body.imageUrl || "").trim();
+    if (!id || !title || !imageUrl) {
+      return NextResponse.json(
+        { error: "ID, Title, and Photo are required." },
+        { status: 400 }
+      );
+    }
+
+    const highlights = Array.isArray(body.highlights)
+      ? body.highlights
+      : String(body.highlights || "")
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+    const supabase = getMockTestAdminClient();
+    const { error } = await supabase
+      .from("cms_content")
+      .update({
+        title,
+        media_url: imageUrl,
+        description: JSON.stringify({
+          year: Number(body.year || 2026),
+          examCategory: String(body.examCategory || "UPSC CSE").trim(),
+          cardType: body.cardType === "topper" ? "topper" : "poster",
+          subtitle: String(body.subtitle || "").trim(),
+          rankBadge: String(body.rankBadge || "").trim(),
+          highlights,
+          story: String(body.story || "").trim(),
+        }),
+      })
+      .eq("id", id)
+      .eq("section", GALLERY_SECTION);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Unable to update achiever." },
       { status: 500 }
     );
   }

@@ -1,9 +1,10 @@
-export type ExamCategory = "UPSC CSE" | "SSC" | "Banking" | "State PSC";
+export type ExamCategory = string;
 
 export interface AchieverItem {
   id: string;
   year: number;
   examCategory: ExamCategory;
+  cardType?: "poster" | "topper";
   title: string;
   subtitle: string;
   rankBadge?: string;
@@ -15,13 +16,17 @@ export interface AchieverItem {
 
 export const GALLERY_YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020] as const;
 
-export const EXAM_CATEGORIES: Array<"All Exams" | ExamCategory> = [
-  "All Exams",
+export const DEFAULT_EXAMS: string[] = [
   "UPSC CSE",
   "SSC",
   "Banking",
   "State PSC",
+  "IB ACIO",
+  "CAPF / Defence",
+  "Railways",
 ];
+
+export const EXAM_CATEGORIES: string[] = ["All Exams", ...DEFAULT_EXAMS];
 
 export const SEED_ACHIEVERS: AchieverItem[] = [
   {
