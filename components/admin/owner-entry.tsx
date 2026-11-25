@@ -37,14 +37,9 @@ export function OwnerEntry() {
       onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); start(); } }}
       onKeyUp={(event) => { if (event.key === "Enter" || event.key === " ") cancel(); }}
       onContextMenu={(event) => event.preventDefault()}
-      className={`relative inline-flex min-h-6 min-w-6 select-none items-center justify-center rounded-md align-middle transition-colors ${holding ? "bg-amber-200 text-[#14256f] ring-2 ring-amber-400" : "hover:bg-slate-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500"}`}
+      className="relative inline-flex min-h-6 min-w-6 select-none items-center justify-center rounded-md align-middle focus-visible:outline-none"
     >
       ©
-      <span
-        aria-hidden="true"
-        className="absolute bottom-0 left-0 h-0.5 rounded-full bg-amber-500"
-        style={{ width: holding ? "100%" : "0%", transition: holding ? "width 5s linear" : "none" }}
-      />
     </button>
   );
 }

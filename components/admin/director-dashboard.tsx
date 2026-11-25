@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { AssetActivityReport } from "@/components/admin/asset-activity-report";
+import { ErpFinancePanel } from "@/components/admin/erp-finance-panel";
 import { createClient } from "@/lib/supabase/client";
 
 type Role = "student" | "instructor" | "admin" | "director" | "owner";
@@ -38,6 +39,7 @@ export function DirectorDashboard({ scope = "director" }: { scope?: "director" |
   const [data, setData] = React.useState<Report | null>(null);
   const [error, setError] = React.useState("");
   const [tab, setTab] = React.useState<Tab>("students");
+  const [sectionView, setSectionView] = React.useState<"activity" | "erp">("activity");
   const [admin, setAdmin] = React.useState(10);
   const [teacher, setTeacher] = React.useState(10);
   const [updated, setUpdated] = React.useState<Date | null>(null);
@@ -82,12 +84,24 @@ export function DirectorDashboard({ scope = "director" }: { scope?: "director" |
     window.location.assign("/staff/login");
   }
 
-  return <main className="min-h-screen bg-[#f5f7fb] p-4 text-slate-900 sm:p-6">
+  return <main className="min-h-screen bg-[#faf8f4] p-4 text-slate-900 sm:p-6">
     <div className="mx-auto max-w-7xl space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
-        <div><p className="text-xs font-black uppercase tracking-widest text-blue-700">{scope === "owner" ? "Private Super Admin view" : "Private director view"}</p><h1 className="mt-2 text-3xl font-black">{scope === "owner" ? "Platform Activity" : "Director Dashboard"}</h1><p className="mt-1 text-sm text-slate-500">Activity, teaching, enrolments and payments.</p></div>
-        <div className="flex items-center gap-3 text-xs text-slate-500"><span>{updated ? `Updated ${updated.toLocaleTimeString("en-IN")}` : "Loading…"}</span><button onClick={() => void load()} className="rounded-lg border bg-white px-3 py-2 font-bold text-blue-800">Refresh now</button>{scope === "director" && <button onClick={() => void signOut()} className="rounded-lg border bg-white px-3 py-2 font-bold text-slate-700">Sign out</button>}</div>
+        <div><p className="text-xs font-black uppercase tracking-widest text-blue-700">{scope === "owner" ? "Private Super Admin view" : "Private director view"}</p><h1 className="mt-2 text-3xl font-black">{scope === "owner" ? "Platform Activity" : "Director Dashboard"}</h1><p className="mt-1 text-sm text-slate-500">Activity, teaching, enrolments, ERP expenses, tax &amp; payments.</p></div>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+          <div className="inline-flex rounded-xl border bg-white p-1">
+            <button type="button" onClick={() => setSectionView("activity")} className={`rounded-lg px-3 py-1.5 font-bold ${sectionView === "activity" ? "bg-[#14256f] text-white" : "text-slate-600"}`}>Activity &amp; Controls</button>
+            <button type="button" onClick={() => setSectionView("erp")} className={`rounded-lg px-3 py-1.5 font-bold ${sectionView === "erp" ? "bg-[#c37a26] text-white" : "text-slate-600"}`}>ERP, Expenses &amp; Tax</button>
+          </div>
+          <span>{updated ? `Updated ${updated.toLocaleTimeString("en-IN")}` : "Loading…"}</span>
+          <button onClick={() => void load()} className="rounded-lg border bg-white px-3 py-2 font-bold text-blue-800">Refresh now</button>
+          {scope === "director" && <button onClick={() => void signOut()} className="rounded-lg border bg-white px-3 py-2 font-bold text-slate-700">Sign out</button>}
+        </div>
       </header>
+      {sectionView === "erp" ? (
+        <ErpFinancePanel />
+      ) : (
+        <>
       {error && <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">{error}</p>}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {[["Total students", data?.students ?? "—"], ["New students today", data?.studentSignupsToday ?? "—"], ["Student sign-ins today", data?.studentLoginsToday ?? "—"], ["Course sales today", `₹${(sales / 100).toLocaleString("en-IN")}`], ["Classes today", data?.classes ?? "—"]].map(([label, value]) => <div key={String(label)} className="rounded-xl border bg-white p-5"><p className="text-sm text-slate-500">{label}</p><b className="mt-2 block text-2xl">{value}</b></div>)}
@@ -105,6 +119,8 @@ export function DirectorDashboard({ scope = "director" }: { scope?: "director" |
         <section className="rounded-xl border bg-white p-5"><h2 className="text-xl font-bold">Teacher uploads</h2>{data?.teacherUploads.length ? data.teacherUploads.slice(0, 20).map((upload, index) => <div key={index} className="border-b py-2 text-sm"><b>{upload.details?.title || upload.action}</b><small className="block text-slate-500">{data.teacherNames?.[upload.teacher_id] || "Teacher"} · {stamp(upload.created_at)}</small></div>) : <p className="mt-4 text-sm text-slate-500">No teacher uploads recorded yet.</p>}</section></div>
       <section className="rounded-xl border bg-white p-5"><h2 className="text-xl font-bold">Idle sign-out settings</h2><p className="mt-1 text-sm text-slate-500">Staff will be asked to sign in again after inactivity.</p><div className="mt-4 grid max-w-xl gap-4 sm:grid-cols-2"><label className="text-sm font-bold">Admin idle minutes<input type="number" min="5" max="120" value={admin} onChange={(event) => setAdmin(Number(event.target.value))} className="mt-2 block w-full rounded-lg border p-3" /></label><label className="text-sm font-bold">Teacher idle minutes<input type="number" min="5" max="120" value={teacher} onChange={(event) => setTeacher(Number(event.target.value))} className="mt-2 block w-full rounded-lg border p-3" /></label></div><button onClick={() => void save()} className="mt-4 rounded-lg bg-[#202b70] px-5 py-2 font-bold text-white">Save settings</button></section>
       <AssetActivityReport />
+        </>
+      )}
     </div>
   </main>;
 }

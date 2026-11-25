@@ -111,11 +111,11 @@ export function DirectorCreate() {
   }
 
   return <section className="rounded-2xl border bg-white p-5">
-    <h2 className="text-lg font-bold">Named staff accounts</h2>
-    <p className="mt-1 text-sm text-slate-500">Only Super Admin creates named admin and director logins.</p>
+    <h2 className="text-lg font-bold">Named staff accounts (Director &amp; Admin)</h2>
+    <p className="mt-1 text-sm text-slate-500">Only Super Admin creates named Director and Admin logins. Directors sign in directly from the normal <span className="font-semibold text-slate-800">Portal Login (/login)</span>.</p>
     <form onSubmit={create} className="mt-4 flex flex-wrap gap-2">
-      <input required minLength={2} aria-label="Staff full name" value={name} onChange={event => setName(event.target.value)} placeholder="Full name" className="rounded-lg border p-3" />
-      <input required aria-label="Staff email" type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="Email" className="rounded-lg border p-3" />
+      <input required minLength={2} aria-label="Staff full name" value={name} onChange={event => setName(event.target.value)} placeholder="Full name (e.g. Director)" className="rounded-lg border p-3" />
+      <input required aria-label="Staff email" type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="e.g. director@ibemhalias.com" className="rounded-lg border p-3" />
       <select aria-label="Staff role" value={role} onChange={event => setRole(event.target.value)} className="rounded-lg border p-3"><option value="director">Director</option><option value="admin">Admin</option></select>
       <input aria-label="New staff password" type="password" autoComplete="new-password" minLength={8} value={createPassword} onChange={event => setCreatePassword(event.target.value)} placeholder="Password (optional)" className="rounded-lg border p-3" />
       <button disabled={busy} type="submit" className="rounded-lg bg-[#202b70] px-4 py-2 font-bold text-white disabled:opacity-50">{busy ? "Creating…" : "Create staff account"}</button>
