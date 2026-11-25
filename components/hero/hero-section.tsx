@@ -2,15 +2,69 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, BookOpen, Building2, CalendarDays, IndianRupee, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Building2,
+  CalendarDays,
+  IndianRupee,
+  Trophy,
+  Users,
+} from "lucide-react";
 import { PortalFloatingControls } from "@/components/portal/portal-floating-controls";
 
+type CmsHeroItem = {
+  id: string;
+  title?: string | null;
+  media_type?: string | null;
+  media_url?: string | null;
+  external_url?: string | null;
+};
+
+const DEFAULT_HERO_IMG =
+  "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1600&q=85";
+
 export function HeroSection() {
+  const [heroImages, setHeroImages] = React.useState<
+    Array<{ id: string; url: string; title: string }>
+  >([]);
+  const [activeSlide, setActiveSlide] = React.useState(0);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    fetch("/api/cms/content?section=hero", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : { items: [] }))
+      .then((payload) => {
+        if (cancelled) return;
+        const imgs = ((payload.items || []) as CmsHeroItem[])
+          .filter(
+            (item) =>
+              item.media_type === "image" &&
+              Boolean(item.media_url || item.external_url)
+          )
+          .map((item, idx) => ({
+            id: item.id || `hero-${idx}`,
+            url: String(item.media_url || item.external_url),
+            title: item.title || "Ibemhal IAS",
+          }));
+        if (imgs.length) setHeroImages(imgs);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const currentHero =
+    heroImages.length > 0
+      ? heroImages[activeSlide % heroImages.length]
+      : { id: "default", url: DEFAULT_HERO_IMG, title: "Students preparing at Ibemhal IAS" };
+
   return (
     <section className="bg-[#faf8f4] pt-[104px] text-[#14256f]">
       {/* Hero Banner */}
       <div className="border-b border-[#e8e1d5]">
-        <div className="mx-auto grid max-w-[1400px] items-center gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_1.05fr] lg:px-8 lg:py-14">
+        <div className="mx-auto grid max-w-[1400px] items-center gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_1.08fr] lg:px-8 lg:py-14">
           <div className="max-w-xl">
             <div className="flex items-center gap-2.5 text-xs font-extrabold uppercase tracking-[0.18em] text-[#b4691e]">
               <span className="h-[2px] w-7 bg-[#c37a26]" />
@@ -43,38 +97,92 @@ export function HeroSection() {
               >
                 Free resources
               </Link>
+              <Link
+                href="/achievers"
+                className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-amber-300 bg-amber-50/90 px-5 text-sm font-black text-amber-900 transition hover:bg-amber-100"
+              >
+                <Trophy className="h-4 w-4 text-[#c37a26]" />
+                Hall of Fame
+              </Link>
             </div>
           </div>
 
           <div className="relative">
             <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-[#e5dfd4] bg-white shadow-xl shadow-blue-950/10">
               <img
-                src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1600&q=85"
-                alt="Students preparing at Ibemhal IAS"
-                className="h-full w-full object-cover"
+                src={currentHero.url}
+                alt={currentHero.title}
+                className="h-full w-full object-cover object-center"
               />
+              {heroImages.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Previous hero photo"
+                    onClick={() =>
+                      setActiveSlide(
+                        (s) => (s - 1 + heroImages.length) % heroImages.length
+                      )
+                    }
+                    className="absolute left-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-[#14256f] shadow hover:bg-white"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next hero photo"
+                    onClick={() =>
+                      setActiveSlide((s) => (s + 1) % heroImages.length)
+                    }
+                    className="absolute right-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-[#14256f] shadow hover:bg-white"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </>
+              )}
             </div>
 
-            <Link
-              href="/courses"
-              className="mt-3 flex items-center gap-3 rounded-2xl border border-[#e5dfd4] bg-white p-3.5 shadow-lg sm:absolute sm:-bottom-4 sm:right-4 sm:mt-0 sm:min-w-[260px]"
-            >
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-50 text-[#c37a26]">
-                <CalendarDays className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="text-xs font-black text-[#14256f]">New batches</div>
-                <div className="text-[11px] font-semibold text-slate-500">
-                  UPSC · Banking · State exams
+            <div className="mt-3 grid gap-2.5 sm:absolute sm:-bottom-5 sm:left-4 sm:right-4 sm:mt-0 sm:grid-cols-2">
+              <Link
+                href="/achievers"
+                className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-white/95 p-3 shadow-lg backdrop-blur transition hover:border-amber-400"
+              >
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-100 text-[#b4691e]">
+                  <Trophy className="h-5 w-5" />
                 </div>
-              </div>
-            </Link>
+                <div>
+                  <div className="text-xs font-black text-[#14256f]">
+                    Hall of Fame · 500+ Selections
+                  </div>
+                  <div className="text-[11px] font-semibold text-slate-500">
+                    Explore 2020–2026 Alumni &amp; Toppers →
+                  </div>
+                </div>
+              </Link>
+
+              <Link
+                href="/courses"
+                className="flex items-center gap-3 rounded-2xl border border-[#e5dfd4] bg-white/95 p-3 shadow-lg backdrop-blur transition hover:border-[#14256f]/40"
+              >
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-[#14256f]">
+                  <CalendarDays className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="text-xs font-black text-[#14256f]">
+                    New batches
+                  </div>
+                  <div className="text-[11px] font-semibold text-slate-500">
+                    UPSC · Banking · State exams
+                  </div>
+                </div>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Explore by Exam */}
-      <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1400px] px-4 pb-12 pt-14 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <h2 className="font-serif text-2xl font-bold tracking-tight text-[#14256f] sm:text-3xl">

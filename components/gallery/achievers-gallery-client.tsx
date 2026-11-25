@@ -315,7 +315,7 @@ export function AchieversGalleryClient() {
   }, [selectedYear, items]);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pt-[104px] pb-16">
+    <div className="min-h-screen bg-[#faf8f4] pt-[104px] pb-16">
       {/* 4-5s Big Bang Celebration Popup */}
       <AnimatePresence>
         {showCelebration && (
