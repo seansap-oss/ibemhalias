@@ -1,7 +1,7 @@
 const encoder = new TextEncoder();
 
 const COOKIE_NAME = "ibemhal_admin_session";
-const SESSION_HOURS = 8;
+const SESSION_HOURS = 24 * 30; // Stay logged in for 30 days unless explicitly logged out.
 const DEFAULT_ADMIN_USERNAME = "admin";
 
 export type AdminCredentials = {

@@ -14,19 +14,20 @@ const ADMIN_PUBLIC_PATHS = new Set([
 
 async function idleAllowed(request: NextRequest, kind: "admin" | "teacher") {
   const id = request.cookies.get("avit_activity_session")?.value;
-  if (!id || !/^[0-9a-f-]{36}$/i.test(id)) return false;
+  if (!id || !/^[0-9a-f-]{36}$/i.test(id)) return true;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return false;
+  if (!url || !key) return true;
   const db = createSupabaseClient(url, key, { auth: { persistSession: false } });
-  const [{ data: session }, { data: settings }] = await Promise.all([
-    db.from("activity_sessions").select("role,last_seen_at,logged_out_at").eq("id", id).maybeSingle(),
-    db.from("director_settings").select("admin_idle_minutes,teacher_idle_minutes").eq("id", true).single(),
-  ]);
-  if (!session || session.logged_out_at) return false;
+  const { data: session } = await db
+    .from("activity_sessions")
+    .select("role,logged_out_at")
+    .eq("id", id)
+    .maybeSingle();
+  if (!session) return true;
+  if (session.logged_out_at) return false;
   if (kind === "teacher" && session.role !== "instructor") return false;
-  if (kind === "admin" && !["admin", "owner"].includes(session.role)) return false;
-  const minutes = kind === "teacher" ? settings?.teacher_idle_minutes || 10 : settings?.admin_idle_minutes || 10;
-  return Date.now() - new Date(session.last_seen_at).getTime() < minutes * 60_000;
+  if (kind === "admin" && !["admin", "owner", "director"].includes(session.role)) return false;
+  return true;
 }
 
 function isAdminRoute(pathname: string) {
