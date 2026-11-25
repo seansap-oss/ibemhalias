@@ -16,6 +16,7 @@ import {
 import { getYouTubeEmbedUrl } from "@/lib/cms/media";
 import { getGoogleDrivePreviewUrl } from "@/lib/cms/google-drive";
 import { SITE_CONTACT } from "@/lib/site-contact";
+import { PdfReader } from "../cms/pdf-reader";
 
 type Material = Record<string, any>;
 
@@ -92,7 +93,7 @@ export function StudentMaterialViewer({
 
       <div className="min-h-0 flex-1 bg-[#111827]">
         {material.media_type === "pdf" && url ? (
-          <iframe title={material.title} src={`${url}#toolbar=1&navpanes=0&view=FitH`} className="h-full w-full border-0 bg-white" />
+          <PdfReader url={url} title={material.title} embedded allowDownload={false} />
         ) : null}
 
         {drivePreview ? (

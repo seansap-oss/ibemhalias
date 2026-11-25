@@ -421,8 +421,8 @@ export function StudentPortal() {
   );
 
   return (
-    <div className="min-h-screen bg-[#f7f9fd] text-slate-950 antialiased">
-      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur-xl">
+    <div className="min-h-screen bg-[#faf8f4] text-slate-950 antialiased">
+      <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-[#faf8f4]/95 backdrop-blur-xl">
         <div className="flex min-h-[86px] items-center justify-between gap-4 px-4 lg:px-6">
           <div className="flex items-center gap-3">
             <button onClick={() => setMobileMenu(true)} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 text-slate-700 lg:hidden" aria-label="Open student menu"><Menu className="h-5 w-5" /></button>
