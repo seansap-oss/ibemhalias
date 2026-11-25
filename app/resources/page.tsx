@@ -8,7 +8,7 @@ export default function ResourcesPage() {
       title="FREE RESOURCES"
       description="Choose the required exam category."
     >
-      <div className="grid gap-5 lg:grid-cols-[1fr_1.618fr]">
+      <div className="grid gap-5 lg:grid-cols-3">
         <CategoryCard
           href="/resources/civil-service"
           eyebrow="Civil Service"
@@ -20,6 +20,12 @@ export default function ResourcesPage() {
           eyebrow="SSC & Banking"
           title="SSC & BANKING"
           description="PYQs and Others."
+        />
+        <CategoryCard
+          href="/resources/archive"
+          eyebrow="2016 – 2026"
+          title="10-YEAR DIGITAL ARCHIVE"
+          description="Free monthly PDFs, magazines, and notes archived by year & month since 2016."
         />
       </div>
     </PortalPageShell>

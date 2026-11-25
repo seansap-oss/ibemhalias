@@ -189,6 +189,12 @@ export function Navbar() {
               Free Resources
             </Link>
             <Link
+              href="/resources/archive"
+              className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-white hover:text-[#14256f]"
+            >
+              PDF Archive
+            </Link>
+            <Link
               href="/mentorship"
               className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-white hover:text-[#14256f]"
             >

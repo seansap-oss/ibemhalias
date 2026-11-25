@@ -1,23 +1,24 @@
-import { CmsContentManager } from "@/components/admin/cms-content-manager";
+import { LandingStudioManager } from "@/components/admin/landing-studio-manager";
 
 export default function AdminContentPage() {
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-6">
-      <div className="mx-auto max-w-[1600px]">
+    <div className="min-h-screen bg-[#faf8f4] p-4 md:p-6">
+      <div className="mx-auto max-w-[1500px]">
         <div className="mb-5">
-          <div className="text-xs font-black uppercase tracking-[0.18em] text-indigo-600">
+          <div className="text-xs font-black uppercase tracking-[0.18em] text-[#b4691e]">
             IBEMHAL IAS Admin
           </div>
-          <h1 className="mt-2 text-3xl font-black text-slate-950">
-            Website Content Manager
+          <h1 className="mt-1 text-3xl font-black text-[#14256f]">
+            Landing Page &amp; Content Studio
           </h1>
-          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600">
-            Upload and publish files, images, audio, video, PDFs, Word/Excel documents
-            and YouTube embeds to the exact client-approved website sections.
+          <p className="mt-1.5 max-w-3xl text-sm leading-relaxed text-slate-600">
+            Manage Hero photos &amp; videos, configure the Homepage discount/announcement
+            popup, upload PDFs to the 10-Year Free Archive (2016–2026), and publish
+            study materials.
           </p>
         </div>
 
-        <CmsContentManager />
+        <LandingStudioManager />
       </div>
     </div>
   );
