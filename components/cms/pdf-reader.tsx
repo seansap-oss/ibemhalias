@@ -17,6 +17,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
+import { DynamicWatermark } from "@/components/security/dynamic-watermark";
 
 export type ReaderTheme = "light" | "sepia" | "dark";
 
@@ -32,6 +33,7 @@ interface PdfReaderProps {
   /** When true, renders inline inside an existing viewer shell (no fixed outer modal). */
   embedded?: boolean;
   allowDownload?: boolean;
+  watermarkText?: string;
 }
 
 const THEME_STORAGE_KEY = "ibemhal_pdf_theme_v1";
@@ -110,6 +112,7 @@ export function PdfReader({
   onClose,
   embedded = false,
   allowDownload = true,
+  watermarkText,
 }: PdfReaderProps) {
   const [theme, setTheme] = useState<ReaderTheme>("sepia");
   const [brightness, setBrightness] = useState<number>(95);
@@ -649,9 +652,11 @@ export function PdfReader({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onContextMenu={(e) => e.preventDefault()}
         style={{ filter: `brightness(${brightness / 100})` }}
         className={`relative min-h-0 flex-1 overflow-y-auto overscroll-contain transition-[filter] duration-150 ${themeStyle.outerBg}`}
       >
+        <DynamicWatermark label={watermarkText} lightText={theme === "dark"} />
         {loading && (
           <div className="grid h-full min-h-[320px] place-items-center p-6">
             <div className="flex flex-col items-center gap-3 text-center">

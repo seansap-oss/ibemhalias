@@ -11,12 +11,14 @@ import {
   FileType2,
   Image as ImageIcon,
   LockKeyhole,
+  Maximize2,
   X,
 } from "lucide-react";
 import { getYouTubeEmbedUrl } from "@/lib/cms/media";
 import { getGoogleDrivePreviewUrl } from "@/lib/cms/google-drive";
 import { SITE_CONTACT } from "@/lib/site-contact";
 import { PdfReader } from "../cms/pdf-reader";
+import { DynamicWatermark } from "../security/dynamic-watermark";
 
 type Material = Record<string, any>;
 
@@ -24,11 +26,16 @@ export function StudentMaterialViewer({
   material,
   onClose,
   onComplete,
+  studentWatermark,
 }: {
   material: Material;
   onClose: () => void;
   onComplete: () => void;
+  studentWatermark?: string;
 }) {
+  const videoContainerRef = React.useRef<HTMLDivElement | null>(null);
+  const isPremium = material.access_level === "premium";
+  const watermarkLabel = studentWatermark || (isPremium ? "Ibemhal IAS Protected Content" : undefined);
   const url = material.media_url || material.external_url || "";
   const drivePreview = material.media_type === "video" ? getGoogleDrivePreviewUrl(url) : null;
   const record = (action: string) => { void fetch("/api/activity/assets", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ assetId: material.id, action }) }); };
@@ -79,12 +86,12 @@ export function StudentMaterialViewer({
         <button onClick={() => { record("complete"); onComplete(); }} className="hidden min-h-10 items-center gap-2 rounded-xl bg-green-600 px-3 text-xs font-black text-white sm:inline-flex">
           <CheckCircle2 className="h-4 w-4" /> Mark Complete
         </button>
-        {url && !drivePreview ? (
+        {url && !drivePreview && !isPremium ? (
           <a href={url} onClick={() => record("external_open")} target="_blank" rel="noopener noreferrer" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10" title="Open original">
             <ExternalLink className="h-5 w-5" />
           </a>
         ) : null}
-        {url && !drivePreview ? (
+        {url && !drivePreview && !isPremium ? (
           <a href={url} onClick={() => record("download_requested")} download className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10" title="Download">
             <Download className="h-5 w-5" />
           </a>
@@ -93,16 +100,51 @@ export function StudentMaterialViewer({
 
       <div className="min-h-0 flex-1 bg-[#111827]">
         {material.media_type === "pdf" && url ? (
-          <PdfReader url={url} title={material.title} embedded allowDownload={false} />
+          <PdfReader url={url} title={material.title} embedded allowDownload={!isPremium} watermarkText={watermarkLabel} />
         ) : null}
 
         {drivePreview ? (
-          <div className="grid h-full place-items-center p-3">
-            <iframe src={drivePreview} title={material.title} allow="autoplay; fullscreen" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" className="aspect-video w-full max-w-6xl rounded-xl border-0 bg-black" />
+          <div className="relative grid h-full place-items-center p-3">
+            <div className="relative aspect-video w-full max-w-6xl overflow-hidden rounded-xl bg-black">
+              <iframe src={drivePreview} title={material.title} allow="autoplay; fullscreen" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" className="h-full w-full border-0 bg-black" />
+              <DynamicWatermark label={watermarkLabel} lightText />
+            </div>
           </div>
         ) : material.media_type === "video" && url ? (
           <div className="grid h-full place-items-center p-3">
-            <video src={url} controls playsInline autoPlay onPlay={() => record("play")} preload="metadata" className="max-h-full w-full max-w-6xl rounded-xl bg-black" />
+            <div
+              ref={videoContainerRef}
+              onContextMenu={(e) => e.preventDefault()}
+              className="relative flex max-h-full w-full max-w-6xl items-center justify-center overflow-hidden rounded-xl bg-black"
+            >
+              <video
+                src={url}
+                controls
+                controlsList="nodownload noplaybackrate"
+                disablePictureInPicture
+                playsInline
+                autoPlay
+                onPlay={() => record("play")}
+                preload="metadata"
+                className="max-h-full w-full bg-black"
+              />
+              <DynamicWatermark label={watermarkLabel} lightText />
+              <button
+                type="button"
+                onClick={() => {
+                  if (document.fullscreenElement) {
+                    void document.exitFullscreen().catch(() => undefined);
+                  } else {
+                    void videoContainerRef.current?.requestFullscreen().catch(() => undefined);
+                  }
+                }}
+                title="Fullscreen with watermark"
+                className="absolute right-3 top-3 z-40 inline-flex items-center gap-1 rounded-lg bg-black/65 px-2.5 py-1.5 text-xs font-bold text-white backdrop-blur hover:bg-black/85"
+              >
+                <Maximize2 className="h-3.5 w-3.5" />
+                Fullscreen
+              </button>
+            </div>
           </div>
         ) : null}
 

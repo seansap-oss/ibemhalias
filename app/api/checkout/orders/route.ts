@@ -3,12 +3,22 @@ import { createCmsServiceClient } from "@/lib/supabase/cms-server";
 import { createSessionClient } from "@/lib/supabase/server-session";
 import { getPaymentTemplates, renderPaymentTemplate } from "@/lib/commerce/payment-templates";
 import { sendPendingPaymentEmail } from "@/lib/commerce/receipt-email";
+import { checkRateLimit, getClientIp, recordRateLimitHit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 const uuid = (value: unknown) => /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(String(value || ""));
 
 export async function POST(request: NextRequest) {
   try {
+    const rlKey = `checkout-order:${getClientIp(request)}`;
+    const rl = checkRateLimit(rlKey, 15, 15 * 60_000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Too many checkout requests. Please wait a few minutes before trying again." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } }
+      );
+    }
+    recordRateLimitHit(rlKey, 15 * 60_000);
     const body = await request.json();
     const email = String(body.email || "").trim().toLowerCase();
     const name = String(body.name || "").trim();

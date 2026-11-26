@@ -69,7 +69,8 @@ async function attachSignedUrls(items: any[], viewer: ViewerAccess) {
     let media_url = item.external_url || null;
     let thumbnail_url = null;
     if (item.storage_path) {
-      const { data } = await service.storage.from(BUCKET).createSignedUrl(item.storage_path, 60 * 60);
+      const ttlSeconds = item.access_level === "premium" ? 10 * 60 : 60 * 60;
+      const { data } = await service.storage.from(BUCKET).createSignedUrl(item.storage_path, ttlSeconds);
       media_url = data?.signedUrl || null;
     }
     if (item.thumbnail_path) {

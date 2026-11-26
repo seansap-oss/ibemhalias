@@ -10,6 +10,7 @@ import {
 } from "@/lib/admin-session";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/supabase/config";
 import { createCmsServiceClient } from "@/lib/supabase/cms-server";
+import { checkRateLimit, clearRateLimit, getClientIp, recordRateLimitHit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -139,6 +140,16 @@ function noStore(response: NextResponse) {
 
 export async function POST(request: NextRequest) {
   try {
+    const rlKey = `admin-login:${getClientIp(request)}`;
+    const rl = checkRateLimit(rlKey, 5, 15 * 60_000);
+    if (!rl.allowed) {
+      return noStore(
+        NextResponse.json(
+          { error: `Too many failed login attempts. Try again in ${Math.ceil(rl.retryAfterSeconds / 60)} minute(s).` },
+          { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } }
+        )
+      );
+    }
     const body = await request.json();
 
     const identifier = String(
@@ -170,6 +181,7 @@ export async function POST(request: NextRequest) {
         );
 
       if (!supabaseIdentity) {
+        recordRateLimitHit(rlKey, 15 * 60_000);
         return noStore(
           NextResponse.json(
             { error: "Invalid admin ID or password." },
@@ -181,6 +193,8 @@ export async function POST(request: NextRequest) {
       identity = supabaseIdentity;
       authSource = "supabase";
     }
+
+    clearRateLimit(rlKey);
 
     const token = await createAdminSessionToken(identity);
     const { data: activity } = await createCmsServiceClient().from("activity_sessions").insert({ identity, role: "admin", country_code: request.headers.get("x-vercel-ip-country"), region_code: request.headers.get("x-vercel-ip-country-region") }).select("id").single();

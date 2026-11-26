@@ -468,7 +468,7 @@ export function StudentPortal() {
 
       {mobileMenu ? <div className="fixed inset-0 z-[80] lg:hidden"><button className="absolute inset-0 bg-slate-950/45" onClick={() => setMobileMenu(false)} aria-label="Close menu overlay" /><div className="absolute inset-y-0 left-0"><div className="absolute right-2 top-2 z-10"><button onClick={() => setMobileMenu(false)} className="grid h-9 w-9 place-items-center rounded-full bg-slate-100"><X className="h-4 w-4" /></button></div><Sidebar view={view} mobile onNavigate={() => setMobileMenu(false)} /></div></div> : null}
 
-      {activeMaterial ? <StudentMaterialViewer material={activeMaterial} onClose={() => setActiveMaterial(null)} onComplete={() => { void updateMaterialProgress(activeMaterial.id, "complete"); setActiveMaterial((current) => current ? { ...current, progress: { ...(current.progress || {}), completed: true, progress_percent: 100 } } : null); }} /> : null}
+      {activeMaterial ? <StudentMaterialViewer material={activeMaterial} studentWatermark={[name, data.profile?.email, data.profile?.student_code].filter(Boolean).join(" · ")} onClose={() => setActiveMaterial(null)} onComplete={() => { void updateMaterialProgress(activeMaterial.id, "complete"); setActiveMaterial((current) => current ? { ...current, progress: { ...(current.progress || {}), completed: true, progress_percent: 100 } } : null); }} /> : null}
     </div>
   );
 }
