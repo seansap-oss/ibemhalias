@@ -4,6 +4,7 @@ import * as React from "react";
 import { AssetActivityReport } from "@/components/admin/asset-activity-report";
 import { DirectorAdminManager } from "@/components/admin/director-admin-manager";
 import { ErpFinancePanel } from "@/components/admin/erp-finance-panel";
+import { PaymentTemplateEditor } from "@/components/admin/payment-template-editor";
 import { createClient } from "@/lib/supabase/client";
 
 type Role = "student" | "instructor" | "admin" | "director" | "owner";
@@ -143,7 +144,10 @@ export function DirectorDashboard({ scope = "director" }: { scope?: "director" |
         </div>
       </header>
       {sectionView === "erp" ? (
-        <ErpFinancePanel />
+        <div className="space-y-6">
+          <ErpFinancePanel />
+          <PaymentTemplateEditor />
+        </div>
       ) : (
         <>
       {error && <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">{error}</p>}
