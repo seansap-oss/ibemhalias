@@ -656,7 +656,6 @@ export function PdfReader({
         style={{ filter: `brightness(${brightness / 100})` }}
         className={`relative min-h-0 flex-1 overflow-y-auto overscroll-contain transition-[filter] duration-150 ${themeStyle.outerBg}`}
       >
-        <DynamicWatermark label={watermarkText} lightText={theme === "dark"} />
         {loading && (
           <div className="grid h-full min-h-[320px] place-items-center p-6">
             <div className="flex flex-col items-center gap-3 text-center">
@@ -669,11 +668,14 @@ export function PdfReader({
         )}
 
         {!loading && fallbackIframe && (
-          <iframe
-            title={title}
-            src={`${url}#toolbar=1&navpanes=0&view=FitH`}
-            className="h-full w-full border-0 bg-white"
-          />
+          <div className="relative h-full w-full">
+            <iframe
+              title={title}
+              src={`${url}#toolbar=1&navpanes=0&view=FitH`}
+              className="h-full w-full border-0 bg-white"
+            />
+            <DynamicWatermark label={watermarkText} lightText={theme === "dark"} />
+          </div>
         )}
 
         {!loading && !fallbackIframe && (
@@ -695,6 +697,7 @@ export function PdfReader({
                   }}
                   className={`block max-w-none transition-[filter] duration-150 ${themeStyle.canvasFilter}`}
                 />
+                <DynamicWatermark label={watermarkText} lightText={theme === "dark"} />
                 <div className="flex items-center justify-between border-t border-black/5 px-3 py-1 text-[10px] font-bold opacity-60">
                   <span>
                     Page {pageNum} of {numPages}
