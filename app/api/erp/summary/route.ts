@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomBytes } from "node:crypto";
 import { canManageCourses } from "@/lib/course-admin";
 import { canViewDirector } from "@/lib/director-access";
 import { hasOwnerSession } from "@/lib/super-admin";
 import { createCmsServiceClient } from "@/lib/supabase/cms-server";
+import { logAdminWork } from "@/lib/admin-audit";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +23,43 @@ function getIsoWeekLabel(dateStr: string) {
   return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
 }
 
+function computeAiForecast(seriesAscending: number[]) {
+  if (seriesAscending.length === 0) {
+    return { nextPaise: 0, growthPercent: 0, confidenceLabel: "Awaiting initial sales" };
+  }
+  if (seriesAscending.length === 1) {
+    const val = seriesAscending[0];
+    return {
+      nextPaise: Math.round(val * 1.12),
+      growthPercent: 12,
+      confidenceLabel: "Baseline projection (+12%)",
+    };
+  }
+  const recent = seriesAscending.slice(-6);
+  const n = recent.length;
+  let sumX = 0;
+  let sumY = 0;
+  let sumXY = 0;
+  let sumXX = 0;
+  for (let i = 0; i < n; i++) {
+    sumX += i;
+    sumY += recent[i];
+    sumXY += i * recent[i];
+    sumXX += i * i;
+  }
+  const denom = n * sumXX - sumX * sumX;
+  const slope = denom !== 0 ? (n * sumXY - sumX * sumY) / denom : 0;
+  const intercept = (sumY - slope * sumX) / n;
+  const predicted = Math.max(0, Math.round(intercept + slope * n));
+  const lastVal = recent[n - 1] || 1;
+  const growthPercent = lastVal > 0 ? Math.round(((predicted - lastVal) / lastVal) * 100) : 0;
+  return {
+    nextPaise: predicted,
+    growthPercent: Math.max(-50, Math.min(200, growthPercent)),
+    confidenceLabel: n >= 3 ? "AI Trend Regression" : "Moving Average",
+  };
+}
+
 export async function GET() {
   if (!(await canAccessErp())) {
     return NextResponse.json({ error: "Director, Admin, or Super Admin access required" }, { status: 403 });
@@ -29,10 +68,20 @@ export async function GET() {
   const isOwner = await hasOwnerSession();
   const db = createCmsServiceClient();
 
-  const [ordersRes, itemsRes, coursesRes, expensesRes, taxRes, platformRes, invoicesRes] = await Promise.all([
+  const [
+    ordersRes,
+    itemsRes,
+    coursesRes,
+    expensesRes,
+    offlineRes,
+    taxRes,
+    platformRes,
+    receiptSettingsRes,
+    invoicesRes,
+  ] = await Promise.all([
     db
       .from("course_purchase_orders")
-      .select("id, course_id, buyer_name, buyer_email, amount_paise, status, created_at, paid_at")
+      .select("id, course_id, buyer_user_id, buyer_name, buyer_email, buyer_phone, amount_paise, payment_reference, status, created_at, paid_at")
       .order("created_at", { ascending: false })
       .limit(2000),
     db
@@ -42,11 +91,19 @@ export async function GET() {
     db
       .from("courses")
       .select("id, title, slug")
+      .order("created_at", { ascending: false })
       .limit(500),
     db
       .from("cms_content")
       .select("id, title, month_label, date_label, sort_order, description, created_at")
       .eq("section_path", "erp-expenses")
+      .order("date_label", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(500),
+    db
+      .from("cms_content")
+      .select("id, title, month_label, date_label, sort_order, description, course_id, asset_number, created_at")
+      .eq("section_path", "erp-offline-income")
       .order("date_label", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(500),
@@ -62,6 +119,11 @@ export async function GET() {
       .eq("id", true)
       .maybeSingle(),
     db
+      .from("avit_receipt_delivery_settings")
+      .select("payment_upi_id")
+      .eq("institute_name", "Ibemhal IAS")
+      .maybeSingle(),
+    db
       .from("cms_content")
       .select("id, title, month_label, date_label, sort_order, description, asset_number, external_url, created_at")
       .eq("section_path", "erp-fee-invoices")
@@ -69,12 +131,20 @@ export async function GET() {
       .limit(200),
   ]);
 
-  if (ordersRes.error || itemsRes.error || coursesRes.error || expensesRes.error || invoicesRes.error) {
+  if (
+    ordersRes.error ||
+    itemsRes.error ||
+    coursesRes.error ||
+    expensesRes.error ||
+    offlineRes.error ||
+    invoicesRes.error
+  ) {
     const errMsg =
       ordersRes.error?.message ||
       itemsRes.error?.message ||
       coursesRes.error?.message ||
       expensesRes.error?.message ||
+      offlineRes.error?.message ||
       invoicesRes.error?.message ||
       "Unable to load ERP data.";
     return NextResponse.json({ error: errMsg }, { status: 500 });
@@ -83,7 +153,7 @@ export async function GET() {
   const feeBps =
     typeof platformRes.data?.fee_bps === "number" && platformRes.data.fee_bps >= 0
       ? platformRes.data.fee_bps
-      : 200; // Default 2.00%
+      : 200;
 
   const gstPercent =
     typeof taxRes.data?.sort_order === "number" && taxRes.data.sort_order >= 0 && taxRes.data.sort_order <= 28
@@ -107,8 +177,41 @@ export async function GET() {
     notes: row.description || "",
   }));
 
+  const offlinePayments = (offlineRes.data || []).map((row) => {
+    let meta: {
+      student_name?: string;
+      student_email?: string;
+      student_phone?: string;
+      course_title?: string;
+      enrolled?: boolean;
+      notes?: string;
+    } = {};
+    try {
+      meta = JSON.parse(row.description || "{}");
+    } catch {
+      meta = {};
+    }
+    return {
+      id: row.id,
+      receipt_number: row.asset_number || `OFF-${row.id.slice(0, 6).toUpperCase()}`,
+      student_name: meta.student_name || row.title || "Walk-in Student",
+      student_email: meta.student_email || "",
+      student_phone: meta.student_phone || "",
+      course_id: row.course_id || null,
+      course_title: meta.course_title || (row.course_id ? courseMap.get(row.course_id)?.title : undefined) || "Course",
+      payment_mode: (row.month_label || "cash") as "cash" | "bank" | "card",
+      payment_date: row.date_label || String(row.created_at).slice(0, 10),
+      amount_paise: Number(row.sort_order || 0),
+      enrolled: Boolean(meta.enrolled),
+      notes: meta.notes || "",
+      created_at: row.created_at,
+    };
+  });
+
   type PeriodBucket = {
     period: string;
+    online_paise: number;
+    offline_paise: number;
     income_paise: number;
     expense_paise: number;
     erp_fee_paise: number;
@@ -120,35 +223,64 @@ export async function GET() {
   const monthlyMap = new Map<string, PeriodBucket>();
   const yearlyMap = new Map<string, PeriodBucket>();
 
-  const addIncomeToBucket = (map: Map<string, PeriodBucket>, key: string, amountPaise: number) => {
-    const entry = map.get(key) || { period: key, income_paise: 0, expense_paise: 0, erp_fee_paise: 0, orders: 0 };
-    entry.income_paise += amountPaise;
-    entry.erp_fee_paise = Math.round((entry.income_paise * feeBps) / 10000);
-    entry.orders += 1;
-    map.set(key, entry);
+  const ensureBucket = (map: Map<string, PeriodBucket>, key: string): PeriodBucket => {
+    const existing = map.get(key);
+    if (existing) return existing;
+    const fresh: PeriodBucket = {
+      period: key,
+      online_paise: 0,
+      offline_paise: 0,
+      income_paise: 0,
+      expense_paise: 0,
+      erp_fee_paise: 0,
+      orders: 0,
+    };
+    map.set(key, fresh);
+    return fresh;
   };
 
-  const addExpenseToBucket = (map: Map<string, PeriodBucket>, key: string, amountPaise: number) => {
-    const entry = map.get(key) || { period: key, income_paise: 0, expense_paise: 0, erp_fee_paise: 0, orders: 0 };
-    entry.expense_paise += amountPaise;
-    map.set(key, entry);
+  const addIncome = (
+    map: Map<string, PeriodBucket>,
+    key: string,
+    amountPaise: number,
+    channel: "online" | "offline"
+  ) => {
+    const b = ensureBucket(map, key);
+    if (channel === "online") b.online_paise += amountPaise;
+    else b.offline_paise += amountPaise;
+    b.income_paise = b.online_paise + b.offline_paise;
+    b.erp_fee_paise = Math.round((b.income_paise * feeBps) / 10000);
+    b.orders += 1;
+  };
+
+  const addExpense = (map: Map<string, PeriodBucket>, key: string, amountPaise: number) => {
+    const b = ensureBucket(map, key);
+    b.expense_paise += amountPaise;
   };
 
   for (const order of paidOrders) {
     const dt = new Date(order.paid_at || order.created_at).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
     const amt = Number(order.amount_paise || 0);
-    addIncomeToBucket(dailyMap, dt, amt);
-    addIncomeToBucket(weeklyMap, getIsoWeekLabel(dt), amt);
-    addIncomeToBucket(monthlyMap, dt.slice(0, 7), amt);
-    addIncomeToBucket(yearlyMap, dt.slice(0, 4), amt);
+    addIncome(dailyMap, dt, amt, "online");
+    addIncome(weeklyMap, getIsoWeekLabel(dt), amt, "online");
+    addIncome(monthlyMap, dt.slice(0, 7), amt, "online");
+    addIncome(yearlyMap, dt.slice(0, 4), amt, "online");
+  }
+
+  for (const off of offlinePayments) {
+    const dt = off.payment_date.slice(0, 10);
+    addIncome(dailyMap, dt, off.amount_paise, "offline");
+    addIncome(weeklyMap, getIsoWeekLabel(dt), off.amount_paise, "offline");
+    addIncome(monthlyMap, dt.slice(0, 7), off.amount_paise, "offline");
+    addIncome(yearlyMap, dt.slice(0, 4), off.amount_paise, "offline");
   }
 
   for (const exp of expenses) {
     const dt = exp.expense_date.slice(0, 10);
-    addExpenseToBucket(dailyMap, dt, exp.amount_paise);
-    addExpenseToBucket(weeklyMap, getIsoWeekLabel(dt), exp.amount_paise);
-    addExpenseToBucket(monthlyMap, dt.slice(0, 7), exp.amount_paise);
-    addExpenseToBucket(yearlyMap, dt.slice(0, 4), exp.amount_paise);
+    addExpense(dailyMap, dt, exp.amount_paise);
+    addExpense(weeklyMap, getIsoWeekLabel(dt), exp.amount_paise);
+    addExpense(monthlyMap, dt.slice(0, 7), exp.amount_paise);
+    addExpense(yearlyMap, dt.slice(0, 4), exp.amount_paise);
   }
 
   const daily = [...dailyMap.values()].sort((a, b) => b.period.localeCompare(a.period)).slice(0, 30);
@@ -156,11 +288,12 @@ export async function GET() {
   const monthly = [...monthlyMap.values()].sort((a, b) => b.period.localeCompare(a.period)).slice(0, 12);
   const yearly = [...yearlyMap.values()].sort((a, b) => b.period.localeCompare(a.period)).slice(0, 10);
 
-  // Top-selling courses / items by code
-  const salesMap = new Map<
-    string,
-    { code: string; title: string; units: number; revenue_paise: number }
-  >();
+  // AI Forecast on Weekly & Monthly combined income
+  const weeklyForecast = computeAiForecast([...weekly].reverse().map((w) => w.income_paise));
+  const monthlyForecast = computeAiForecast([...monthly].reverse().map((m) => m.income_paise));
+
+  // Top-selling courses / items by code (Online + Offline combined)
+  const salesMap = new Map<string, { code: string; title: string; units: number; revenue_paise: number }>();
   for (const item of items) {
     if (!paidOrderIds.has(item.order_id)) continue;
     const course = courseMap.get(item.course_id);
@@ -178,17 +311,76 @@ export async function GET() {
     existing.revenue_paise += Number(item.amount_paise || 0);
     salesMap.set(key, existing);
   }
+  for (const off of offlinePayments) {
+    const course = off.course_id ? courseMap.get(off.course_id) : undefined;
+    const code = course?.slug
+      ? course.slug.toUpperCase().slice(0, 18)
+      : off.course_id
+      ? `CRS-${String(off.course_id).slice(0, 6).toUpperCase()}`
+      : "OFFLINE";
+    const key = off.course_id || off.course_title;
+    const existing = salesMap.get(key) || {
+      code,
+      title: off.course_title,
+      units: 0,
+      revenue_paise: 0,
+    };
+    existing.units += 1;
+    existing.revenue_paise += off.amount_paise;
+    salesMap.set(key, existing);
+  }
   const topSellers = [...salesMap.values()]
     .sort((a, b) => b.units - a.units || b.revenue_paise - a.revenue_paise)
     .slice(0, 15);
 
-  const grossIncomePaise = paidOrders.reduce((sum, o) => sum + Number(o.amount_paise || 0), 0);
+  const onlineIncomePaise = paidOrders.reduce((sum, o) => sum + Number(o.amount_paise || 0), 0);
+  const offlineIncomePaise = offlinePayments.reduce((sum, o) => sum + o.amount_paise, 0);
+  const grossIncomePaise = onlineIncomePaise + offlineIncomePaise;
   const totalExpensesPaise = expenses.reduce((sum, e) => sum + e.amount_paise, 0);
   const baseRevenuePaise = Math.round(grossIncomePaise / (1 + gstPercent / 100));
   const gstAmountPaise = grossIncomePaise - baseRevenuePaise;
   const erpFeePaise = Math.round((grossIncomePaise * feeBps) / 10000);
   const netProfitPaise = grossIncomePaise - totalExpensesPaise;
   const netAfterErpFeePaise = netProfitPaise - erpFeePaise;
+
+  // Combined Unified Ledger (Online UPI + Offline Cash/Bank/Card)
+  const orderItemsByOrder = new Map<string, string[]>();
+  for (const it of items) {
+    const list = orderItemsByOrder.get(it.order_id) || [];
+    list.push(it.title_snapshot);
+    orderItemsByOrder.set(it.order_id, list);
+  }
+
+  const combinedLedger = [
+    ...paidOrders.map((o) => ({
+      id: o.id,
+      kind: "online" as const,
+      student_name: o.buyer_name,
+      student_email: o.buyer_email,
+      student_phone: o.buyer_phone || "",
+      course_title: orderItemsByOrder.get(o.id)?.join(", ") || (o.course_id ? courseMap.get(o.course_id)?.title : "") || "Course",
+      payment_mode: "online_upi",
+      amount_paise: Number(o.amount_paise || 0),
+      date: new Date(o.paid_at || o.created_at).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }),
+      enrolled: Boolean(o.buyer_user_id),
+      reference: o.payment_reference || "UPI",
+    })),
+    ...offlinePayments.map((o) => ({
+      id: o.id,
+      kind: "offline" as const,
+      student_name: o.student_name,
+      student_email: o.student_email,
+      student_phone: o.student_phone,
+      course_title: o.course_title,
+      payment_mode: o.payment_mode,
+      amount_paise: o.amount_paise,
+      date: o.payment_date,
+      enrolled: o.enrolled,
+      reference: o.receipt_number,
+    })),
+  ]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 60);
 
   const erpInvoices = (invoicesRes.data || []).map((inv) => {
     let meta: { gross_income_paise?: number; fee_bps?: number; status?: string; notes?: string; payment_ref?: string } = {};
@@ -216,7 +408,11 @@ export async function GET() {
     {
       isOwner,
       ownerUpiId: platformRes.data?.owner_upi_id || null,
+      instituteUpiId: receiptSettingsRes.data?.payment_upi_id || null,
+      courses,
       summary: {
+        online_income_paise: onlineIncomePaise,
+        offline_income_paise: offlineIncomePaise,
         gross_income_paise: grossIncomePaise,
         base_revenue_paise: baseRevenuePaise,
         gst_percent: gstPercent,
@@ -227,13 +423,20 @@ export async function GET() {
         erp_fee_paise: erpFeePaise,
         net_after_erp_fee_paise: netAfterErpFeePaise,
         paid_orders_count: paidOrders.length,
+        offline_orders_count: offlinePayments.length,
         pending_orders_count: orders.filter((o) => o.status === "pending").length,
+        ai_forecast: {
+          weekly: weeklyForecast,
+          monthly: monthlyForecast,
+        },
       },
       daily,
       weekly,
       monthly,
       yearly,
       expenses,
+      offlinePayments,
+      combinedLedger,
       topSellers,
       erpInvoices,
     },
@@ -249,6 +452,121 @@ export async function POST(request: NextRequest) {
   const isOwner = await hasOwnerSession();
   const body = await request.json();
   const db = createCmsServiceClient();
+
+  if (body.action === "add_offline_payment") {
+    const studentName = String(body.student_name || "").trim();
+    const studentEmail = String(body.student_email || "").trim().toLowerCase();
+    const studentPhone = String(body.student_phone || "").trim();
+    const courseId = String(body.course_id || "").trim() || null;
+    const courseTitle = String(body.course_title || "Course").trim();
+    const paymentMode = ["cash", "bank", "card"].includes(String(body.payment_mode))
+      ? String(body.payment_mode)
+      : "cash";
+    const paymentDate = String(
+      body.payment_date || new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })
+    ).slice(0, 10);
+    const amountRupees = Number(body.amount_rupees);
+    const autoEnroll = body.auto_enroll !== false;
+    const notes = String(body.notes || "").trim();
+
+    if (!studentName || Number.isNaN(amountRupees) || amountRupees <= 0) {
+      return NextResponse.json({ error: "Enter valid student name and amount." }, { status: 400 });
+    }
+
+    let enrolled = false;
+    let studentCreated = false;
+    let tempPassword: string | null = null;
+
+    if (autoEnroll && courseId && /^\S+@\S+\.\S+$/.test(studentEmail)) {
+      let studentId: string | null = null;
+      const { data: existingProfile } = await db
+        .from("profiles")
+        .select("id")
+        .eq("email", studentEmail)
+        .maybeSingle();
+
+      if (existingProfile?.id) {
+        studentId = existingProfile.id;
+      } else {
+        tempPassword = `Ias@${randomBytes(3).toString("hex")}`;
+        const { data: created, error: createErr } = await db.auth.admin.createUser({
+          email: studentEmail,
+          password: tempPassword,
+          email_confirm: true,
+          user_metadata: { full_name: studentName, phone: studentPhone },
+          app_metadata: { role: "student" },
+        });
+        if (!createErr && created.user) {
+          studentId = created.user.id;
+          studentCreated = true;
+          await db.from("profiles").upsert(
+            { id: studentId, email: studentEmail, full_name: studentName, role: "student" },
+            { onConflict: "id" }
+          );
+        }
+      }
+
+      if (studentId) {
+        const { error: enrollErr } = await db
+          .from("enrollments")
+          .upsert({ user_id: studentId, course_id: courseId, status: "active" }, { onConflict: "user_id,course_id" });
+        if (!enrollErr) enrolled = true;
+      }
+    }
+
+    const receiptNum = `OFF-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.floor(100 + Math.random() * 900)}`;
+
+    const { error } = await db.from("cms_content").insert({
+      section_path: "erp-offline-income",
+      title: studentName,
+      month_label: paymentMode,
+      date_label: paymentDate,
+      sort_order: Math.round(amountRupees * 100),
+      course_id: courseId,
+      asset_number: receiptNum,
+      description: JSON.stringify({
+        student_name: studentName,
+        student_email: studentEmail,
+        student_phone: studentPhone,
+        course_title: courseTitle,
+        enrolled,
+        notes,
+      }),
+      media_type: "note",
+      is_published: false,
+      access_level: "premium",
+    });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    await logAdminWork(
+      `Recorded Offline ${paymentMode.toUpperCase()} Payment`,
+      `${studentName} · ₹${amountRupees}`,
+      courseTitle
+    );
+
+    return NextResponse.json({
+      ok: true,
+      receipt_number: receiptNum,
+      enrolled,
+      studentCreated,
+      tempPassword,
+    });
+  }
+
+  if (body.action === "delete_offline_payment") {
+    const id = String(body.id || "").trim();
+    if (!id) return NextResponse.json({ error: "Payment id required." }, { status: 400 });
+    const { error } = await db
+      .from("cms_content")
+      .delete()
+      .eq("id", id)
+      .eq("section_path", "erp-offline-income");
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
 
   if (body.action === "add_expense") {
     const title = String(body.title || "").trim();

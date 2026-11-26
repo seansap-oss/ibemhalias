@@ -433,6 +433,14 @@ export function StudentPortal() {
             />
           </div>
           <div className="flex items-center gap-3">
+            <a
+              href="https://ibemhaliasexamportal.vercel.app/login"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden items-center gap-1.5 rounded-xl bg-[#14256f] px-3 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#1e3594] sm:inline-flex"
+            >
+              Exam Portal ↗
+            </a>
             <div className="hidden text-[10px] font-bold text-slate-400 xl:block">{SITE_VERSION_LABEL}</div>
             <Link href="/dashboard?view=announcements" className="relative grid h-10 w-10 place-items-center rounded-full border border-slate-200 bg-white text-[#14256f]"><Bell className="h-5 w-5" />{data.announcements.length ? <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[#1f5fd0] px-1 text-[9px] font-black text-white">{Math.min(9, data.announcements.length)}</span> : null}</Link>
             <div className="relative">

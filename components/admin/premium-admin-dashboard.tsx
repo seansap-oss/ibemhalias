@@ -98,6 +98,7 @@ function StatCard({
 
 const quickActions = [
   { href: "/admin/ingest", label: "AI Exam Maker", icon: Sparkles, tone: "text-blue-700" },
+  { href: "https://ibemhaliasexamportal.vercel.app/login", label: "Exam Portal ↗", icon: TestTube2, tone: "text-emerald-700" },
   { href: "/admin/mock-test", label: "Mock Tests & MCQs", icon: TestTube2, tone: "text-violet-600" },
   { href: "/admin/courses/new", label: "Create Course", icon: BookOpen, tone: "text-indigo-600" },
   { href: "/admin/live-classes/students", label: "Add Student", icon: UserPlus, tone: "text-blue-600" },
