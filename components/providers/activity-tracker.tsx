@@ -15,6 +15,7 @@ const post = (url: string, body: object) =>
 export function ActivityTracker() {
   const path = usePathname();
   const [idleWarning, setIdleWarning] = React.useState(false);
+  const [countdown, setCountdown] = React.useState(30);
   const lastRef = React.useRef<number>(Date.now());
   const roleRef = React.useRef<"admin" | "teacher" | null>(null);
 
@@ -93,10 +94,11 @@ export function ActivityTracker() {
   const stayLoggedIn = () => {
     lastRef.current = Date.now();
     setIdleWarning(false);
+    setCountdown(30);
     void post("/api/activity/session", { action: "heartbeat" });
   };
 
-  const handleLogout = async () => {
+  const handleLogout = React.useCallback(async () => {
     setIdleWarning(false);
     await post("/api/activity/session", { action: "logout" });
     if (roleRef.current === "admin") {
@@ -105,7 +107,25 @@ export function ActivityTracker() {
     const db = createClient();
     if (db) await db.auth.signOut().catch(() => undefined);
     window.location.assign("/login");
-  };
+  }, []);
+
+  React.useEffect(() => {
+    if (!idleWarning) {
+      setCountdown(30);
+      return;
+    }
+    const tick = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(tick);
+          void handleLogout();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(tick);
+  }, [idleWarning, handleLogout]);
 
   if (!idleWarning) return null;
 
@@ -121,7 +141,7 @@ export function ActivityTracker() {
               Inactivity Notice
             </h3>
             <p className="text-xs text-slate-500">
-              You have been inactive for a while. Your session is still active.
+              You have been idle. Auto-signing out in <span className="font-black text-rose-600">{countdown}s</span>.
             </p>
           </div>
         </div>

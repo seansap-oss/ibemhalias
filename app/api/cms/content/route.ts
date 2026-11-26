@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCmsServiceClient } from "@/lib/supabase/cms-server";
+import { logAdminWork } from "@/lib/admin-audit";
 import { createSessionClient, requireCmsAdmin } from "@/lib/supabase/server-session";
 
 const BUCKET = "cms-content";
@@ -125,6 +126,7 @@ export async function POST(request: NextRequest) {
     const service = createCmsServiceClient();
     const { data, error } = await service.from("cms_content").insert(insertRow).select("*").single();
     if (error) throw error;
+    await logAdminWork("Published CMS Content", String(insertRow.title || insertRow.section_path), String(insertRow.section_path || ""));
     return NextResponse.json({ item: data });
   } catch (error: any) {
     const message = error?.message || "Unable to create content";

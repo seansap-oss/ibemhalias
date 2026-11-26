@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { canManageCourses } from "@/lib/course-admin";
 import { createCmsServiceClient } from "@/lib/supabase/cms-server";
+import { logAdminWork } from "@/lib/admin-audit";
 
 export const dynamic = "force-dynamic";
 const uuid = (value: unknown) => /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(String(value || ""));
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest) {
   if (!(await canManageCourses())) return fail("Admin access required", 403);
   const body = await request.json().catch(() => ({}));
   const action = String(body.action || "course");
+  await logAdminWork(`Course Builder: ${action}`, String(body.title || body.course_id || body.id || "Course"));
   const db = createCmsServiceClient();
   if (action === "module") {
     if (!uuid(body.courseId)) return fail("Choose a course");

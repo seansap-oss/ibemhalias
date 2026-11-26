@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireCmsAdmin } from "@/lib/supabase/server-session";
 import { createCmsServiceClient } from "@/lib/supabase/cms-server";
 import { sendCourseReceipt } from "@/lib/commerce/receipt-email";
+import { logAdminWork } from "@/lib/admin-audit";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 async function authorised() { try { await requireCmsAdmin(); return true; } catch { return false; } }
@@ -26,6 +27,11 @@ export async function POST(request: NextRequest) {
     const db = createCmsServiceClient();
     const { data, error } = await db.rpc("verify_course_purchase", { p_order_id: body.id, p_approve: body.action === "verify" });
     if (error) return NextResponse.json({ error: error.message }, { status: 409 });
+    await logAdminWork(
+      body.action === "verify" ? "Verified Course UPI Payment" : "Rejected Course UPI Payment",
+      String(body.id),
+      data?.[0]?.buyer_email ? `Buyer: ${data[0].buyer_email}` : undefined
+    );
     const receipt = data?.[0];
     if (receipt?.receipt_number) {
       const { data: items } = await db.from("course_purchase_order_items").select("title_snapshot").eq("order_id", body.id);

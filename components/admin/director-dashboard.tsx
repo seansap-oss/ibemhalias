@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { AssetActivityReport } from "@/components/admin/asset-activity-report";
+import { DirectorAdminManager } from "@/components/admin/director-admin-manager";
 import { ErpFinancePanel } from "@/components/admin/erp-finance-panel";
 import { createClient } from "@/lib/supabase/client";
 
@@ -10,7 +11,9 @@ type Session = { identity: string; role: Role; logged_in_at: string; last_seen_a
 type Event = { role: Role; kind: string; target_id: string | null; duration_seconds: number; created_at: string };
 type Student = { id: string; full_name: string | null; email: string | null; created_at: string };
 type Upload = { action: string; details: { title?: string } | null; created_at: string; teacher_id: string };
-type Report = { viewer: "director" | "owner"; sessions: Session[]; studentRegions: [string, number][]; studentLoginsToday: number; uniqueStudentsToday: number; studentSignupsToday: number; recentStudents: Student[]; events: Event[]; teacherUploads: Upload[]; teacherNames: Record<string, string>; sales: { amount_paise: number }[]; students: number; classes: number; settings: { admin_idle_minutes: number; teacher_idle_minutes: number } };
+type AdminAccount = { id: string; full_name: string | null; email: string | null; created_at: string };
+type AdminAudit = { id: string; title: string; month_label: string | null; date_label: string | null; description: string | null; created_at: string };
+type Report = { viewer: "director" | "owner"; sessions: Session[]; studentRegions: [string, number][]; studentLoginsToday: number; uniqueStudentsToday: number; studentSignupsToday: number; recentStudents: Student[]; events: Event[]; teacherUploads: Upload[]; teacherNames: Record<string, string>; sales: { amount_paise: number }[]; students: number; classes: number; settings: { admin_idle_minutes: number; teacher_idle_minutes: number }; adminAccounts?: AdminAccount[]; adminAuditLog?: AdminAudit[] };
 type Tab = "students" | "teachers" | "admins" | "directors" | "owner";
 
 const colors: Record<Tab, string> = {
@@ -77,6 +80,47 @@ export function DirectorDashboard({ scope = "director" }: { scope?: "director" |
   const sales = (data?.sales || []).reduce((sum, row) => sum + row.amount_paise, 0);
   const interest = courseInterest(data?.events || []);
 
+  // Per-Admin Daily Scorecard
+  const adminSessionsAll = (data?.sessions || []).filter((s) => s.role === "admin");
+  const adminScorecardMap = new Map<string, { identity: string; name: string; loginsToday: number; activeMinutesToday: number; firstSignIn: string | null; lastActive: string | null; onlineNow: boolean }>();
+  for (const acc of data?.adminAccounts || []) {
+    const idKey = (acc.email || acc.full_name || acc.id).toLowerCase();
+    adminScorecardMap.set(idKey, {
+      identity: acc.email || acc.id,
+      name: acc.full_name || acc.email || "Admin",
+      loginsToday: 0,
+      activeMinutesToday: 0,
+      firstSignIn: null,
+      lastActive: null,
+      onlineNow: false,
+    });
+  }
+  const idleLimitMs = (data?.settings?.admin_idle_minutes || 10) * 60_000;
+  for (const s of adminSessionsAll) {
+    const key = s.identity.toLowerCase();
+    const existing = adminScorecardMap.get(key) || {
+      identity: s.identity,
+      name: s.identity,
+      loginsToday: 0,
+      activeMinutesToday: 0,
+      firstSignIn: null,
+      lastActive: null,
+      onlineNow: false,
+    };
+    const isToday = new Date(s.logged_in_at).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }) === today;
+    if (isToday) {
+      existing.loginsToday += 1;
+      existing.activeMinutesToday += Math.round(s.active_seconds / 60);
+      if (!existing.firstSignIn || s.logged_in_at < existing.firstSignIn) existing.firstSignIn = s.logged_in_at;
+    }
+    if (!existing.lastActive || s.last_seen_at > existing.lastActive) existing.lastActive = s.last_seen_at;
+    if (!s.logged_out_at && Date.now() - new Date(s.last_seen_at).getTime() < idleLimitMs) {
+      existing.onlineNow = true;
+    }
+    adminScorecardMap.set(key, existing);
+  }
+  const adminScorecard = [...adminScorecardMap.values()].sort((a, b) => b.loginsToday - a.loginsToday || b.activeMinutesToday - a.activeMinutesToday);
+
   async function signOut() {
     await fetch("/api/activity/session", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "logout" }) }).catch(() => undefined);
     const client = createClient();
@@ -113,11 +157,82 @@ export function DirectorDashboard({ scope = "director" }: { scope?: "director" |
           <div className="rounded-lg border border-sky-200 bg-sky-50 p-4"><h3 className="font-bold text-sky-900">Recently enrolled students</h3><p className="mb-3 text-xs text-sky-700">New accounts appear here even before their first sign-in.</p><div className="max-h-72 overflow-auto">{data?.recentStudents.length ? data.recentStudents.map((student) => <div key={student.id} className="flex flex-wrap justify-between gap-2 border-t border-sky-200 py-2 text-sm"><span><b>{student.full_name || "Unnamed student"}</b><small className="block text-slate-600">{student.email || "No email"}</small></span><span className="text-slate-500">{stamp(student.created_at)}</span></div>) : <p className="text-sm">No student records yet.</p>}</div></div>
           <div className="rounded-lg border p-4"><h3 className="font-bold">Student sign-ins by region</h3><p className="mt-1 text-xs text-slate-500">{data?.uniqueStudentsToday || 0} distinct students today. Local preview may show “Unknown” because it has no Vercel location headers.</p><div className="mt-3 flex flex-wrap gap-2">{data?.studentRegions.length ? data.studentRegions.map(([region, count]) => <span key={region} className="rounded-lg bg-sky-50 px-3 py-2 text-sm">{region}: <b>{count}</b></span>) : <p className="text-sm text-slate-500">No student sign-ins recorded today.</p>}</div></div>
         </div>}
+        {tab === "admins" && (
+          <div className="mt-5 space-y-5">
+            <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4">
+              <h3 className="font-bold text-[#14256f]">Per-Admin Daily Scorecard (Today)</h3>
+              <p className="mt-0.5 text-xs text-slate-600">Shows how many times each Admin logged in today, total active minutes, and live status.</p>
+              <div className="mt-3 overflow-x-auto">
+                <table className="w-full min-w-[680px] text-left text-sm">
+                  <thead>
+                    <tr className="border-b text-xs uppercase text-slate-500">
+                      <th className="pb-2">Admin</th>
+                      <th className="pb-2">Logins Today</th>
+                      <th className="pb-2">Active Time Today</th>
+                      <th className="pb-2">Status</th>
+                      <th className="pb-2">First Sign-In</th>
+                      <th className="pb-2">Last Active</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adminScorecard.map((row) => (
+                      <tr key={row.identity} className="border-b last:border-0">
+                        <td className="py-2.5">
+                          <b>{row.name}</b>
+                          {row.name !== row.identity && <small className="block text-slate-500">{row.identity}</small>}
+                        </td>
+                        <td className="font-bold">{row.loginsToday}</td>
+                        <td className="font-semibold">{row.activeMinutesToday} min</td>
+                        <td>
+                          <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${row.onlineNow ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}`}>
+                            {row.onlineNow ? "Online Now" : "Idle / Signed Out"}
+                          </span>
+                        </td>
+                        <td>{row.firstSignIn ? stamp(row.firstSignIn) : "—"}</td>
+                        <td>{row.lastActive ? stamp(row.lastActive) : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {!adminScorecard.length && <p className="py-3 text-sm text-slate-500">No admin accounts or sessions yet.</p>}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <h3 className="font-bold text-[#14256f]">Admin Work Audit Log (What Admins Are Doing)</h3>
+              <p className="mt-0.5 text-xs text-slate-500">Tracks course edits, CMS updates, and payment verifications per Admin.</p>
+              <div className="mt-3 max-h-60 overflow-auto">
+                <table className="w-full min-w-[600px] text-left text-sm">
+                  <thead>
+                    <tr className="border-b text-xs uppercase text-slate-500">
+                      <th className="pb-2">Admin</th>
+                      <th className="pb-2">Action</th>
+                      <th className="pb-2">Target / Details</th>
+                      <th className="pb-2">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(data?.adminAuditLog || []).map((log) => (
+                      <tr key={log.id} className="border-b last:border-0">
+                        <td className="py-2 font-semibold">{log.month_label || "Admin"}</td>
+                        <td>{log.title}</td>
+                        <td className="text-slate-600">{[log.date_label, log.description].filter(Boolean).join(" · ") || "—"}</td>
+                        <td className="text-xs text-slate-500">{stamp(log.created_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {!(data?.adminAuditLog || []).length && <p className="py-3 text-sm text-slate-500">No admin work actions recorded yet.</p>}
+              </div>
+            </div>
+          </div>
+        )}
         <div className="mt-5 overflow-x-auto"><table className="w-full min-w-[850px] text-left text-sm"><thead><tr>{["Name", "Signed in", "Last active", "Signed out", "Active time", "Region / country"].map((heading) => <th key={heading} className="border-b pb-2 pr-3">{heading}</th>)}</tr></thead><tbody>{sessions.map((session, index) => <tr className="border-b last:border-0" key={`${session.identity}-${session.logged_in_at}-${index}`}><td className="py-3 pr-3 font-semibold">{session.identity}</td><td className="pr-3">{stamp(session.logged_in_at)}</td><td className="pr-3">{stamp(session.last_seen_at)}</td><td className="pr-3">{session.logged_out_at ? stamp(session.logged_out_at) : "—"}</td><td className="pr-3">{Math.round(session.active_seconds / 60)} min</td><td>{[session.region_code, session.country_code].filter(Boolean).join(" / ") || "Unknown"}</td></tr>)}</tbody></table>{!sessions.length && <p className="py-5 text-sm text-slate-500">No {tab === "owner" ? "super admin" : tab} sign-ins recorded yet.</p>}</div>
       </section>
       <div className="grid gap-6 lg:grid-cols-2"><section className="rounded-xl border bg-white p-5"><h2 className="text-xl font-bold">Most-read content</h2><p className="mt-1 text-xs text-slate-500">Estimated from visible reading intervals while a signed-in student is active.</p>{interest.length ? interest.map(([path, stats]) => <div key={path} className="flex justify-between gap-4 border-b py-2 text-sm"><span>{path}</span><span>{stats.views} intervals · {Math.round(stats.minutes)} min</span></div>) : <p className="mt-4 text-sm text-slate-500">No reading activity recorded yet.</p>}</section>
         <section className="rounded-xl border bg-white p-5"><h2 className="text-xl font-bold">Teacher uploads</h2>{data?.teacherUploads.length ? data.teacherUploads.slice(0, 20).map((upload, index) => <div key={index} className="border-b py-2 text-sm"><b>{upload.details?.title || upload.action}</b><small className="block text-slate-500">{data.teacherNames?.[upload.teacher_id] || "Teacher"} · {stamp(upload.created_at)}</small></div>) : <p className="mt-4 text-sm text-slate-500">No teacher uploads recorded yet.</p>}</section></div>
       <section className="rounded-xl border bg-white p-5"><h2 className="text-xl font-bold">Idle sign-out settings</h2><p className="mt-1 text-sm text-slate-500">Staff will be asked to sign in again after inactivity.</p><div className="mt-4 grid max-w-xl gap-4 sm:grid-cols-2"><label className="text-sm font-bold">Admin idle minutes<input type="number" min="5" max="120" value={admin} onChange={(event) => setAdmin(Number(event.target.value))} className="mt-2 block w-full rounded-lg border p-3" /></label><label className="text-sm font-bold">Teacher idle minutes<input type="number" min="5" max="120" value={teacher} onChange={(event) => setTeacher(Number(event.target.value))} className="mt-2 block w-full rounded-lg border p-3" /></label></div><button onClick={() => void save()} className="mt-4 rounded-lg bg-[#202b70] px-5 py-2 font-bold text-white">Save settings</button></section>
+      <DirectorAdminManager onChanged={() => void load()} />
       <AssetActivityReport />
         </>
       )}
