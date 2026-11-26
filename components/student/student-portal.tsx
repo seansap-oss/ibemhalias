@@ -434,7 +434,7 @@ export function StudentPortal() {
           </div>
           <div className="flex items-center gap-3">
             <a
-              href="https://ibemhaliasexamportal.vercel.app/login"
+              href="/api/exam-portal/sso"
               target="_blank"
               rel="noopener noreferrer"
               className="hidden items-center gap-1.5 rounded-xl bg-[#14256f] px-3 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#1e3594] sm:inline-flex"

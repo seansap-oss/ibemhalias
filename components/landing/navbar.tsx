@@ -176,6 +176,14 @@ export function Navbar() {
             >
               Test Series
             </Link>
+            <a
+              href="/api/exam-portal/sso"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-lg px-3 py-2 text-sm font-semibold text-[#14256f] transition hover:bg-white"
+            >
+              Exam Portal ↗
+            </a>
             <Link
               href="/current-affairs/daily"
               className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-white hover:text-[#14256f]"
