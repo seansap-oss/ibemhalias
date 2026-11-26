@@ -77,6 +77,7 @@ export async function GET() {
     taxRes,
     platformRes,
     receiptSettingsRes,
+    qrConfigRes,
     invoicesRes,
   ] = await Promise.all([
     db
@@ -122,6 +123,12 @@ export async function GET() {
       .from("avit_receipt_delivery_settings")
       .select("payment_upi_id")
       .eq("institute_name", "Ibemhal IAS")
+      .maybeSingle(),
+    db
+      .from("cms_content")
+      .select("title, external_url, description")
+      .eq("section_path", "payment-qr-config")
+      .limit(1)
       .maybeSingle(),
     db
       .from("cms_content")
@@ -409,6 +416,13 @@ export async function GET() {
       isOwner,
       ownerUpiId: platformRes.data?.owner_upi_id || null,
       instituteUpiId: receiptSettingsRes.data?.payment_upi_id || null,
+      paymentQrConfig: {
+        instituteName: qrConfigRes.data?.title || "Ibemhal IAS",
+        qrImageUrl: qrConfigRes.data?.external_url || "",
+        paymentNote:
+          qrConfigRes.data?.description ||
+          "Make sure you are sending payment to the right QR code for Ibemhal IAS.",
+      },
       courses,
       summary: {
         online_income_paise: onlineIncomePaise,
@@ -452,6 +466,61 @@ export async function POST(request: NextRequest) {
   const isOwner = await hasOwnerSession();
   const body = await request.json();
   const db = createCmsServiceClient();
+
+  if (body.action === "save_payment_settings") {
+    const upiId = String(body.payment_upi_id || "").trim();
+    const instituteName = String(body.institute_name || "Ibemhal IAS").trim() || "Ibemhal IAS";
+    const qrImageUrl = String(body.qr_image_url || "").trim();
+    const paymentNote =
+      String(body.payment_note || "").trim() ||
+      `Make sure you are sending payment to the right QR code for ${instituteName}.`;
+
+    if (upiId && !/^[a-zA-Z0-9._-]{2,256}@[a-zA-Z0-9.-]{2,64}$/.test(upiId)) {
+      return NextResponse.json({ error: "Enter a valid UPI ID (e.g. name@bank)." }, { status: 400 });
+    }
+
+    const { error: upiErr } = await db
+      .from("avit_receipt_delivery_settings")
+      .update({ payment_upi_id: upiId || null, updated_at: new Date().toISOString() })
+      .eq("institute_name", "Ibemhal IAS");
+
+    if (upiErr) {
+      return NextResponse.json({ error: upiErr.message }, { status: 500 });
+    }
+
+    const existingQr = await db
+      .from("cms_content")
+      .select("id")
+      .eq("section_path", "payment-qr-config")
+      .limit(1)
+      .maybeSingle();
+
+    if (existingQr.data?.id) {
+      const { error: qrErr } = await db
+        .from("cms_content")
+        .update({
+          title: instituteName,
+          external_url: qrImageUrl || null,
+          description: paymentNote,
+        })
+        .eq("id", existingQr.data.id);
+      if (qrErr) return NextResponse.json({ error: qrErr.message }, { status: 500 });
+    } else {
+      const { error: qrErr } = await db.from("cms_content").insert({
+        section_path: "payment-qr-config",
+        title: instituteName,
+        external_url: qrImageUrl || null,
+        description: paymentNote,
+        media_type: "image",
+        is_published: false,
+        access_level: "premium",
+      });
+      if (qrErr) return NextResponse.json({ error: qrErr.message }, { status: 500 });
+    }
+
+    await logAdminWork("Updated Institute UPI & QR Settings", instituteName, upiId || "QR updated");
+    return NextResponse.json({ ok: true });
+  }
 
   if (body.action === "add_offline_payment") {
     const studentName = String(body.student_name || "").trim();

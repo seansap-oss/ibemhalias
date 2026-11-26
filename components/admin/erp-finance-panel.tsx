@@ -109,6 +109,11 @@ interface ErpResponse {
   isOwner: boolean;
   ownerUpiId: string | null;
   instituteUpiId: string | null;
+  paymentQrConfig?: {
+    instituteName: string;
+    qrImageUrl: string;
+    paymentNote: string;
+  };
   courses: CourseOption[];
   summary: ErpSummary;
   daily: PeriodRow[];
@@ -168,6 +173,15 @@ export function ErpFinancePanel() {
   const [invGrossRupees, setInvGrossRupees] = React.useState("");
   const [invNotes, setInvNotes] = React.useState("2% ERP Maintenance & Payment Gateway Charge (incl. GST)");
   const [payRefMap, setPayRefMap] = React.useState<Record<string, string>>({});
+
+  // Institute UPI & QR Photo Settings state
+  const [upiInput, setUpiInput] = React.useState("");
+  const [instNameInput, setInstNameInput] = React.useState("Ibemhal IAS");
+  const [qrImageUrlInput, setQrImageUrlInput] = React.useState("");
+  const [paymentNoteInput, setPaymentNoteInput] = React.useState(
+    "Make sure you are sending payment to the right QR code for Ibemhal IAS."
+  );
+  const [uploadingQr, setUploadingQr] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
 
   const load = React.useCallback(async () => {
@@ -177,6 +191,14 @@ export function ErpFinancePanel() {
       if (!res.ok) throw new Error(json.error || "Unable to load ERP data.");
       setData(json);
       setGstInput(String(json.summary?.gst_percent ?? 18));
+      setUpiInput((prev) => (prev === "" && json.instituteUpiId ? json.instituteUpiId : prev));
+      if (json.paymentQrConfig) {
+        setInstNameInput((prev) => (prev === "Ibemhal IAS" && json.paymentQrConfig.instituteName ? json.paymentQrConfig.instituteName : prev));
+        setQrImageUrlInput((prev) => (prev === "" && json.paymentQrConfig.qrImageUrl ? json.paymentQrConfig.qrImageUrl : prev));
+        setPaymentNoteInput((prev) =>
+          prev.startsWith("Make sure") && json.paymentQrConfig.paymentNote ? json.paymentQrConfig.paymentNote : prev
+        );
+      }
       setInvGrossRupees((prev) =>
         prev === "" ? String(Math.round((json.summary?.gross_income_paise || 0) / 100)) : prev
       );
@@ -380,6 +402,53 @@ export function ErpFinancePanel() {
     }
   }
 
+  async function handleQrUpload(file: File | null) {
+    if (!file) return;
+    setUploadingQr(true);
+    setStatusMsg("");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("sectionPath", "payment-qr-config");
+      const res = await fetch("/api/cms/upload", { method: "POST", body: form });
+      const json = await res.json();
+      if (!res.ok || !json.url) throw new Error(json.error || "QR upload failed.");
+      setQrImageUrlInput(json.url);
+      setStatusMsg("QR image uploaded! Click 'Save UPI & QR Settings' to publish it to checkout.");
+    } catch (err) {
+      setStatusMsg(err instanceof Error ? err.message : "QR upload failed.");
+    } finally {
+      setUploadingQr(false);
+    }
+  }
+
+  async function savePaymentSettings(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setStatusMsg("");
+    try {
+      const res = await fetch("/api/erp/summary", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          action: "save_payment_settings",
+          payment_upi_id: upiInput,
+          institute_name: instNameInput,
+          qr_image_url: qrImageUrlInput,
+          payment_note: paymentNoteInput,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to save UPI & QR settings.");
+      setStatusMsg("Institute UPI ID & QR Code settings saved and live on Course Checkout!");
+      await load();
+    } catch (err) {
+      setStatusMsg(err instanceof Error ? err.message : "Failed to save UPI & QR settings.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function markInvoiceStatus(id: string, status: "paid" | "unpaid") {
     setBusy(true);
     setStatusMsg("");
@@ -461,59 +530,59 @@ export function ErpFinancePanel() {
 
   return (
     <div className="space-y-6">
-      {/* 5 Vibrant Semantic Color-Coded KPI Cards */}
+      {/* 5 Solid Color-Coded KPI Cards with High-Contrast Black Text */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border-2 border-slate-300 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Combined</p>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black text-[#14256f]">ALL</span>
+            <p className="text-xs font-black uppercase tracking-wider text-slate-950">Total Combined</p>
+            <span className="rounded-full bg-slate-900 px-2.5 py-0.5 text-[10px] font-black text-white">ALL</span>
           </div>
-          <p className="mt-2 text-2xl font-black text-[#14256f]">{inr(summary.gross_income_paise)}</p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-2 text-2xl font-black text-slate-950">{inr(summary.gross_income_paise)}</p>
+          <p className="mt-1 text-xs font-semibold text-slate-700">
             {summary.paid_orders_count + summary.offline_orders_count} total admissions
           </p>
         </div>
 
-        <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50/60 p-5 shadow-sm">
+        <div className="rounded-2xl border-2 border-emerald-500 bg-emerald-200 p-5 shadow-sm">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-wider text-emerald-800">Online UPI</p>
-            <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-black text-white">ONLINE</span>
+            <p className="text-xs font-black uppercase tracking-wider text-slate-950">Online UPI</p>
+            <span className="rounded-full bg-slate-950 px-2.5 py-0.5 text-[10px] font-black text-white">ONLINE</span>
           </div>
-          <p className="mt-2 text-2xl font-black text-emerald-700">{inr(summary.online_income_paise)}</p>
-          <p className="mt-1 text-xs text-emerald-800">{summary.paid_orders_count} verified UPI orders</p>
+          <p className="mt-2 text-2xl font-black text-slate-950">{inr(summary.online_income_paise)}</p>
+          <p className="mt-1 text-xs font-semibold text-slate-900">{summary.paid_orders_count} verified UPI orders</p>
         </div>
 
-        <div className="rounded-2xl border-2 border-blue-200 bg-blue-50/60 p-5 shadow-sm">
+        <div className="rounded-2xl border-2 border-blue-500 bg-blue-200 p-5 shadow-sm">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-wider text-blue-800">Offline Cash / Desk</p>
-            <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-black text-white">OFFLINE</span>
+            <p className="text-xs font-black uppercase tracking-wider text-slate-950">Offline Cash / Desk</p>
+            <span className="rounded-full bg-slate-950 px-2.5 py-0.5 text-[10px] font-black text-white">OFFLINE</span>
           </div>
-          <p className="mt-2 text-2xl font-black text-blue-700">{inr(summary.offline_income_paise)}</p>
-          <p className="mt-1 text-xs text-blue-800">{summary.offline_orders_count} counter receipts</p>
+          <p className="mt-2 text-2xl font-black text-slate-950">{inr(summary.offline_income_paise)}</p>
+          <p className="mt-1 text-xs font-semibold text-slate-900">{summary.offline_orders_count} counter receipts</p>
         </div>
 
-        <div className="rounded-2xl border-2 border-rose-200 bg-rose-50/50 p-5 shadow-sm">
+        <div className="rounded-2xl border-2 border-rose-500 bg-rose-200 p-5 shadow-sm">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-wider text-rose-800">Expenses &amp; 2% Fee</p>
-            <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-black text-white">OUTFLOW</span>
+            <p className="text-xs font-black uppercase tracking-wider text-slate-950">Expenses &amp; 2% Fee</p>
+            <span className="rounded-full bg-slate-950 px-2.5 py-0.5 text-[10px] font-black text-white">OUTFLOW</span>
           </div>
-          <p className="mt-2 text-2xl font-black text-rose-700">
+          <p className="mt-2 text-2xl font-black text-slate-950">
             {inr(summary.total_expenses_paise + summary.erp_fee_paise)}
           </p>
-          <p className="mt-1 text-xs text-rose-800">
+          <p className="mt-1 text-xs font-semibold text-slate-900">
             Exp {inr(summary.total_expenses_paise)} · {feePercentLabel}% Fee {inr(summary.erp_fee_paise)}
           </p>
         </div>
 
-        <div className="rounded-2xl border-2 border-violet-200 bg-gradient-to-br from-violet-50 to-amber-50/60 p-5 shadow-sm">
+        <div className="rounded-2xl border-2 border-violet-500 bg-violet-200 p-5 shadow-sm">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-wider text-violet-900">AI Next-Month Forecast</p>
-            <Sparkles className="h-4 w-4 text-violet-600" />
+            <p className="text-xs font-black uppercase tracking-wider text-slate-950">AI Next-Month Forecast</p>
+            <Sparkles className="h-4 w-4 text-slate-950" />
           </div>
-          <p className="mt-2 text-2xl font-black text-violet-700">
+          <p className="mt-2 text-2xl font-black text-slate-950">
             {inr(summary.ai_forecast?.monthly.nextPaise || 0)}
           </p>
-          <p className="mt-1 text-xs font-semibold text-violet-800">
+          <p className="mt-1 text-xs font-semibold text-slate-900">
             {(summary.ai_forecast?.monthly.growthPercent ?? 0) >= 0 ? "+" : ""}
             {summary.ai_forecast?.monthly.growthPercent ?? 0}% · {summary.ai_forecast?.monthly.confidenceLabel}
           </p>
@@ -803,28 +872,104 @@ export function ErpFinancePanel() {
           </div>
         </form>
 
-        {/* Live Counter Scannable GPay / UPI QR Code */}
-        <section className="flex flex-col items-center justify-center rounded-2xl border-2 border-emerald-200 bg-white p-5 text-center shadow-sm">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-black uppercase text-emerald-800">
-            <QrIcon className="h-3.5 w-3.5" /> Counter / Desk UPI QR
+        {/* Live Counter Scannable GPay / UPI QR Code & Uploaded QR */}
+        <section className="flex flex-col items-center justify-center rounded-2xl border-2 border-emerald-400 bg-emerald-50/60 p-5 text-center shadow-sm">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-950 px-3 py-1 text-[11px] font-black uppercase text-white">
+            <QrIcon className="h-3.5 w-3.5" /> {instNameInput || "Ibemhal IAS"} · UPI QR
           </div>
-          <p className="mt-2 text-xs text-slate-500">
-            Scan with GPay, PhonePe, or Paytm {qrAmountNum > 0 ? `for ₹${qrAmountNum}` : "(enter amount on left)"}
+          <p className="mt-2 text-xs font-semibold text-slate-800">
+            {paymentNoteInput}
           </p>
-          {qrUri ? (
-            <div className="mt-3 rounded-2xl border border-emerald-100 bg-[#faf8f4] p-3">
+          {qrImageUrlInput ? (
+            <div className="mt-3 rounded-2xl border-2 border-emerald-300 bg-white p-2">
+              <img src={qrImageUrlInput} alt="Institute UPI QR" className="h-40 w-40 rounded-xl object-contain" />
+            </div>
+          ) : qrUri ? (
+            <div className="mt-3 rounded-2xl border-2 border-emerald-300 bg-white p-3">
               <QrCode value={qrUri} size={156} logoText="IB" />
             </div>
           ) : (
-            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800">
-              Set Institute UPI ID in Admin Payment Settings or Super Admin UPI to enable live QR.
+            <div className="mt-4 rounded-xl border border-amber-300 bg-amber-100 p-4 text-xs font-semibold text-slate-900">
+              Set Institute UPI ID or upload your QR Code photo below to enable checkout QR.
             </div>
           )}
           {activeQrUpi && (
-            <p className="mt-2 break-all font-mono text-[11px] font-bold text-[#14256f]">{activeQrUpi}</p>
+            <p className="mt-2 break-all font-mono text-xs font-black text-slate-950">{activeQrUpi}</p>
           )}
         </section>
       </div>
+
+      {/* Institute UPI ID, QR Photo Uploader & Checkout Verification Note */}
+      <form onSubmit={savePaymentSettings} className="rounded-2xl border-2 border-slate-300 bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="flex items-center gap-2 text-lg font-black text-slate-950">
+              <QrIcon className="h-5 w-5 text-[#14256f]" />
+              Institute UPI ID &amp; Checkout QR Code Settings
+            </h3>
+            <p className="text-xs text-slate-600">
+              Everything saved here reflects live on every Course Checkout page (`/courses`).
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div>
+            <label className="block text-xs font-bold uppercase text-slate-700">Institute Name</label>
+            <input
+              required
+              value={instNameInput}
+              onChange={(e) => setInstNameInput(e.target.value)}
+              placeholder="Ibemhal IAS"
+              className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-semibold text-slate-950"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase text-slate-700">Company UPI ID</label>
+            <input
+              value={upiInput}
+              onChange={(e) => setUpiInput(e.target.value)}
+              placeholder="e.g. ibemhalias@sbi"
+              className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-semibold text-slate-950"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase text-slate-700">Upload QR Photo (GPay / Bank QR)</label>
+            <div className="mt-1 flex items-center gap-2">
+              <input
+                type="file"
+                accept="image/*"
+                disabled={uploadingQr}
+                onChange={(e) => void handleQrUpload(e.target.files?.[0] || null)}
+                className="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs"
+              />
+              {qrImageUrlInput && (
+                <button
+                  type="button"
+                  onClick={() => setQrImageUrlInput("")}
+                  className="shrink-0 rounded-lg border border-rose-300 px-2.5 py-2 text-xs font-bold text-rose-700"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <input
+            value={paymentNoteInput}
+            onChange={(e) => setPaymentNoteInput(e.target.value)}
+            placeholder="Make sure you are sending payment to the right QR code for Ibemhal IAS."
+            className="min-w-[260px] flex-1 rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-950"
+          />
+          <button
+            disabled={busy || uploadingQr}
+            type="submit"
+            className="rounded-xl bg-[#14256f] px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+          >
+            {uploadingQr ? "Uploading QR…" : "Save UPI & QR Settings"}
+          </button>
+        </div>
+      </form>
 
       {/* Unified Combined Ledger: Online UPI (Green) + Offline Cash (Blue) + Enrollment Status */}
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
