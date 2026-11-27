@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ibemhal IAS — System Architecture & Platform Presentation</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #faf8f4;
+      color: #0f172a;
+      line-height: 1.55;
+    }
+    .deck { max-width: 1120px; margin: 0 auto; padding: 28px 20px 64px; }
+    .slide {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 24px;
+      padding: 36px;
+      margin-bottom: 28px;
+      box-shadow: 0 8px 30px rgba(20, 37, 111, 0.06);
+    }
+    .badge {
+      display: inline-block;
+      background: #14256f;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+    }
+    .badge.gold { background: #c37a26; }
+    .badge.green { background: #059669; }
+    h1 { font-size: 34px; font-weight: 900; color: #14256f; margin-bottom: 10px; }
+    h2 { font-size: 24px; font-weight: 900; color: #14256f; margin-bottom: 12px; }
+    h3 { font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
+    p.lead { font-size: 16px; color: #475569; max-width: 820px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; margin-top: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 20px; }
+    .card {
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 18px;
+      background: #faf8f4;
+    }
+    .card.green { background: #d1fae5; border-color: #10b981; }
+    .card.blue { background: #dbeafe; border-color: #2563eb; }
+    .card.rose { background: #ffe4e6; border-color: #f43f5e; }
+    .card.violet { background: #ede9fe; border-color: #7c3aed; }
+    ul { padding-left: 18px; margin-top: 8px; font-size: 14px; color: #334155; }
+    li { margin-bottom: 6px; }
+    .flow {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 18px;
+    }
+    .step {
+      background: #14256f; color: #fff; font-weight: 800; font-size: 13px;
+      padding: 10px 16px; border-radius: 12px;
+    }
+    .arrow { font-weight: 900; color: #c37a26; font-size: 18px; }
+    code { background: #e2e8f0; padding: 2px 6px; border-radius: 6px; font-size: 13px; }
+    @media print { .slide { break-inside: avoid; box-shadow: none; } }
+  </style>
+</head>
+<body>
+  <div class="deck">
+
+    <!-- Slide 1 -->
+    <section class="slide">
+      <span class="badge">Platform Presentation</span>
+      <h1>Ibemhal IAS — Complete Digital Institute Ecosystem</h1>
+      <p class="lead">
+        A custom, institute-owned platform uniting a public coaching website, Kindle-style secured study portal,
+        Unified Offline + Online Business ERP, Director governance suite, and a separate AI-powered Online Exam Portal.
+      </p>
+      <div class="grid-3">
+        <div class="card">
+          <h3>1. Public Coaching Website</h3>
+          <ul>
+            <li>Vision-grade landing design (#faf8f4)</li>
+            <li>Editable Hero Photo/Video Carousel</li>
+            <li>Homepage Promo/Discount Popup</li>
+            <li>Hall of Fame Gallery &amp; 3 Branch Maps</li>
+            <li>10-Year Free PDF Archive (2016–2026)</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>2. Student LMS &amp; Kindle Reader</h3>
+          <ul>
+            <li>Single-device lock against account sharing</li>
+            <li>Day / Kindle Sepia / Night PDF themes</li>
+            <li>Screen Dimmer (30–100%) &amp; Pinch-Zoom</li>
+            <li>Dynamic Student Watermark on every PDF page &amp; video fullscreen</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>3. Dedicated AI Exam Portal</h3>
+          <ul>
+            <li>Separate high-speed CBT exam server</li>
+            <li>1-Click Single Sign-On (SSO) from LMS</li>
+            <li>AI Story/Notes &rarr; MCQ Generator</li>
+            <li>UPSC Mains Essays with AI Auto-Grading</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 2 -->
+    <section class="slide">
+      <span class="badge gold">Two-Website Architecture</span>
+      <h2>Why Two Connected Websites?</h2>
+      <p class="lead">
+        Heavy live timed exams run on an isolated portal so thousands of concurrent test submissions never slow down
+        course admissions, PDF study rooms, or video classes.
+      </p>
+      <div class="grid-2">
+        <div class="card blue">
+          <h3>Website 1: Main LMS &amp; ERP</h3>
+          <p><code>https://ibemhal-ias-lms-preview.vercel.app</code></p>
+          <ul>
+            <li>Courses, Guest Checkout + UPI QR, Student Learning Room</li>
+            <li>Director Dashboard, Admin Studio CMS, Finance ERP</li>
+            <li>Zoom &amp; Built-In Live Classes Studio</li>
+          </ul>
+        </div>
+        <div class="card green">
+          <h3>Website 2: Online CBT &amp; AI Exam Portal</h3>
+          <p><code>https://ibemhaliasexamportal-3p41.vercel.app</code></p>
+          <ul>
+            <li>Timed Mock Tests, Negative Marking, Question Shuffling</li>
+            <li>Gemini / Grok AI MCQ Creator &amp; Essay Examiner</li>
+            <li>Anti-Cheat Tab-Switch Monitor &amp; Instant Scorecards</li>
+          </ul>
+        </div>
+      </div>
+      <div class="flow">
+        <div class="step">Student Logs In Once (`/login`)</div>
+        <span class="arrow">&rarr;</span>
+        <div class="step">Clicks "Exam Portal &nearr;"</div>
+        <span class="arrow">&rarr;</span>
+        <div class="step">Instant Signed SSO Handoff</div>
+        <span class="arrow">&rarr;</span>
+        <div class="step">Takes Exam With Zero Re-Login</div>
+      </div>
+    </section>
+
+    <!-- Slide 3 -->
+    <section class="slide">
+      <span class="badge green">End-to-End Revenue &amp; ERP</span>
+      <h2>Unified Online UPI + Offline Cash ERP &amp; Auto-Enrollment</h2>
+      <div class="grid-2">
+        <div class="card green">
+          <h3>Online UPI Admissions (Emerald Green)</h3>
+          <ul>
+            <li>Student scans Institute QR Photo or Live Amount QR on <code>/courses</code></li>
+            <li>Enters Name, Receipt Email, WhatsApp Phone &amp; UPI Ref</li>
+            <li>Admin clicks <strong>Verify &amp; Enroll</strong> &rarr; auto-creates student login, assigns course, emails receipt &amp; prepares 1-click WhatsApp</li>
+          </ul>
+        </div>
+        <div class="card blue">
+          <h3>Offline Cash / Desk Admissions (Royal Blue)</h3>
+          <ul>
+            <li>Walk-in Cash, Bank/NEFT, or Card/POS recorded at the counter</li>
+            <li>Instantly enrolls the student in the selected course</li>
+            <li>Combines with Online UPI in Daily/Weekly/Monthly/Yearly ERP reports</li>
+          </ul>
+        </div>
+        <div class="card rose">
+          <h3>Expenses &amp; GST Tracking (Rose)</h3>
+          <ul>
+            <li>Logs Salaries, Rent, Printing, Marketing &amp; Server costs</li>
+            <li>Automatic GST / Tax calculation &amp; Net Profit view</li>
+          </ul>
+        </div>
+        <div class="card violet">
+          <h3>AI Revenue Forecast (Violet)</h3>
+          <ul>
+            <li>Computes Weekly &amp; Monthly growth projections from live ledger trends</li>
+            <li>Interactive Donut Mix &amp; Bar + Forecast charts</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 4 -->
+    <section class="slide">
+      <span class="badge">Governance &amp; Staff Control</span>
+      <h2>Role Hierarchy &amp; Admin Accountability</h2>
+      <div class="grid-3">
+        <div class="card">
+          <h3>Director</h3>
+          <ul>
+            <li>Creates &amp; manages <code>Admin 1..Admin 10</code></li>
+            <li>Views Per-Admin Daily Scorecard (logins/day, active minutes, live status)</li>
+            <li>Audits every Admin action &amp; configures Idle Auto-Sign-Out (30s countdown)</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Admin Staff</h3>
+          <ul>
+            <li>Builds Courses, uploads PDFs/Videos, manages Landing Studio</li>
+            <li>Verifies UPI orders &amp; records walk-in Cash admissions</li>
+            <li>Generates AI MCQ &amp; Essay exams</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Teachers &amp; Students</h3>
+          <ul>
+            <li>Teachers host Live Classes, moderate Raise-Hand &amp; Q&amp;A</li>
+            <li>Students read watermarked Kindle PDFs, watch protected videos &amp; take AI exams</li>
+            <li>Supports Web, Android APK &amp; iOS (Xcode)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</body>
+</html>

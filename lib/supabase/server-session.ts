@@ -5,6 +5,7 @@ import {
   getAdminCookieName,
   verifyAdminSessionToken,
 } from "@/lib/admin-session";
+import { hasOwnerSession } from "@/lib/super-admin";
 
 export async function createSessionClient() {
   const cookieStore = await cookies();
@@ -33,6 +34,13 @@ export async function createSessionClient() {
 }
 
 export async function requireCmsAdmin() {
+  if (await hasOwnerSession()) {
+    return {
+      id: "owner:avit-solutions",
+      email: "owner@avit-solutions",
+    };
+  }
+
   const cookieStore = await cookies();
 
   const adminToken =

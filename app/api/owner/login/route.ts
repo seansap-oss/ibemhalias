@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkOwnerPassword, issueOwnerToken, OWNER_COOKIE, ownerConfigured } from "@/lib/super-admin";
+import { createAdminSessionToken, getAdminCookieName } from "@/lib/admin-session";
+import { createCmsServiceClient } from "@/lib/supabase/cms-server";
 import { checkRateLimit, clearRateLimit, getClientIp, recordRateLimitHit } from "@/lib/rate-limit";
 export const runtime = "nodejs";
 export async function POST(request: NextRequest) {
@@ -19,8 +21,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid credentials." }, { status: 401 });
   }
   clearRateLimit(rlKey);
+  const adminToken = await createAdminSessionToken("owner:avit-solutions").catch(() => null);
+  const { data: activity } = await createCmsServiceClient()
+    .from("activity_sessions")
+    .insert({ identity: "AViT owner", role: "owner" })
+    .select("id")
+    .single();
   const response = NextResponse.json({ ok: true });
   response.cookies.set(OWNER_COOKIE, issueOwnerToken(), { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: "/", maxAge: 8 * 3600 });
+  if (adminToken) {
+    response.cookies.set(getAdminCookieName(), adminToken, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 8 * 3600 });
+  }
+  if (activity?.id) {
+    response.cookies.set("avit_activity_session", activity.id, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 8 * 3600 });
+  }
   response.headers.set("Cache-Control", "no-store");
   return response;
 }

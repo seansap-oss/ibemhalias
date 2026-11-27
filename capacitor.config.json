@@ -8,8 +8,15 @@
     "webContentsDebuggingEnabled": true
   },
   "server": {
+    "url": "https://ibemhal-ias-lms-preview.vercel.app",
     "androidScheme": "https",
-    "iosScheme": "https"
+    "iosScheme": "https",
+    "allowNavigation": [
+      "ibemhal-ias-lms-preview.vercel.app",
+      "ibemhaliasexamportal-3p41.vercel.app",
+      "ibemhaliasexamportal.vercel.app",
+      "*.supabase.co"
+    ]
   },
   "ios": {
     "contentInset": "automatic",
