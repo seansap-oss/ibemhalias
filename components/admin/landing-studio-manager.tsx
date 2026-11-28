@@ -84,6 +84,13 @@ export function LandingStudioManager() {
   // Support & AI Voice Concierge state
   const [voiceEnabled, setVoiceEnabled] = React.useState(true);
   const [autoGreetOnOpen, setAutoGreetOnOpen] = React.useState(true);
+  const [voiceAccent, setVoiceAccent] = React.useState<"en-IN" | "en-GB" | "en-US">("en-IN");
+  const [voiceGender, setVoiceGender] = React.useState<"female" | "male">("female");
+  const [voiceRate, setVoiceRate] = React.useState<"0.9" | "1.0" | "1.1">("1.0");
+  const [ttsPreviewBusy, setTtsPreviewBusy] = React.useState(false);
+  const [ttsPlaying, setTtsPlaying] = React.useState(false);
+  const previewAudioRef = React.useRef<HTMLAudioElement | null>(null);
+  const previewBlobRef = React.useRef<string | null>(null);
   const [voiceGreeting, setVoiceGreeting] = React.useState("");
   const [busyNotice, setBusyNotice] = React.useState("");
   const [audioUrl, setAudioUrl] = React.useState("");
@@ -116,6 +123,17 @@ export function LandingStudioManager() {
     if (c?.config) {
       setVoiceEnabled(c.config.voiceEnabled !== false);
       setAutoGreetOnOpen(c.config.autoGreetOnOpen !== false);
+      setVoiceAccent(
+        c.config.voiceAccent === "en-GB" || c.config.voiceAccent === "en-US"
+          ? c.config.voiceAccent
+          : "en-IN"
+      );
+      setVoiceGender(c.config.voiceGender === "male" ? "male" : "female");
+      setVoiceRate(
+        c.config.voiceRate === "0.9" || c.config.voiceRate === "1.1"
+          ? c.config.voiceRate
+          : "1.0"
+      );
       setVoiceGreeting(c.config.voiceGreeting || "");
       setBusyNotice(c.config.busyNotice || "");
       setAudioUrl(c.config.audioUrl || "");
@@ -282,6 +300,60 @@ export function LandingStudioManager() {
     await loadAll();
   };
 
+  const stopPreviewVoice = () => {
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+    }
+    if (previewBlobRef.current) {
+      URL.revokeObjectURL(previewBlobRef.current);
+      previewBlobRef.current = null;
+    }
+    setTtsPlaying(false);
+  };
+
+  const previewTtsVoice = async () => {
+    if (ttsPlaying) {
+      stopPreviewVoice();
+      return;
+    }
+    const textToSpeak =
+      voiceGreeting.trim() ||
+      "Welcome to Ibemhal IAS, Manipur's premier Civil Services coaching institute.";
+    setTtsPreviewBusy(true);
+    setErr("");
+    try {
+      const res = await fetch("/api/support/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: textToSpeak,
+          accent: voiceAccent,
+          gender: voiceGender,
+          rate: voiceRate,
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d?.error || "Failed to generate voice preview");
+      }
+      const blob = await res.blob();
+      stopPreviewVoice();
+      const url = URL.createObjectURL(blob);
+      previewBlobRef.current = url;
+      const audio = new Audio(url);
+      previewAudioRef.current = audio;
+      setTtsPlaying(true);
+      audio.onended = () => stopPreviewVoice();
+      audio.onerror = () => stopPreviewVoice();
+      await audio.play();
+    } catch (e: any) {
+      setErr(e?.message || "Voice preview failed");
+    } finally {
+      setTtsPreviewBusy(false);
+    }
+  };
+
   const saveConcierge = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
@@ -295,6 +367,10 @@ export function LandingStudioManager() {
           action: "save_config",
           voiceEnabled,
           autoGreetOnOpen,
+          voiceAccent,
+          voiceGender,
+          voiceRate,
+          generateTtsAudio: true,
           voiceGreeting,
           busyNotice,
           audioStoragePath,
@@ -887,15 +963,82 @@ export function LandingStudioManager() {
               />
             </div>
 
+            <div className="grid gap-4 rounded-xl border border-indigo-100 bg-indigo-50/50 p-4 sm:grid-cols-3">
+              <div>
+                <label className="text-xs font-bold text-slate-700">
+                  Microsoft Voice Accent
+                </label>
+                <select
+                  value={voiceAccent}
+                  onChange={(e) => setVoiceAccent(e.target.value as "en-IN" | "en-GB" | "en-US")}
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold"
+                >
+                  <option value="en-IN">Indian English (en-IN)</option>
+                  <option value="en-GB">UK British (en-GB)</option>
+                  <option value="en-US">American US (en-US)</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-700">
+                  Voice Gender
+                </label>
+                <select
+                  value={voiceGender}
+                  onChange={(e) => setVoiceGender(e.target.value as "female" | "male")}
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold"
+                >
+                  <option value="female">
+                    Female ({voiceAccent === "en-IN" ? "Neerja" : voiceAccent === "en-GB" ? "Sonia" : "Jenny"})
+                  </option>
+                  <option value="male">
+                    Male ({voiceAccent === "en-IN" ? "Prabhat" : voiceAccent === "en-GB" ? "Ryan" : "Guy"})
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-700">
+                  Speaking Speed
+                </label>
+                <select
+                  value={voiceRate}
+                  onChange={(e) => setVoiceRate(e.target.value as "0.9" | "1.0" | "1.1")}
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold"
+                >
+                  <option value="0.9">0.9x (Calm & Clear)</option>
+                  <option value="1.0">1.0x (Natural)</option>
+                  <option value="1.1">1.1x (Crisp & Energetic)</option>
+                </select>
+              </div>
+            </div>
+
             <div>
-              <label className="text-xs font-bold text-slate-700">
-                Automated Voice Greeting Script (Spoken aloud automatically if no MP3 is uploaded)
-              </label>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <label className="text-xs font-bold text-slate-700">
+                  Text-to-Speech Script (Admin writes text, Microsoft AI speaks & caches MP3 on Save)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => void previewTtsVoice()}
+                  disabled={ttsPreviewBusy}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-[11px] font-black text-[#14256f] hover:bg-indigo-100 disabled:opacity-50"
+                >
+                  {ttsPreviewBusy ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Volume2 className="h-3.5 w-3.5" />
+                  )}
+                  {ttsPreviewBusy
+                    ? "Generating Voice..."
+                    : ttsPlaying
+                      ? "Stop Preview"
+                      : "Preview Microsoft Voice"}
+                </button>
+              </div>
               <textarea
                 rows={3}
                 value={voiceGreeting}
                 onChange={(e) => setVoiceGreeting(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
               />
             </div>
 

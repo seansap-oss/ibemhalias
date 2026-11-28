@@ -27,6 +27,9 @@ type ConciergeTab = "quick" | "ai" | "callback";
 type ConciergeConfig = {
   voiceEnabled: boolean;
   autoGreetOnOpen: boolean;
+  voiceAccent?: string;
+  voiceGender?: string;
+  voiceRate?: string;
   voiceGreeting: string;
   busyNotice: string;
   resolvedAudioUrl?: string | null;
@@ -70,6 +73,7 @@ export function AiConciergeWidget() {
   const [config, setConfig] = React.useState<ConciergeConfig>(DEFAULT_CONFIG);
   const [branches, setBranches] = React.useState(branchLocations);
   const [speaking, setSpeaking] = React.useState(false);
+  const [voiceLoading, setVoiceLoading] = React.useState(false);
   const [copiedField, setCopiedField] = React.useState<string | null>(null);
 
   // AI Advisor State
@@ -93,6 +97,8 @@ export function AiConciergeWidget() {
   const [leadErr, setLeadErr] = React.useState<string | null>(null);
 
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  const blobUrlRef = React.useRef<string | null>(null);
+  const ttsAbortRef = React.useRef<AbortController | null>(null);
 
   React.useEffect(() => {
     fetch("/api/support/concierge", { cache: "no-store" })
@@ -109,18 +115,44 @@ export function AiConciergeWidget() {
   }, []);
 
   const stopVoice = React.useCallback(() => {
+    if (ttsAbortRef.current) {
+      ttsAbortRef.current.abort();
+      ttsAbortRef.current = null;
+    }
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    }
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
     }
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
+    setVoiceLoading(false);
     setSpeaking(false);
   }, []);
 
+  const playBrowserFallback = React.useCallback((textToSpeak: string) => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window && textToSpeak) {
+      try {
+        const utter = new SpeechSynthesisUtterance(textToSpeak);
+        utter.rate = 0.98;
+        utter.pitch = 1;
+        utter.onend = () => setSpeaking(false);
+        utter.onerror = () => setSpeaking(false);
+        setSpeaking(true);
+        window.speechSynthesis.speak(utter);
+      } catch {
+        setSpeaking(false);
+      }
+    }
+  }, []);
+
   const speakText = React.useCallback(
-    (textToSpeak: string, audioSrc?: string | null) => {
+    async (textToSpeak: string, audioSrc?: string | null) => {
       stopVoice();
       if (audioSrc) {
         const audio = new Audio(audioSrc);
@@ -134,21 +166,44 @@ export function AiConciergeWidget() {
         return;
       }
 
-      if (typeof window !== "undefined" && "speechSynthesis" in window && textToSpeak) {
-        try {
-          const utter = new SpeechSynthesisUtterance(textToSpeak);
-          utter.rate = 0.98;
-          utter.pitch = 1;
-          utter.onend = () => setSpeaking(false);
-          utter.onerror = () => setSpeaking(false);
-          setSpeaking(true);
-          window.speechSynthesis.speak(utter);
-        } catch {
-          setSpeaking(false);
+      if (!textToSpeak.trim()) return;
+
+      const controller = new AbortController();
+      ttsAbortRef.current = controller;
+      setVoiceLoading(true);
+      try {
+        const res = await fetch("/api/support/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: textToSpeak,
+            accent: config.voiceAccent || "en-IN",
+            gender: config.voiceGender || "female",
+            rate: config.voiceRate || "1.0",
+          }),
+          signal: controller.signal,
+        });
+        if (!res.ok) throw new Error("TTS request failed");
+        const blob = await res.blob();
+        if (controller.signal.aborted) return;
+
+        const url = URL.createObjectURL(blob);
+        blobUrlRef.current = url;
+        const audio = new Audio(url);
+        audioRef.current = audio;
+        setVoiceLoading(false);
+        setSpeaking(true);
+        audio.onended = () => setSpeaking(false);
+        audio.onerror = () => setSpeaking(false);
+        await audio.play();
+      } catch (err: any) {
+        setVoiceLoading(false);
+        if (err?.name !== "AbortError") {
+          playBrowserFallback(textToSpeak);
         }
       }
     },
-    [stopVoice]
+    [config.voiceAccent, config.voiceGender, config.voiceRate, playBrowserFallback, stopVoice]
   );
 
   const openWidget = React.useCallback(
@@ -357,7 +412,11 @@ export function AiConciergeWidget() {
                         : "bg-[#14256f] text-white hover:bg-[#1d348f]"
                     }`}
                   >
-                    {speaking ? (
+                    {voiceLoading ? (
+                      <>
+                        <Volume2 className="h-3.5 w-3.5 animate-pulse" /> Loading...
+                      </>
+                    ) : speaking ? (
                       <>
                         <VolumeX className="h-3.5 w-3.5" /> Mute
                       </>

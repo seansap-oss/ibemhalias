@@ -5,6 +5,18 @@ import { logAdminWork } from "@/lib/admin-audit";
 import { runWithFallback, extractJson } from "@/lib/ai/router";
 import { SITE_CONTACT } from "@/lib/site-contact";
 import { branchLocations } from "@/components/portal/nav-items";
+import {
+  VoiceAccent,
+  VoiceGender,
+  VoiceRate,
+  normalizeAccent,
+  normalizeGender,
+  normalizeRate,
+  synthesizeMicrosoftSpeech,
+} from "@/lib/tts/microsoft-voices";
+
+export const runtime = "nodejs";
+export const maxDuration = 30;
 
 const CONFIG_SECTION = "support-concierge-config";
 const LEADS_SECTION = "support-leads";
@@ -13,6 +25,9 @@ const BUCKET = "cms-content";
 type ConciergeConfig = {
   voiceEnabled: boolean;
   autoGreetOnOpen: boolean;
+  voiceAccent: VoiceAccent;
+  voiceGender: VoiceGender;
+  voiceRate: VoiceRate;
   voiceGreeting: string;
   busyNotice: string;
   audioStoragePath: string | null;
@@ -27,6 +42,9 @@ type ConciergeConfig = {
 const DEFAULT_CONCIERGE_CONFIG: ConciergeConfig = {
   voiceEnabled: true,
   autoGreetOnOpen: true,
+  voiceAccent: "en-IN",
+  voiceGender: "female",
+  voiceRate: "1.0",
   voiceGreeting:
     "Welcome to Ibemhal IAS, Manipur's trusted low-fee Civil Services coaching institute. All counsellors may currently be assisting students, so I am your automated AI concierge. You can check our three Imphal centres, speak with Sales or Support, get smart course recommendations, or pay fees via UPI QR to receive an instant fee receipt.",
   busyNotice:
@@ -259,13 +277,59 @@ export async function POST(request: NextRequest) {
       // Clear previous concierge config rows so only latest single config applies
       await db.from("cms_content").delete().eq("section_path", CONFIG_SECTION);
 
+      const voiceAccent = normalizeAccent(body.voiceAccent);
+      const voiceGender = normalizeGender(body.voiceGender);
+      const voiceRate = normalizeRate(body.voiceRate);
+      const voiceGreeting = String(
+        body.voiceGreeting || DEFAULT_CONCIERGE_CONFIG.voiceGreeting
+      ).trim();
+      const customUrl = String(body.audioUrl || "").trim();
+      let audioStoragePath = body.audioStoragePath
+        ? String(body.audioStoragePath)
+        : null;
+
+      // Auto-generate natural Microsoft Neural MP3 for the greeting and cache in Supabase Storage
+      const shouldAutoGenerateTts =
+        body.voiceEnabled !== false &&
+        voiceGreeting.length > 0 &&
+        !customUrl &&
+        (body.generateTtsAudio === true ||
+          !audioStoragePath ||
+          audioStoragePath.startsWith("support-audio/tts-greeting-"));
+
+      if (shouldAutoGenerateTts) {
+        try {
+          const { buffer } = await synthesizeMicrosoftSpeech({
+            text: voiceGreeting,
+            accent: voiceAccent,
+            gender: voiceGender,
+            rate: voiceRate,
+          });
+          const filePath = `support-audio/tts-greeting-${Date.now()}.mp3`;
+          const { error: uploadErr } = await db.storage
+            .from(BUCKET)
+            .upload(filePath, buffer, {
+              contentType: "audio/mpeg",
+              upsert: true,
+            });
+          if (!uploadErr) {
+            audioStoragePath = filePath;
+          }
+        } catch {
+          // Live /api/support/tts remains available as runtime fallback
+        }
+      }
+
       const nextConfig: ConciergeConfig = {
         voiceEnabled: body.voiceEnabled !== false,
         autoGreetOnOpen: body.autoGreetOnOpen !== false,
-        voiceGreeting: String(body.voiceGreeting || DEFAULT_CONCIERGE_CONFIG.voiceGreeting).trim(),
+        voiceAccent,
+        voiceGender,
+        voiceRate,
+        voiceGreeting,
         busyNotice: String(body.busyNotice || DEFAULT_CONCIERGE_CONFIG.busyNotice).trim(),
-        audioStoragePath: body.audioStoragePath ? String(body.audioStoragePath) : null,
-        audioUrl: String(body.audioUrl || "").trim(),
+        audioStoragePath,
+        audioUrl: customUrl,
         salesPhone: String(body.salesPhone || SITE_CONTACT.phoneDisplay).trim(),
         supportPhone: String(body.supportPhone || SITE_CONTACT.phoneDisplay).trim(),
         supportEmail: String(body.supportEmail || SITE_CONTACT.helpdeskEmail).trim(),
