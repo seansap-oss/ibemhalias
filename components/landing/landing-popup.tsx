@@ -37,7 +37,10 @@ export function LandingPopup({ autoOpen = true }: { autoOpen?: boolean }) {
       const item = (data.items || [])[0];
 
       if (!item) {
-        if (forceShow) {
+        const seenFallback =
+          typeof window !== "undefined" &&
+          sessionStorage.getItem(`ibemhal-popup-seen-${FALLBACK_ANNOUNCEMENT.id}`);
+        if (forceShow || !seenFallback) {
           setPopup(FALLBACK_ANNOUNCEMENT);
           setOpen(true);
         }
@@ -74,7 +77,10 @@ export function LandingPopup({ autoOpen = true }: { autoOpen?: boolean }) {
       setPopup(payload.enabled ? payload : FALLBACK_ANNOUNCEMENT);
       setOpen(true);
     } catch {
-      if (forceShow) {
+      const seenFallback =
+        typeof window !== "undefined" &&
+        sessionStorage.getItem(`ibemhal-popup-seen-${FALLBACK_ANNOUNCEMENT.id}`);
+      if (forceShow || !seenFallback) {
         setPopup(FALLBACK_ANNOUNCEMENT);
         setOpen(true);
       }
@@ -106,11 +112,11 @@ export function LandingPopup({ autoOpen = true }: { autoOpen?: boolean }) {
 
   return (
     <div
-      className="fixed inset-0 z-[140] flex items-center justify-center bg-slate-950/65 p-3 backdrop-blur-sm sm:p-6"
+      className="fixed inset-0 z-[160] flex items-center justify-center bg-slate-950/65 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm sm:p-6"
       onClick={dismiss}
     >
       <div
-        className="relative flex max-h-[82vh] w-[92vw] max-w-4xl flex-col overflow-hidden rounded-3xl border border-[#e5dfd4] bg-[#faf8f4] shadow-2xl"
+        className="relative flex max-h-[82vh] w-[92vw] max-w-4xl flex-col overflow-hidden rounded-3xl border border-[#e5dfd4] bg-[#faf8f4] shadow-2xl overscroll-contain"
         onClick={(e) => e.stopPropagation()}
       >
         <button
