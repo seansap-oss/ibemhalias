@@ -96,8 +96,7 @@ export function AiConciergeWidget() {
   const [leadDone, setLeadDone] = React.useState<string | null>(null);
   const [leadErr, setLeadErr] = React.useState<string | null>(null);
 
-  const audioRef = React.useRef<HTMLAudioElement | null>(null);
-  const blobUrlRef = React.useRef<string | null>(null);
+  const audioElRef = React.useRef<HTMLAudioElement | null>(null);
   const ttsAbortRef = React.useRef<AbortController | null>(null);
 
   React.useEffect(() => {
@@ -119,14 +118,11 @@ export function AiConciergeWidget() {
       ttsAbortRef.current.abort();
       ttsAbortRef.current = null;
     }
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current = null;
-    }
-    if (blobUrlRef.current) {
-      URL.revokeObjectURL(blobUrlRef.current);
-      blobUrlRef.current = null;
+    if (audioElRef.current) {
+      audioElRef.current.pause();
+      try {
+        audioElRef.current.currentTime = 0;
+      } catch {}
     }
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
@@ -152,56 +148,53 @@ export function AiConciergeWidget() {
   }, []);
 
   const speakText = React.useCallback(
-    async (textToSpeak: string, audioSrc?: string | null) => {
+    (textToSpeak: string, audioSrc?: string | null) => {
       stopVoice();
-      if (audioSrc) {
-        const audio = new Audio(audioSrc);
-        audioRef.current = audio;
-        setSpeaking(true);
-        audio.onended = () => setSpeaking(false);
-        audio.onerror = () => {
-          setSpeaking(false);
-        };
-        audio.play().catch(() => setSpeaking(false));
-        return;
+      const targetText = textToSpeak.trim();
+      const resolvedSrc =
+        audioSrc ||
+        (targetText
+          ? `/api/support/tts?text=${encodeURIComponent(targetText.slice(0, 1500))}&accent=${encodeURIComponent(
+              config.voiceAccent || "en-IN"
+            )}&gender=${encodeURIComponent(
+              config.voiceGender || "female"
+            )}&rate=${encodeURIComponent(config.voiceRate || "1.0")}`
+          : "");
+
+      if (!resolvedSrc) return;
+
+      const el = audioElRef.current || new Audio();
+      if (!audioElRef.current) {
+        audioElRef.current = el;
       }
-
-      if (!textToSpeak.trim()) return;
-
-      const controller = new AbortController();
-      ttsAbortRef.current = controller;
+      el.src = resolvedSrc;
       setVoiceLoading(true);
-      try {
-        const res = await fetch("/api/support/tts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            text: textToSpeak,
-            accent: config.voiceAccent || "en-IN",
-            gender: config.voiceGender || "female",
-            rate: config.voiceRate || "1.0",
-          }),
-          signal: controller.signal,
-        });
-        if (!res.ok) throw new Error("TTS request failed");
-        const blob = await res.blob();
-        if (controller.signal.aborted) return;
 
-        const url = URL.createObjectURL(blob);
-        blobUrlRef.current = url;
-        const audio = new Audio(url);
-        audioRef.current = audio;
+      el.oncanplay = () => {
         setVoiceLoading(false);
         setSpeaking(true);
-        audio.onended = () => setSpeaking(false);
-        audio.onerror = () => setSpeaking(false);
-        await audio.play();
-      } catch (err: any) {
+      };
+      el.onended = () => {
         setVoiceLoading(false);
-        if (err?.name !== "AbortError") {
-          playBrowserFallback(textToSpeak);
+        setSpeaking(false);
+      };
+      el.onerror = () => {
+        setVoiceLoading(false);
+        setSpeaking(false);
+        if (targetText) playBrowserFallback(targetText);
+      };
+
+      el.play().then(
+        () => {
+          setVoiceLoading(false);
+          setSpeaking(true);
+        },
+        () => {
+          setVoiceLoading(false);
+          setSpeaking(false);
+          if (targetText) playBrowserFallback(targetText);
         }
-      }
+      );
     },
     [config.voiceAccent, config.voiceGender, config.voiceRate, playBrowserFallback, stopVoice]
   );
