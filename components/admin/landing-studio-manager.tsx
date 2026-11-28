@@ -7,17 +7,31 @@ import {
   CheckCircle2,
   ExternalLink,
   Film,
+  Headphones,
   Image as ImageIcon,
   Loader2,
   Megaphone,
+  MessageCircle,
+  Phone,
   Plus,
   Trash2,
   Upload,
+  Volume2,
   Youtube,
 } from "lucide-react";
 import { CmsContentManager } from "@/components/admin/cms-content-manager";
 
-type TabId = "hero" | "popup" | "archive" | "materials";
+type TabId = "hero" | "popup" | "archive" | "materials" | "concierge";
+
+type SupportLead = {
+  id: string;
+  name: string;
+  department: string;
+  phone: string;
+  email: string;
+  message: string;
+  createdAt: string;
+};
 
 const YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016];
 const MONTHS = [
@@ -67,8 +81,22 @@ export function LandingStudioManager() {
   const [archUrl, setArchUrl] = React.useState("");
   const [archStoragePath, setArchStoragePath] = React.useState<string | null>(null);
 
+  // Support & AI Voice Concierge state
+  const [voiceEnabled, setVoiceEnabled] = React.useState(true);
+  const [autoGreetOnOpen, setAutoGreetOnOpen] = React.useState(true);
+  const [voiceGreeting, setVoiceGreeting] = React.useState("");
+  const [busyNotice, setBusyNotice] = React.useState("");
+  const [audioUrl, setAudioUrl] = React.useState("");
+  const [audioStoragePath, setAudioStoragePath] = React.useState<string | null>(null);
+  const [salesPhone, setSalesPhone] = React.useState("");
+  const [supportPhone, setSupportPhone] = React.useState("");
+  const [supportEmail, setSupportEmail] = React.useState("");
+  const [whatsappNumber, setWhatsappNumber] = React.useState("");
+  const [aiPromptHint, setAiPromptHint] = React.useState("");
+  const [supportLeads, setSupportLeads] = React.useState<SupportLead[]>([]);
+
   const loadAll = React.useCallback(async () => {
-    const [h, p, a] = await Promise.all([
+    const [h, p, a, c] = await Promise.all([
       fetch("/api/cms/content?section=hero", { cache: "no-store" })
         .then((r) => r.json())
         .catch(() => ({ items: [] })),
@@ -78,10 +106,29 @@ export function LandingStudioManager() {
       fetch("/api/cms/content?section=digital_archive", { cache: "no-store" })
         .then((r) => r.json())
         .catch(() => ({ items: [] })),
+      fetch("/api/support/concierge?mode=leads", { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null),
     ]);
     setHeroItems(h.items || []);
     setPopupItems(p.items || []);
     setArchiveItems(a.items || []);
+    if (c?.config) {
+      setVoiceEnabled(c.config.voiceEnabled !== false);
+      setAutoGreetOnOpen(c.config.autoGreetOnOpen !== false);
+      setVoiceGreeting(c.config.voiceGreeting || "");
+      setBusyNotice(c.config.busyNotice || "");
+      setAudioUrl(c.config.audioUrl || "");
+      setAudioStoragePath(c.config.audioStoragePath || null);
+      setSalesPhone(c.config.salesPhone || "");
+      setSupportPhone(c.config.supportPhone || "");
+      setSupportEmail(c.config.supportEmail || "");
+      setWhatsappNumber(c.config.whatsappNumber || "");
+      setAiPromptHint(c.config.aiPromptHint || "");
+    }
+    if (Array.isArray(c?.leads)) {
+      setSupportLeads(c.leads);
+    }
   }, []);
 
   React.useEffect(() => {
@@ -235,6 +282,48 @@ export function LandingStudioManager() {
     await loadAll();
   };
 
+  const saveConcierge = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setErr("");
+    setMsg("");
+    try {
+      const res = await fetch("/api/support/concierge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "save_config",
+          voiceEnabled,
+          autoGreetOnOpen,
+          voiceGreeting,
+          busyNotice,
+          audioStoragePath,
+          audioUrl,
+          salesPhone,
+          supportPhone,
+          supportEmail,
+          whatsappNumber,
+          aiPromptHint,
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d?.error || "Failed to save Support & AI Voice config");
+      setMsg("Support, AI Concierge & Automated Voice settings saved LIVE!");
+      await loadAll();
+    } catch (e: any) {
+      setErr(e?.message || "Failed to save Concierge settings");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deleteSupportLead = async (id: string) => {
+    await fetch(`/api/support/concierge?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
+    await loadAll();
+  };
+
   return (
     <div className="space-y-6">
       {/* Studio Tabs */}
@@ -245,6 +334,7 @@ export function LandingStudioManager() {
             { id: "popup", label: "2. Homepage Popup", icon: Megaphone },
             { id: "archive", label: "3. 10-Year PDF Archive (2016–2026)", icon: Archive },
             { id: "materials", label: "4. Course & Resource Files", icon: Upload },
+            { id: "concierge", label: `5. Support & AI Voice (${supportLeads.length})`, icon: Headphones },
           ].map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -699,6 +789,243 @@ export function LandingStudioManager() {
 
       {/* TAB 4: EXISTING COURSE & RESOURCE MATERIALS */}
       {tab === "materials" && <CmsContentManager />}
+
+      {/* TAB 5: SUPPORT CONCIERGE, AI VOICE & LEADS INBOX */}
+      {tab === "concierge" && (
+        <div className="space-y-6">
+          <form
+            onSubmit={saveConcierge}
+            className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="flex items-center gap-2 text-lg font-black text-[#14256f]">
+                  <Volume2 className="h-5 w-5 text-amber-600" /> Automated Voice & AI Support Settings
+                </h2>
+                <p className="text-xs text-slate-600">
+                  Control the automated voice greeting, busy-line audio recording, Sales/Support phones, and AI Course Advisor shown from the header Contact button & floating Concierge.
+                </p>
+              </div>
+              <div className="flex items-center gap-4 text-xs font-bold">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={voiceEnabled}
+                    onChange={(e) => setVoiceEnabled(e.target.checked)}
+                    className="h-4 w-4 rounded accent-[#14256f]"
+                  />
+                  Enable Voice Guide
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={autoGreetOnOpen}
+                    onChange={(e) => setAutoGreetOnOpen(e.target.checked)}
+                    className="h-4 w-4 rounded accent-[#14256f]"
+                  />
+                  Auto-Play When Opened
+                </label>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-xs font-bold text-slate-700">
+                  Sales & Admissions Phone
+                </label>
+                <input
+                  value={salesPhone}
+                  onChange={(e) => setSalesPhone(e.target.value)}
+                  placeholder="+91 76290 49230"
+                  className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-700">
+                  Customer Support Phone
+                </label>
+                <input
+                  value={supportPhone}
+                  onChange={(e) => setSupportPhone(e.target.value)}
+                  placeholder="+91 76290 49230"
+                  className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-700">
+                  Official Support Email
+                </label>
+                <input
+                  type="email"
+                  value={supportEmail}
+                  onChange={(e) => setSupportEmail(e.target.value)}
+                  placeholder="ibemhaliashelpdesk@gmail.com"
+                  className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-700">
+                  WhatsApp Number (digits only)
+                </label>
+                <input
+                  value={whatsappNumber}
+                  onChange={(e) => setWhatsappNumber(e.target.value)}
+                  placeholder="917629049230"
+                  className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-700">
+                Busy-Hour Banner Notice (shown when lines are busy)
+              </label>
+              <input
+                value={busyNotice}
+                onChange={(e) => setBusyNotice(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-700">
+                Automated Voice Greeting Script (Spoken aloud automatically if no MP3 is uploaded)
+              </label>
+              <textarea
+                rows={3}
+                value={voiceGreeting}
+                onChange={(e) => setVoiceGreeting(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="text-xs font-bold text-slate-800">
+                  Optional Custom Busy/Welcome Audio Recording (.mp3 / .wav)
+                </div>
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100">
+                  <Upload className="h-3.5 w-3.5" />
+                  {audioStoragePath ? "Audio Uploaded ✓" : "Upload Audio MP3"}
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    onChange={(e) =>
+                      void uploadFileToStorage(
+                        e.target.files?.[0] || null,
+                        "support-audio",
+                        (sp) => setAudioStoragePath(sp)
+                      )
+                    }
+                  />
+                </label>
+              </div>
+              <input
+                value={audioUrl}
+                onChange={(e) => setAudioUrl(e.target.value)}
+                placeholder="Or paste external MP3 link (leave blank to use AI voice speech synthesis)"
+                className="mt-2.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-700">
+                AI Course Advisor Guidance Prompt
+              </label>
+              <textarea
+                rows={2}
+                value={aiPromptHint}
+                onChange={(e) => setAiPromptHint(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={busy}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#14256f] px-5 py-2.5 text-xs font-black text-white hover:bg-[#1d348f] disabled:opacity-50"
+            >
+              {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+              Save Support & Voice Settings
+            </button>
+          </form>
+
+          {/* Callback & Customer Support Leads Inbox */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-black text-[#14256f]">
+                Visitor Callback & Sales/Support Messages ({supportLeads.length})
+              </h3>
+              <span className="text-xs text-slate-500">
+                Submitted from AI Concierge Message Box
+              </span>
+            </div>
+
+            {supportLeads.length === 0 ? (
+              <p className="mt-4 rounded-xl bg-slate-50 p-4 text-xs text-slate-500">
+                No visitor callback messages yet. Messages sent when counsellors are busy appear here.
+              </p>
+            ) : (
+              <div className="mt-4 divide-y divide-slate-100">
+                {supportLeads.map((lead) => {
+                  const waNum = (lead.phone || "").replace(/[^\d]/g, "");
+                  return (
+                    <div
+                      key={lead.id}
+                      className="flex flex-wrap items-start justify-between gap-3 py-3 text-xs"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded-md bg-blue-100 px-2 py-0.5 text-[10px] font-black uppercase text-[#14256f]">
+                            {lead.department}
+                          </span>
+                          <span className="font-black text-slate-900">{lead.name}</span>
+                          {lead.phone && (
+                            <a
+                              href={`tel:${lead.phone}`}
+                              className="inline-flex items-center gap-1 font-bold text-emerald-700 hover:underline"
+                            >
+                              <Phone className="h-3 w-3" /> {lead.phone}
+                            </a>
+                          )}
+                          {lead.email && (
+                            <span className="text-slate-500">{lead.email}</span>
+                          )}
+                        </div>
+                        <p className="text-slate-700">{lead.message}</p>
+                        <div className="text-[10px] text-slate-400">
+                          {new Date(lead.createdAt).toLocaleString()}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {waNum.length >= 10 && (
+                          <a
+                            href={`https://wa.me/${waNum.length === 10 ? "91" + waNum : waNum}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded-lg bg-green-600 px-2.5 py-1.5 text-[11px] font-bold text-white hover:bg-green-700"
+                          >
+                            <MessageCircle className="h-3 w-3" /> WhatsApp
+                          </a>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => void deleteSupportLead(lead.id)}
+                          className="rounded-lg border border-red-200 px-2.5 py-1.5 text-[11px] font-bold text-red-600 hover:bg-red-50"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

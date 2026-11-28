@@ -2,9 +2,10 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  Bell,
   BookOpen,
   Building2,
   CalendarDays,
@@ -12,9 +13,8 @@ import {
   ChevronRight,
   FileQuestion,
   GraduationCap,
+  Headphones,
   LogOut,
-  Mail,
-  MapPin,
   Menu,
   Newspaper,
   ShieldCheck,
@@ -26,8 +26,9 @@ import { useLongPress } from "@/hooks/use-long-press";
 import { LocalAdminAuthModal } from "@/components/admin/local-admin-auth-modal";
 import { LONG_PRESS_MS, hasLocalAdminSession } from "@/lib/local-admin";
 import { portalNavItems } from "@/components/portal/nav-items";
-import { SITE_CONTACT } from "@/lib/site-contact";
 import { IbemhalLogo } from "@/components/brand/ibemhal-logo";
+import { LandingPopup } from "@/components/landing/landing-popup";
+import { AiConciergeWidget } from "@/components/landing/ai-concierge-widget";
 
 type UserSession = {
   authenticated: boolean;
@@ -41,6 +42,7 @@ type UserSession = {
 
 export function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [authOpen, setAuthOpen] = React.useState(false);
   const [session, setSession] = React.useState<UserSession | null>(null);
@@ -98,28 +100,6 @@ export function Navbar() {
   return (
     <>
       <header className="site-navbar fixed inset-x-0 top-0 z-50 border-b border-[#e5dfd4] bg-[#faf8f4]/95 backdrop-blur-xl">
-        {/* Top Utility Bar */}
-        <div className="bg-[#14256f] text-[11px] font-semibold text-blue-100">
-          <div className="mx-auto flex h-8 max-w-[1400px] items-center justify-between px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center gap-1.5">
-              <MapPin className="h-3 w-3 text-[#f3d18b]" />
-              <span>Imphal, Manipur · Keishampat · Chingmeirong · Thangmeiband</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <a
-                href={`mailto:${SITE_CONTACT.helpdeskEmail}`}
-                className="hidden items-center gap-1 hover:text-white sm:inline-flex"
-              >
-                <Mail className="h-3 w-3 text-[#f3d18b]" />
-                {SITE_CONTACT.helpdeskEmail}
-              </a>
-              <Link href="/#contact" className="font-bold text-white hover:underline">
-                Contact
-              </Link>
-            </div>
-          </div>
-        </div>
-
         <nav className="mx-auto flex h-[72px] max-w-[1400px] items-center gap-4 px-4 sm:px-6 lg:px-8">
           <button
             onClick={() => setMenuOpen(true)}
@@ -233,6 +213,31 @@ export function Navbar() {
           </div>
 
           <div className="ml-auto flex items-center gap-2 lg:ml-0">
+            <button
+              type="button"
+              onClick={() =>
+                window.dispatchEvent(
+                  new CustomEvent("ibemhal:open-concierge", { detail: { tab: "quick" } })
+                )
+              }
+              aria-label="Contact, Branch Addresses & AI Helpdesk"
+              title="Contact, 3 Imphal Centres & AI Helpdesk"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[#e5dfd4] bg-white text-[#14256f] shadow-sm transition hover:border-[#14256f] hover:bg-blue-50/50"
+            >
+              <Headphones className="h-5 w-5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent("ibemhal:open-popup"))}
+              aria-label="Notifications & Announcements"
+              title="Notifications & Announcements"
+              className="relative grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[#e5dfd4] bg-white text-[#14256f] shadow-sm transition hover:border-[#14256f] hover:bg-amber-50/60"
+            >
+              <Bell className="h-5 w-5" />
+              <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-orange-500 ring-2 ring-white" />
+            </button>
+
             {session?.authenticated ? (
               <div className="flex items-center gap-2">
                 <Link
@@ -389,6 +394,8 @@ export function Navbar() {
       </AnimatePresence>
 
       <LocalAdminAuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
+      <LandingPopup autoOpen={pathname === "/"} />
+      <AiConciergeWidget />
     </>
   );
 }
