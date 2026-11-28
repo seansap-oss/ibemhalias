@@ -113,27 +113,34 @@ function LoginForm() {
 
     try {
       // 1. Check dedicated admin session first (supports both admin username and email).
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
       const adminResponse = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ identifier, password }),
-      });
+        signal: controller.signal,
+      }).finally(() => clearTimeout(timeoutId));
       const adminData = await adminResponse.json().catch(() => ({}));
 
       if (adminResponse.ok && adminData?.authenticated) {
-        await fetch("/api/owner/logout", {
-          method: "POST",
-          cache: "no-store",
-        }).catch(() => undefined);
-        const supabase = createClient();
-        if (supabase) {
-          await supabase.auth
-            .signOut({ scope: "local" })
-            .catch(() => undefined);
-        }
+        await Promise.race([
+          Promise.all([
+            fetch("/api/owner/logout", {
+              method: "POST",
+              cache: "no-store",
+            }).catch(() => undefined),
+            (() => {
+              const supabase = createClient();
+              return supabase
+                ? supabase.auth.signOut({ scope: "local" }).catch(() => undefined)
+                : Promise.resolve();
+            })(),
+          ]),
+          new Promise((resolve) => setTimeout(resolve, 800)),
+        ]);
 
-        router.replace(resolveSafeRedirect("admin", requested));
-        router.refresh();
+        window.location.assign(resolveSafeRedirect("admin", requested));
         return;
       }
 
@@ -219,13 +226,12 @@ function LoginForm() {
             "Unable to start the director session. Please try signing in again."
           );
         }
-        router.replace(
+        window.location.assign(
           resolveSafeRedirect(
             role as "instructor" | "admin" | "director",
             requested
           )
         );
-        router.refresh();
         return;
       }
 
@@ -234,7 +240,11 @@ function LoginForm() {
         "This account does not have portal access. Please contact the institute."
       );
     } catch (reasonErr: any) {
-      setError(reasonErr?.message || "Unable to sign in.");
+      setError(
+        reasonErr?.name === "AbortError"
+          ? "Login request timed out. Please try again."
+          : reasonErr?.message || "Unable to sign in."
+      );
       setBusy(false);
     }
   };

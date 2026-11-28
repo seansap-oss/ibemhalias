@@ -109,23 +109,21 @@ export default function AdminLoginClient() {
 
       // Administrator and student sessions are intentionally
       // separated. Only after the admin credentials succeed do we
-      // clear any browser-side Supabase student session.
+      // clear any browser-side Supabase student session (non-blocking).
       const supabase = createClient();
       if (supabase) {
-        await supabase.auth
-          .signOut({ scope: "local" })
-          .catch(() => undefined);
+        await Promise.race([
+          supabase.auth.signOut({ scope: "local" }).catch(() => undefined),
+          new Promise((resolve) => setTimeout(resolve, 800)),
+        ]);
       }
 
       sessionStorage.removeItem("admin_auth");
       sessionStorage.removeItem("admin_email");
 
-      router.replace(
-        getSafeAdminDestination(
-          searchParams.get("redirectedFrom")
-        )
+      window.location.assign(
+        getSafeAdminDestination(searchParams.get("redirectedFrom"))
       );
-      router.refresh();
     } catch (err: any) {
       setError(
         err?.message ||

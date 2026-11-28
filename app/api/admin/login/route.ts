@@ -197,7 +197,22 @@ export async function POST(request: NextRequest) {
     clearRateLimit(rlKey);
 
     const token = await createAdminSessionToken(identity);
-    const { data: activity } = await createCmsServiceClient().from("activity_sessions").insert({ identity, role: "admin", country_code: request.headers.get("x-vercel-ip-country"), region_code: request.headers.get("x-vercel-ip-country-region") }).select("id").single();
+    let activityId: string | null = null;
+    try {
+      const { data: activity } = await createCmsServiceClient()
+        .from("activity_sessions")
+        .insert({
+          identity,
+          role: "admin",
+          country_code: request.headers.get("x-vercel-ip-country"),
+          region_code: request.headers.get("x-vercel-ip-country-region"),
+        })
+        .select("id")
+        .single();
+      activityId = activity?.id || null;
+    } catch {
+      // Non-blocking session log
+    }
 
     const response = NextResponse.json({
       ok: true,
@@ -221,7 +236,15 @@ export async function POST(request: NextRequest) {
       path: "/",
       maxAge: 8 * 60 * 60,
     });
-    if (activity?.id) response.cookies.set("avit_activity_session", activity.id, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 8 * 60 * 60 });
+    if (activityId) {
+      response.cookies.set("avit_activity_session", activityId, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: 8 * 60 * 60,
+      });
+    }
 
     return noStore(response);
   } catch (error: any) {
