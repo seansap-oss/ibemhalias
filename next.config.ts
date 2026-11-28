@@ -4,6 +4,7 @@ const isStaticExport = process.env.BUILD_TARGET === "capacitor";
 
 const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
+  serverExternalPackages: ["msedge-tts", "ws"],
   ...(isStaticExport
     ? {
         output: "export" as const,
