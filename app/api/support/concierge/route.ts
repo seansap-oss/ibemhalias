@@ -10,7 +10,7 @@ const CONFIG_SECTION = "support-concierge-config";
 const LEADS_SECTION = "support-leads";
 const BUCKET = "cms-content";
 
-export type ConciergeConfig = {
+type ConciergeConfig = {
   voiceEnabled: boolean;
   autoGreetOnOpen: boolean;
   voiceGreeting: string;
@@ -24,7 +24,7 @@ export type ConciergeConfig = {
   aiPromptHint: string;
 };
 
-export const DEFAULT_CONCIERGE_CONFIG: ConciergeConfig = {
+const DEFAULT_CONCIERGE_CONFIG: ConciergeConfig = {
   voiceEnabled: true,
   autoGreetOnOpen: true,
   voiceGreeting:
